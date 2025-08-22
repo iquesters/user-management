@@ -3,16 +3,22 @@
 use Illuminate\Support\Facades\Route;
 use Iquesters\UserManagement\Http\Controllers\Auth\AuthenticatedSessionController;
 use Iquesters\UserManagement\Http\Controllers\Auth\ConfirmablePasswordController;
+use Iquesters\UserManagement\Http\Controllers\DashboardController;
 use Iquesters\UserManagement\Http\Controllers\Auth\EmailVerificationNotificationController;
 use Iquesters\UserManagement\Http\Controllers\Auth\EmailVerificationPromptController;
 use Iquesters\UserManagement\Http\Controllers\Auth\NewPasswordController;
 use Iquesters\UserManagement\Http\Controllers\Auth\PasswordController;
 use Iquesters\UserManagement\Http\Controllers\Auth\PasswordResetLinkController;
+use Iquesters\UserManagement\Http\Controllers\Auth\RegisteredUserController;
 use Iquesters\UserManagement\Http\Controllers\Auth\VerifyEmailController;
 
 Route::middleware('web')->group(function () {
-
+    
     Route::middleware('guest')->group(function () {
+        Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
+        
+        Route::post('register', [RegisteredUserController::class, 'store']);
+        
         Route::get('login', [AuthenticatedSessionController::class, 'create'])
             ->name('login');
 
@@ -53,5 +59,9 @@ Route::middleware('web')->group(function () {
 
         Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
             ->name('logout');
+            
+        Route::prefix('dashboard')->group(function () {
+            Route::get('/show', [DashboardController::class, 'index'])->name('dashboard');
+        });
     });
 });
