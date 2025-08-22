@@ -2,9 +2,9 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
+use Illuminate\Routing\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Models\UserMeta;
+use Iquesters\Masterdata\Models\UserMeta;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +18,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
-        return view('auth.login');
+        return view('usermanagement::auth.login');
     }
 
     /**
