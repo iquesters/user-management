@@ -3,8 +3,8 @@
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
 use Illuminate\Routing\Controller;
-use App\Http\Requests\Auth\LoginRequest;
-use Iquesters\Masterdata\Models\UserMeta;
+use Iquesters\UserManagement\Http\Requests\Auth\LoginRequest;
+use Iquesters\UserManagement\Models\UserMeta;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

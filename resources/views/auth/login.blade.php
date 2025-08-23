@@ -1,4 +1,4 @@
-@extends(config('usermanagement.layout'))
+@extends(config('usermanagement.layout_auth'))
 
 @section('content')
 <div class="w-100">

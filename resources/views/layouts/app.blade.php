@@ -9,13 +9,13 @@
     @stack('styles')
 </head>
 <body>
+    @include('usermanagement::layouts.header')
     <div class="container-fluid" style="min-height: calc(100vh - 65px);">
         <!-- Main Content -->
         <main>
             <div class="w-100 d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 64px);">
                 <div class="row justify-content-md-center w-100">
                     <div class="col-md-4 d-flex flex-column justify-content-center align-items-center">
-                        <img src="{{ Iquesters\UserManagement\UserManagementServiceProvider::getLogoUrl() }}" class="img-fluid mb-3" alt="Logo" style="width: 275px;">
                         <!-- Session Status -->
                         @if (session('status'))
                             <div class="alert alert-info m-0 mt-3 p-2 w-100" role="alert">

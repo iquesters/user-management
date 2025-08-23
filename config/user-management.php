@@ -10,5 +10,21 @@ return [
     | You may override this by publishing this config file and/or setting env.
     |
     */
-    'layout' => env('USER_MANAGEMENT_LAYOUT', 'usermanagement::layouts.package'),
+    'layout_auth' => env('USER_MANAGEMENT_AUTH_LAYOUT', 'usermanagement::layouts.package'),
+    'layout_app' => env('USER_MANAGEMENT_APP_LAYOUT', 'usermanagement::layouts.app'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Logo Configuration
+    |--------------------------------------------------------------------------
+    |
+    | The path or URL of the logo to be displayed on auth pages.
+    | You can use:
+    | - Full URL: 'https://example.com/logo.png'
+    | - Absolute path: '/images/logo.png'
+    | - Package asset: 'img/logo.png' (will be served via package route)
+    | - Package namespace: 'usermanagement::img.logo.png'
+    |
+    */
+    'logo' => env('USER_MANAGEMENT_LOGO', 'img/logo.png'),
 ];

@@ -1,6 +1,6 @@
 <?php
 
-namespace Iquesters\Masterdata\Models;
+namespace Iquesters\UserManagement\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
