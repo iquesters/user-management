@@ -57,22 +57,27 @@ class UserManagementServiceProvider extends ServiceProvider
 
             // Get MIME type
             $mimeTypes = [
+                'css' => 'text/css',
+                'js' => 'application/javascript',
                 'png' => 'image/png',
                 'jpg' => 'image/jpeg',
                 'jpeg' => 'image/jpeg',
                 'gif' => 'image/gif',
                 'svg' => 'image/svg+xml',
-                'css' => 'text/css',
-                'js' => 'application/javascript',
                 'ico' => 'image/x-icon',
             ];
 
             $extension = pathinfo($filePath, PATHINFO_EXTENSION);
             $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
 
+            // Set appropriate cache headers
+            $cacheControl = in_array($extension, ['css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico'])
+                ? 'public, max-age=31536000' // 1 year for assets
+                : 'no-cache';
+
             return response()->file($filePath, [
                 'Content-Type' => $mimeType,
-                'Cache-Control' => 'public, max-age=31536000', // 1 year cache
+                'Cache-Control' => $cacheControl,
             ]);
         })->where('path', '.*')->name('usermanagement.asset');
     }
@@ -102,5 +107,21 @@ class UserManagementServiceProvider extends ServiceProvider
 
         // For regular relative paths, use the asset route
         return route('usermanagement.asset', ['path' => ltrim($customLogo, '/')]);
+    }
+
+    /**
+     * Get the CSS URL for the package
+     */
+    public static function getCssUrl(string $file = 'css/app.css'): string
+    {
+        return route('usermanagement.asset', ['path' => $file]);
+    }
+
+    /**
+     * Get the JS URL for the package
+     */
+    public static function getJsUrl(string $file = 'js/app.js'): string
+    {
+        return route('usermanagement.asset', ['path' => $file]);
     }
 }

@@ -3,7 +3,7 @@
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
 use App\Rules\RecaptchaRule;
-use App\Http\Controllers\Controller;
+use Illuminate\Routing\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
@@ -16,7 +16,7 @@ class PasswordResetLinkController extends Controller
      */
     public function create(): View
     {
-        return view('auth.forgot-password');
+        return view('usermanagement::auth.forget-password');
     }
 
     /**
@@ -28,7 +28,7 @@ class PasswordResetLinkController extends Controller
     {
         $request->validate([
             'email' => ['required', 'email'],
-            'recaptcha_token' => ['required', new RecaptchaRule('password_reset_link', 0.5)]
+            // 'recaptcha_token' => ['required', new RecaptchaRule('password_reset_link', 0.5)]
         ]);
 
         // We will send the password reset link to this user. Once we have attempted
