@@ -12,13 +12,13 @@
                 </a>
                 {{-- @endcan --}}
                 {{-- @can('manage-roles') --}}
-                <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="#">
+                <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="{{ route('roles.index') }}">
                     <span><i class="fas fa-fw fa-user-shield me-2"></i>Roles</span>
                 </a>
                 {{-- @endcan --}}
                 
                 {{-- @can('manage-permissions') --}}
-                <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="#">
+                <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="{{ route('permissions.index') }}">
                     <span><i class="fas fa-fw fa-shield-alt me-2"></i>Permissions</span>
                 </a>
                 {{-- @endcan --}}

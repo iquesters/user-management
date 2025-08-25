@@ -19,7 +19,7 @@ class UserManagementServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Load routes
-        $this->loadRoutesFrom(__DIR__ . '/../routes/auth.php');
+        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
 
         // Load migrations
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
