@@ -21,7 +21,7 @@ class NewPasswordController extends Controller
      */
     public function create(Request $request): View
     {
-        return view('auth.reset-password', ['request' => $request]);
+        return view('usermanagement::auth.reset-password', ['request' => $request]);
     }
 
     /**
@@ -35,7 +35,7 @@ class NewPasswordController extends Controller
             'token' => ['required'],
             'email' => ['required', 'email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'recaptcha_token' => ['required', new RecaptchaRule('password_reset', 0.5)]
+            // 'recaptcha_token' => ['required', new RecaptchaRule('password_reset', 0.5)]
         ]);
 
         // Here we will attempt to reset the user's password. If it is successful we
