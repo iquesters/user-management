@@ -2,9 +2,7 @@
 
 namespace Iquesters\UserManagement\Http\Controllers;
 
-use App\Logging\Logger;
-use App\Models\Organisation;
-use App\Models\OrganisationUsers;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Routing\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -23,13 +21,13 @@ class UserController extends Controller
     public function index()
     {
         try {
-            Logger::info('Fetching all users');
+            Log::info('Fetching all users');
             $users = User::with('roles')->get();
             $roles = Role::all();
-            Logger::debug('Users fetched successfully', ['count' => $users->count()]);
-            return view('users.index', compact('users', 'roles'));
+            Log::debug('Users fetched successfully', ['count' => $users->count()]);
+            return view('usermanagement::users.index', compact('users', 'roles'));
         } catch (Exception $e) {
-            Logger::error('Error fetching users', ['error' => $e->getMessage()]);
+            Log::error('Error fetching users', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'An error occurred while fetching users.');
         }
     }
@@ -40,11 +38,11 @@ class UserController extends Controller
     public function create()
     {
         try {
-            Logger::info('Displaying the user creation form');
+            Log::info('Displaying the user creation form');
             $roles = Role::all();
-            return view('users.create', compact('roles'));
+            return view('usermanagement::users.create', compact('roles'));
         } catch (Exception $e) {
-            Logger::error('Error displaying user creation form', ['error' => $e->getMessage()]);
+            Log::error('Error displaying user creation form', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'An error occurred while displaying the form.');
         }
     }
@@ -55,7 +53,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         try {
-            Logger::info('Starting user creation process');
+            Log::info('Starting user creation process');
             $validated = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
@@ -64,7 +62,7 @@ class UserController extends Controller
                 // 'organisation_uid' => ['nullable', 'string'], // Add this line
             ]);
 
-            Logger::debug('Validation passed', ['name' => $validated['name'], 'email' => $validated['email']]);
+            Log::debug('Validation passed', ['name' => $validated['name'], 'email' => $validated['email']]);
 
             $user = User::create([
                 'uid' => Str::ulid(),
@@ -73,11 +71,11 @@ class UserController extends Controller
                 'password' => Hash::make($validated['password']),
             ]);
 
-            Logger::info('User created successfully', ['id' => $user->id]);
+            Log::info('User created successfully', ['id' => $user->id]);
 
             $user->syncRoles($request->roles);
-            Logger::debug('Roles synced for user', ['id' => $user->id, 'roles' => $request->roles]);
-            // Logger::debug('organisation_uid', ['organisation_uid' => $request->organisation_uid]);
+            Log::debug('Roles synced for user', ['id' => $user->id, 'roles' => $request->roles]);
+            // Log::debug('organisation_uid', ['organisation_uid' => $request->organisation_uid]);
             // If organisation_uid is provided, add the user to the organisation
             // @todo: get orgUid from route
             // if ($request->has('organisation_uid')) {
@@ -103,7 +101,7 @@ class UserController extends Controller
             return redirect()->route('users.index') // Make sure you have this route defined
                 ->with('success', 'User created successfully.');
         } catch (Exception $e) {
-            Logger::error('Error creating user', ['error' => $e->getMessage()]);
+            Log::error('Error creating user', ['error' => $e->getMessage()]);
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'An error occurred while creating the user.');
@@ -116,12 +114,12 @@ class UserController extends Controller
     public function edit(User $user)
     {
         try {
-            Logger::info('Displaying the user edit form', ['id' => $user->id]);
+            Log::info('Displaying the user edit form', ['id' => $user->id]);
             $roles = Role::all();
             $userRoles = $user->roles->pluck('id')->toArray();
-            return view('users.edit', compact('user', 'roles', 'userRoles'));
+            return view('usermanagement::users.edit', compact('user', 'roles', 'userRoles'));
         } catch (Exception $e) {
-            Logger::error('Error displaying user edit form', ['error' => $e->getMessage()]);
+            Log::error('Error displaying user edit form', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'An error occurred while displaying the edit form.');
         }
     }
@@ -132,7 +130,7 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         try {
-            Logger::info('Starting user update process', ['id' => $user->id]);
+            Log::info('Starting user update process', ['id' => $user->id]);
             $validated = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
                 'email' => [
@@ -146,7 +144,7 @@ class UserController extends Controller
                 'roles' => ['required', 'array'],
             ]);
 
-            Logger::debug('Validation passed', ['name' => $validated['name'], 'email' => $validated['email']]);
+            Log::debug('Validation passed', ['name' => $validated['name'], 'email' => $validated['email']]);
 
             $user->name = $validated['name'];
             $user->email = $validated['email'];
@@ -156,15 +154,15 @@ class UserController extends Controller
             }
 
             $user->save();
-            Logger::info('User updated successfully', ['id' => $user->id]);
+            Log::info('User updated successfully', ['id' => $user->id]);
 
             $user->syncRoles($request->roles);
-            Logger::debug('Roles synced for user', ['id' => $user->id, 'roles' => $request->roles]);
+            Log::debug('Roles synced for user', ['id' => $user->id, 'roles' => $request->roles]);
 
             return redirect()->route('users.index')
                 ->with('success', 'User updated successfully.');
         } catch (Exception $e) {
-            Logger::error('Error updating user', ['error' => $e->getMessage()]);
+            Log::error('Error updating user', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'An error occurred while updating the user.');
         }
     }
@@ -175,22 +173,22 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         try {
-            Logger::info('Starting user deletion process', ['id' => $user->id]);
+            Log::info('Starting user deletion process', ['id' => $user->id]);
 
             // Prevent deleting yourself
             if ($user->id === Auth::user()->id) {
-                Logger::warning('User attempted to delete themselves', ['id' => $user->id]);
+                Log::warning('User attempted to delete themselves', ['id' => $user->id]);
                 return redirect()->route('users.index')
                     ->with('error', 'You cannot delete yourself.');
             }
 
             $user->update(['status' => 'deleted']);
-            Logger::info('User deleted successfully', ['id' => $user->id]);
+            Log::info('User deleted successfully', ['id' => $user->id]);
 
             return redirect()->route('users.index')
                 ->with('success', 'User deleted successfully.');
         } catch (Exception $e) {
-            Logger::error('Error deleting user', ['error' => $e->getMessage()]);
+            Log::error('Error deleting user', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'An error occurred while deleting the user.');
         }
     }
