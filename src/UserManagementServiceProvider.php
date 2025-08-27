@@ -24,6 +24,11 @@ class UserManagementServiceProvider extends ServiceProvider
         // Load migrations
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
 
+        // Load SPATIE migrations (no publish needed)
+        $this->loadMigrationsFrom(
+            base_path('vendor/spatie/laravel-permission/database/migrations')
+        );
+
         // Load views
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'usermanagement');
 

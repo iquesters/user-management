@@ -10,6 +10,9 @@
                 <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="{{ route('users.index') }}">
                     <span><i class="fas fa-fw fa-users me-2"></i>Users</span>
                 </a>
+                <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="{{ route('organisations.index') }}">
+                    <span><i class="fas fa-fw fa-building me-2"></i>Organisation</span>
+                </a>
                 {{-- @endcan --}}
                 {{-- @can('manage-roles') --}}
                 <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="{{ route('roles.index') }}">
