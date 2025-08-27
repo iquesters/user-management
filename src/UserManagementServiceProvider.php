@@ -4,6 +4,10 @@ namespace Iquesters\UserManagement;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
+use Illuminate\Filesystem\Filesystem;
 
 class UserManagementServiceProvider extends ServiceProvider
 {
@@ -21,13 +25,8 @@ class UserManagementServiceProvider extends ServiceProvider
         // Load routes
         $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
 
-        // Load migrations
+        // Load your package migrations
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-
-        // Load SPATIE migrations (no publish needed)
-        $this->loadMigrationsFrom(
-            base_path('vendor/spatie/laravel-permission/database/migrations')
-        );
 
         // Load views
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'usermanagement');
@@ -45,6 +44,174 @@ class UserManagementServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../public' => public_path('vendor/usermanagement'),
         ], 'user-management-assets');
+
+        // Auto-publish Spatie migrations AND config
+        $this->autoPublishSpatieFiles();
+    }
+
+    /**
+     * Auto-publish Spatie Permission migrations AND config
+     */
+    protected function autoPublishSpatieFiles(): void
+    {
+        // Only run in console environment during package discovery
+        if (!$this->app->runningInConsole() || !$this->isDuringPackageDiscovery()) {
+            return;
+        }
+
+        // Use deferred execution to ensure Spatie package is registered
+        $this->app->booted(function () {
+            $this->publishSpatieFilesNow();
+        });
+    }
+
+    /**
+     * Check if we're during package discovery
+     */
+    protected function isDuringPackageDiscovery(): bool
+    {
+        return isset($_SERVER['argv'][1]) && $_SERVER['argv'][1] === 'package:discover';
+    }
+
+    /**
+     * Actually publish the Spatie migrations AND config using proper Laravel publishing
+     */
+    protected function publishSpatieFilesNow(): void
+    {
+        // Check if Spatie's service provider is available
+        if (!class_exists(\Spatie\Permission\PermissionServiceProvider::class)) {
+            echo "⚠️  Spatie Permission package is not installed." . PHP_EOL;
+            echo "📝 Please install it via: composer require spatie/laravel-permission" . PHP_EOL . PHP_EOL;
+            return;
+        }
+
+        $migrationPath = database_path('migrations');
+        $configPath = config_path('permission.php');
+
+        // Check if Spatie migrations are already published
+        $spatieFiles = glob($migrationPath . '/*_create_permission_tables.php');
+        $configExists = file_exists($configPath);
+
+        // Check if tables already exist in database
+        $tablesExist = false;
+        try {
+            $tablesExist = $this->checkIfTablesExist();
+        } catch (\Exception $e) {
+            // Database connection might not be available, continue with publishing
+        }
+
+        if ($tablesExist) {
+            echo "✅ Spatie Permission tables already exist in database." . PHP_EOL;
+            return;
+        }
+
+        if (!empty($spatieFiles) && $configExists) {
+            echo "✅ Spatie Permission migrations and config already published." . PHP_EOL;
+            echo "📋 You can now run 'php artisan migrate' to create the permission tables." . PHP_EOL . PHP_EOL;
+            return;
+        }
+
+        // Use Artisan command to publish Spatie migrations AND config
+        try {
+            // Publish both migrations and config with a single command
+            Artisan::call('vendor:publish', [
+                '--provider' => 'Spatie\Permission\PermissionServiceProvider',
+                '--force' => true
+            ]);
+
+            $output = Artisan::output();
+
+            if (str_contains($output, 'Publishing complete')) {
+                echo "✅ Spatie Permission files published successfully!" . PHP_EOL;
+
+                // Check what was actually published
+                $newSpatieFiles = glob($migrationPath . '/*_create_permission_tables.php');
+                $newConfigExists = file_exists($configPath);
+
+                if (!empty($newSpatieFiles) && $newConfigExists) {
+                    echo "✅ Migrations and config both published." . PHP_EOL;
+                } elseif (!empty($newSpatieFiles)) {
+                    echo "✅ Migrations published, but config may already exist." . PHP_EOL;
+                } elseif ($newConfigExists) {
+                    echo "✅ Config published, but migrations may already exist." . PHP_EOL;
+                }
+
+                echo "📋 You can now run 'php artisan migrate' to create the permission tables." . PHP_EOL . PHP_EOL;
+            } else {
+                // If the general command didn't work, try specific tags
+                $this->publishWithSpecificTags();
+            }
+        } catch (\Exception $e) {
+            echo "⚠️  Could not automatically publish Spatie files: " . $e->getMessage() . PHP_EOL;
+            $this->showManualInstructions();
+        }
+    }
+
+    /**
+     * Try publishing with specific tags as fallback
+     */
+    protected function publishWithSpecificTags(): void
+    {
+        try {
+            $migrationPath = database_path('migrations');
+            $configPath = config_path('permission.php');
+
+            $spatieFiles = glob($migrationPath . '/*_create_permission_tables.php');
+            $configExists = file_exists($configPath);
+
+            // Publish migrations if needed
+            if (empty($spatieFiles)) {
+                Artisan::call('vendor:publish', [
+                    '--provider' => 'Spatie\Permission\PermissionServiceProvider',
+                    '--tag' => 'permission-migrations',
+                    '--force' => true
+                ]);
+                echo "✅ Spatie Permission migrations published!" . PHP_EOL;
+            }
+
+            // Publish config if needed
+            if (!$configExists) {
+                Artisan::call('vendor:publish', [
+                    '--provider' => 'Spatie\Permission\PermissionServiceProvider',
+                    '--tag' => 'permission-config',
+                    '--force' => true
+                ]);
+                echo "✅ Spatie Permission config published!" . PHP_EOL;
+            }
+
+            echo "📋 You can now run 'php artisan migrate' to create the permission tables." . PHP_EOL . PHP_EOL;
+        } catch (\Exception $e) {
+            echo "⚠️  Could not publish with specific tags: " . $e->getMessage() . PHP_EOL;
+            $this->showManualInstructions();
+        }
+    }
+
+    /**
+     * Show manual instructions
+     */
+    protected function showManualInstructions(): void
+    {
+        echo "📝 Please run manually:" . PHP_EOL;
+        echo "   php artisan vendor:publish --provider=\"Spatie\Permission\PermissionServiceProvider\"" . PHP_EOL;
+        echo "   php artisan migrate" . PHP_EOL . PHP_EOL;
+    }
+
+    /**
+     * Check if permission tables already exist in the database
+     */
+    protected function checkIfTablesExist(): bool
+    {
+        try {
+            // Check if we can connect to the database and if tables exist
+            if (Schema::hasTable('permissions') && Schema::hasTable('roles')) {
+                return true;
+            }
+        } catch (\Exception $e) {
+            // Database might not be available or configured yet
+            // This is normal during initial package installation
+        }
+
+        return false;
     }
 
     /**
@@ -70,13 +237,17 @@ class UserManagementServiceProvider extends ServiceProvider
                 'gif' => 'image/gif',
                 'svg' => 'image/svg+xml',
                 'ico' => 'image/x-icon',
+                'woff' => 'font/woff',
+                'woff2' => 'font/woff2',
+                'ttf' => 'font/ttf',
+                'eot' => 'application/vnd.ms-fontobject',
             ];
 
             $extension = pathinfo($filePath, PATHINFO_EXTENSION);
             $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
 
             // Set appropriate cache headers
-            $cacheControl = in_array($extension, ['css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico'])
+            $cacheControl = in_array($extension, ['css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'woff', 'woff2', 'ttf', 'eot'])
                 ? 'public, max-age=31536000' // 1 year for assets
                 : 'no-cache';
 

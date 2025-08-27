@@ -5,7 +5,7 @@
             <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="{{ route('dashboard') }}">
                 <span><i class="fas fa-fw fa-tachometer-alt me-2"></i>Dashboard</span>
             </a>
-            @if (Auth::user()->hasRole('super-admin'))
+            {{-- @if (Auth::user()->hasRole('super-admin')) --}}
                 {{-- @can('manage-users') --}}
                 <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="{{ route('users.index') }}">
                     <span><i class="fas fa-fw fa-users me-2"></i>Users</span>
@@ -43,7 +43,7 @@
                 <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="#">
                     <span><i class="fas fa-fw fa-plug me-2"></i>Modules</span>
                 </a>
-            @endif
+            {{-- @endif --}}
         </div>
     </div>
 </aside>
