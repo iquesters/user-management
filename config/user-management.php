@@ -27,4 +27,14 @@ return [
     |
     */
     'logo' => env('USER_MANAGEMENT_LOGO', 'img/logo.png'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | reCAPTCHA Configuration
+    |--------------------------------------------------------------------------
+    */
+    'recaptcha' => [
+        'site_key'   => env('USER_MANAGEMENT_RECAPTCHA_SITE_KEY'),
+        'secret_key' => env('USER_MANAGEMENT_RECAPTCHA_SECRET_KEY'),
+    ],
 ];

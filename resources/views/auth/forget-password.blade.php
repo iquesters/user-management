@@ -49,7 +49,7 @@
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
             
-            grecaptcha.execute('{{ config('services.recaptcha.site_key') }}', {action: 'password_reset_link'})
+            grecaptcha.execute('{{ config('usermanagement.recaptcha.site_key') }}', {action: 'password_reset_link'})
             .then(function(token) {
                 document.getElementById('recaptcha_token').value = token;
                 document.getElementById('passwordEmailForm').submit();

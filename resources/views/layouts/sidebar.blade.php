@@ -10,9 +10,9 @@
                 <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="{{ route('users.index') }}">
                     <span><i class="fas fa-fw fa-users me-2"></i>Users</span>
                 </a>
-                <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="{{ route('organisations.index') }}">
-                    <span><i class="fas fa-fw fa-building me-2"></i>Organisation</span>
-                </a>
+                @if (class_exists(\Iquesters\Organisation\OrganisationServiceProvider::class))
+                    <a href="{{ route('organisations.index') }}">Organisation</a>
+                @endif
                 {{-- @endcan --}}
                 {{-- @can('manage-roles') --}}
                 <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="{{ route('roles.index') }}">
@@ -42,6 +42,10 @@
                 </a>
                 <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="#">
                     <span><i class="fas fa-fw fa-plug me-2"></i>Modules</span>
+                </a>
+                <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center"
+                href="{{ route('organisations.integration.index', ['organisationUid' => $organisation->uid ?? 'default']) }}">
+                    <span><i class="fas fa-fw fa-plug me-2"></i>Integrations</span>
                 </a>
             {{-- @endif --}}
         </div>

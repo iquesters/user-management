@@ -2,7 +2,7 @@
 
 namespace Iquesters\UserManagement\Http\Requests\Auth;
 
-use App\Rules\RecaptchaRule;
+use Iquesters\UserManagement\Rules\RecaptchaRule;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +30,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
-            // 'recaptcha_token' => ['required', new RecaptchaRule('login', 0.5)]
+            'recaptcha_token' => ['required', new RecaptchaRule('login', 0.5)]
         ];
     }
 

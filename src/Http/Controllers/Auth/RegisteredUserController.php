@@ -2,6 +2,7 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
+use Iquesters\UserManagement\Rules\RecaptchaRule;
 use Illuminate\Routing\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -33,6 +34,7 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'recaptcha_token' => ['required', new RecaptchaRule('register', 0.5)]
         ]);
 
         $user = User::create([

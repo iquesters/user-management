@@ -69,7 +69,7 @@
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
             
-            grecaptcha.execute('{{ config('services.recaptcha.site_key') }}', {action: 'login'})
+            grecaptcha.execute('{{ config('usermanagement.recaptcha.site_key') }}', {action: 'login'})
             .then(function(token) {
                 document.getElementById('recaptcha_token').value = token;
                 document.getElementById('login-form').submit();

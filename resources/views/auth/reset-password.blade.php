@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
             
-            grecaptcha.execute('{{ config('services.recaptcha.site_key') }}', {action: 'password_reset'})
+            grecaptcha.execute('{{ config('usermanagement.recaptcha.site_key') }}', {action: 'password_reset'})
             .then(function(token) {
                 document.getElementById('recaptcha_token').value = token;
                 document.getElementById('passwordResetForm').submit();

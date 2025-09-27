@@ -89,8 +89,8 @@
             const submitButton = document.getElementById('register-button');
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
-            
-            grecaptcha.execute('{{ config('services.recaptcha.site_key') }}', {action: 'register'})
+           
+            grecaptcha.execute('{{ config('usermanagement.recaptcha.site_key') }}', {action: 'register'})
             .then(function(token) {
                 document.getElementById('recaptcha_token').value = token;
                 document.getElementById('register-form').submit();
