@@ -37,4 +37,35 @@ return [
         'site_key'   => env('USER_MANAGEMENT_RECAPTCHA_SITE_KEY'),
         'secret_key' => env('USER_MANAGEMENT_RECAPTCHA_SECRET_KEY'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google OAuth Configuration
+    |--------------------------------------------------------------------------
+    |
+    | These credentials are required for Google login & One Tap.
+    | Set them in your .env file:
+    |
+    | USER_MANAGEMENT_GOOGLE_CLIENT_ID=xxxx
+    | USER_MANAGEMENT_GOOGLE_CLIENT_SECRET=xxxx
+    | USER_MANAGEMENT_GOOGLE_REDIRECT_URI=https://your-app.com/auth/google/callback
+    |
+    */
+    'google' => [
+        'client_id'     => env('USER_MANAGEMENT_GOOGLE_CLIENT_ID'),
+        'client_secret' => env('USER_MANAGEMENT_GOOGLE_CLIENT_SECRET'),
+        'redirect'      => env('USER_MANAGEMENT_GOOGLE_REDIRECT_URI', env('APP_URL') . '/auth/google/callback'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Auth Options
+    |--------------------------------------------------------------------------
+    |
+    | These settings control where the user is redirected after login and
+    | what default role new users get when registering via Google login.
+    |
+    */
+    'default_auth_route' => env('USER_MANAGEMENT_DEFAULT_AUTH_ROUTE', 'dashboard'),
+    'default_user_role'  => env('USER_MANAGEMENT_DEFAULT_USER_ROLE', 'organizer'),
 ];

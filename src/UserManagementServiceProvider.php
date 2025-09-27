@@ -47,6 +47,15 @@ class UserManagementServiceProvider extends ServiceProvider
 
         // Auto-publish Spatie migrations AND config
         $this->autoPublishSpatieFiles();
+
+        // Map Google config to Socialite dynamically
+        if (config('usermanagement.google.client_id')) {
+            config([
+                'services.google.client_id'     => config('usermanagement.google.client_id'),
+                'services.google.client_secret' => config('usermanagement.google.client_secret'),
+                'services.google.redirect'      => config('usermanagement.google.redirect'),
+            ]);
+        }
     }
 
     /**

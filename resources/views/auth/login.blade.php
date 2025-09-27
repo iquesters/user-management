@@ -9,11 +9,9 @@
         <div class="mb-3">
             <label for="email" class="form-label">{{ __('Email') }}</label>
             <input id="email" class="form-control" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username">
-            @if ($errors->has('email'))
-            <div class="text-danger mt-2">
-                {{ $errors->first('email') }}
-            </div>
-            @endif
+            @error('email')
+                <div class="text-danger mt-2">{{ $message }}</div>
+            @enderror
         </div>
 
         <!-- Password -->
@@ -25,26 +23,20 @@
                     <i class="fas fa-eye-slash"></i>
                 </button>
             </div>
-            @if ($errors->has('password'))
-            <div class="text-danger mt-2">
-                {{ $errors->first('password') }}
-            </div>
-            @endif
+            @error('password')
+                <div class="text-danger mt-2">{{ $message }}</div>
+            @enderror
         </div>
 
         <!-- Hidden reCAPTCHA Token -->
         <input type="hidden" name="recaptcha_token" id="recaptcha_token">
-        @if ($errors->has('recaptcha_token'))
-            <div class="text-danger mt-2" id="recaptcha-server-error">
-                {{ $errors->first('recaptcha_token') }}
-            </div>
+        @error('recaptcha_token')
+            <div class="text-danger mt-2" id="recaptcha-server-error">{{ $message }}</div>
         @else
-            <div class="text-danger mt-2 d-none" id="recaptcha-client-error">
-                <!-- This will be filled by JS if needed -->
-            </div>
-        @endif
+            <div class="text-danger mt-2 d-none" id="recaptcha-client-error"></div>
+        @enderror
 
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center mb-3">
             @if (Route::has('password.request'))
             <a class="text-decoration-none text-muted" href="{{ route('password.request') }}">
                 {{ __('Forgot password?') }}
@@ -56,15 +48,25 @@
             </button>
         </div>
     </form>
+
+    <!-- 🔹 Divider -->
+    <div class="text-center my-3">
+        <span class="text-muted">or</span>
+    </div>
+
+    <!-- 🔹 Google Login Button -->
+    <div class="d-grid">
+        <a href="{{ route('google.redirect') }}" class="btn btn-outline-danger">
+            <i class="fab fa-google me-2"></i> {{ __('Continue with Google') }}
+        </a>
+    </div>
 </div>
 
 <script>
     grecaptcha.ready(function() {
-        // Execute reCAPTCHA when form is submitted
         document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Disable submit button to prevent double submission
             const submitButton = document.getElementById('login-button');
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
@@ -74,8 +76,7 @@
                 document.getElementById('recaptcha_token').value = token;
                 document.getElementById('login-form').submit();
             })
-            .catch(function(error) {
-                // Re-enable button if there's an error
+            .catch(function() {
                 submitButton.disabled = false;
                 submitButton.innerHTML = '{{ __('Log in') }}';
 

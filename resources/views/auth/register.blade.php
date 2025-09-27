@@ -9,22 +9,18 @@
         <div class="mb-3">
             <label for="name" class="form-label">{{ __('Name') }}</label>
             <input id="name" class="form-control" type="text" name="name" value="{{ old('name') }}" required autofocus autocomplete="name">
-            @if ($errors->has('name'))
-            <div class="text-danger mt-2">
-                {{ $errors->first('name') }}
-            </div>
-            @endif
+            @error('name')
+                <div class="text-danger mt-2">{{ $message }}</div>
+            @enderror
         </div>
 
         <!-- Email Address -->
         <div class="mb-3">
             <label for="email" class="form-label">{{ __('Email') }}</label>
             <input id="email" class="form-control" type="email" name="email" value="{{ old('email') }}" required autocomplete="username">
-            @if ($errors->has('email'))
-            <div class="text-danger mt-2">
-                {{ $errors->first('email') }}
-            </div>
-            @endif
+            @error('email')
+                <div class="text-danger mt-2">{{ $message }}</div>
+            @enderror
         </div>
 
         <!-- Password -->
@@ -36,11 +32,9 @@
                     <i class="fas fa-eye-slash"></i>
                 </button>
             </div>
-            @if ($errors->has('password'))
-            <div class="text-danger mt-2">
-                {{ $errors->first('password') }}
-            </div>
-            @endif
+            @error('password')
+                <div class="text-danger mt-2">{{ $message }}</div>
+            @enderror
         </div>
 
         <!-- Confirm Password -->
@@ -52,24 +46,20 @@
                     <i class="fas fa-eye-slash"></i>
                 </button>
             </div>
-            @if ($errors->has('password_confirmation'))
-            <div class="text-danger mt-2">
-                {{ $errors->first('password_confirmation') }}
-            </div>
-            @endif
+            @error('password_confirmation')
+                <div class="text-danger mt-2">{{ $message }}</div>
+            @enderror
         </div>
 
         <!-- Hidden reCAPTCHA Token -->
         <input type="hidden" name="recaptcha_token" id="recaptcha_token">
-        @if ($errors->has('recaptcha_token'))
-            <div class="text-danger mt-2" id="recaptcha-server-error">
-                {{ $errors->first('recaptcha_token') }}
-            </div>
+        @error('recaptcha_token')
+            <div class="text-danger mt-2" id="recaptcha-server-error">{{ $message }}</div>
         @else
             <div class="text-danger mt-2 d-none" id="recaptcha-client-error"></div>
-        @endif
+        @enderror
 
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center mb-3">
             <a class="text-decoration-none text-muted" href="{{ route('login') }}">
                 {{ __('Already registered?') }}
             </a>
@@ -79,6 +69,18 @@
             </button>
         </div>
     </form>
+
+    <!-- 🔹 Divider -->
+    <div class="text-center my-3">
+        <span class="text-muted">or</span>
+    </div>
+
+    <!-- 🔹 Google Login Button -->
+    <div class="d-grid">
+        <a href="{{ route('google.redirect') }}" class="btn btn-outline-danger">
+            <i class="fab fa-google me-2"></i> {{ __('Continue with Google') }}
+        </a>
+    </div>
 </div>
 
 <script>
@@ -95,7 +97,7 @@
                 document.getElementById('recaptcha_token').value = token;
                 document.getElementById('register-form').submit();
             })
-            .catch(function(error) {
+            .catch(function() {
                 submitButton.disabled = false;
                 submitButton.innerHTML = '{{ __('Register') }}';
 
