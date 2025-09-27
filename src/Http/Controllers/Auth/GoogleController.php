@@ -2,7 +2,6 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
-use App\Constants\EntityStatus;
 use App\Http\Controllers\ContextController;
 use Illuminate\Routing\Controller;
 use App\Models\User;
@@ -23,7 +22,6 @@ class GoogleController extends Controller
      */
     public function google_redirect(Request $request)
     {
-        // dd(config('usermanagement.google'));
         $redirect_url = $request?->query('redirect_url');
 
         if ($redirect_url) {
@@ -33,20 +31,20 @@ class GoogleController extends Controller
         return Socialite::driver('google')->redirect();
     }
 
-
     /**
      * Handle the OAuth callback from Google.
      */
     public function google_callback()
     {
-        // $googleUser = Socialite::driver('google')->user();
         if (app()->environment('local')) {
             $googleUser = Socialite::driver('google')->stateless()->user();
         } else {
             $googleUser = Socialite::driver('google')->user();
         }
 
-        $this->handle_google_user($googleUser);
+        $user = $this->handle_google_user($googleUser);
+
+        Auth::login($user);
 
         return $this->redirect_after_login();
     }
@@ -75,7 +73,9 @@ class GoogleController extends Controller
                 'avatar' => $payload['picture'],
             ];
 
-            $this->handle_google_user($googleUser);
+            $user = $this->handle_google_user($googleUser);
+
+            Auth::login($user);
 
             return $this->redirect_after_login($request->redirect_url);
         }
@@ -96,30 +96,32 @@ class GoogleController extends Controller
             Log::debug('Creating new user for email: ' . $googleUser->email);
 
             $user = User::create([
-                'uid'     => Str::ulid(),
-                'name'    => $googleUser->name,
-                'email'   => $googleUser->email,
-                'status'  => 'active',
-                'password'=> encrypt(Str::random(8)), // random placeholder
+                'uid'      => Str::ulid(),
+                'name'     => $googleUser->name,
+                'email'    => $googleUser->email,
+                'status'   => 'active',
+                'password' => bcrypt(Str::random(16)),
             ]);
 
+            // Save Google ID
             UserMeta::create([
-                'ref_user' => $user->id,
-                'key'      => 'google_id',
-                'value'    => $googleUser->id,
-                'status'   => 'active',
+                'ref_parent' => $user->id,
+                'meta_key'   => 'google_id',
+                'meta_value' => $googleUser->id,
+                'status'     => 'active',
             ]);
 
+            // Save avatar/logo
             UserMeta::create([
-                'ref_user' => $user->id,
-                'key'      => 'logo',
-                'value'    => $googleUser->avatar,
-                'status'   => 'active',
+                'ref_parent' => $user->id,
+                'meta_key'   => 'logo',
+                'meta_value' => $googleUser->avatar,
+                'status'     => 'active',
             ]);
 
             $user->markEmailAsVerified();
 
-            $user->assignRole(config('usermanagement.default_user_role', 'organizer'));
+            $user->assignRole(config('usermanagement.default_user_role', 'user'));
         } else {
             Log::debug('User exists: ' . $googleUser->email);
 
@@ -128,26 +130,32 @@ class GoogleController extends Controller
                 $user->save();
             }
 
-            if (!$user->getMeta('logo')) {
-                UserMeta::create([
+            // Update or create logo
+            UserMeta::updateOrCreate(
+                [
                     'ref_parent' => $user->id,
                     'meta_key'   => 'logo',
+                ],
+                [
                     'meta_value' => $googleUser->avatar,
                     'status'     => 'active',
-                ]);
-            }
+                ]
+            );
 
-            if (!$user->getMeta('google_id')) {
-                UserMeta::create([
+            // Update or create Google ID
+            UserMeta::updateOrCreate(
+                [
                     'ref_parent' => $user->id,
                     'meta_key'   => 'google_id',
+                ],
+                [
                     'meta_value' => $googleUser->id,
                     'status'     => 'active',
-                ]);
-            }
+                ]
+            );
         }
 
-        Auth::login($user);
+        return $user;
     }
 
     /**

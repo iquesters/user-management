@@ -67,5 +67,5 @@ return [
     |
     */
     'default_auth_route' => env('USER_MANAGEMENT_DEFAULT_AUTH_ROUTE', 'dashboard'),
-    'default_user_role'  => env('USER_MANAGEMENT_DEFAULT_USER_ROLE', 'organizer'),
+    'default_user_role'  => env('USER_MANAGEMENT_DEFAULT_USER_ROLE', 'user'),
 ];
