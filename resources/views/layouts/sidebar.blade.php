@@ -43,10 +43,10 @@
                 <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="#">
                     <span><i class="fas fa-fw fa-plug me-2"></i>Modules</span>
                 </a>
-                <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center"
+                {{-- <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center"
                 href="{{ route('organisations.integration.index', ['organisationUid' => $organisation->uid ?? 'default']) }}">
                     <span><i class="fas fa-fw fa-plug me-2"></i>Integrations</span>
-                </a>
+                </a> --}}
             {{-- @endif --}}
         </div>
     </div>
