@@ -1,4 +1,10 @@
-@extends(config('usermanagement.layout_app'))
+@php
+    $layout = class_exists(\Iquesters\UserInterface\UserInterfaceServiceProvider::class)
+        ? 'userinterface::layouts.app'
+        : config('usermanagement.layout_app');
+@endphp
+
+@extends($layout)
 
 @section('content')
 <div class="">

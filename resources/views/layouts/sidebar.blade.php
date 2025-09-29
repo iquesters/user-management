@@ -11,7 +11,9 @@
                     <span><i class="fas fa-fw fa-users me-2"></i>Users</span>
                 </a>
                 @if (class_exists(\Iquesters\Organisation\OrganisationServiceProvider::class))
-                    <a href="{{ route('organisations.index') }}">Organisation</a>
+                    <a class="list-group-item dropdown-item px-2 py-1 d-flex justify-content-between align-items-center" href="{{ route('organisations.index') }}">
+                        <span><i class="fas fa-fw fa-building me-2"></i>Organisation</span>
+                    </a>
                 @endif
                 {{-- @endcan --}}
                 {{-- @can('manage-roles') --}}
