@@ -60,11 +60,11 @@
         @enderror
 
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <a class="text-decoration-none text-muted" href="{{ route('login') }}">
+            <a class="text-decoration-none text-info" href="{{ route('login') }}">
                 {{ __('Already registered?') }}
             </a>
 
-            <button type="submit" class="btn btn-sm btn-outline-dark" id="register-button">
+            <button type="submit" class="btn btn-sm btn-outline-primary" id="register-button">
                 {{ __('Register') }}
             </button>
         </div>
@@ -76,8 +76,8 @@
     </div>
 
     <!-- 🔹 Google Login Button -->
-    <div class="d-grid">
-        <a href="{{ route('google.redirect') }}" class="btn btn-outline-danger">
+    <div class="d-flex align-items-center justify-content-center">
+        <a href="{{ route('google.redirect') }}" class="btn btn-sm btn-outline-dark">
             <i class="fab fa-google me-2"></i> {{ __('Continue with Google') }}
         </a>
     </div>

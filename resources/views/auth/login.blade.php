@@ -15,7 +15,7 @@
         </div>
 
         <!-- Password -->
-        <div class="mb-3">
+        <div class="mb-2">
             <label for="password" class="form-label">{{ __('Password') }}</label>
             <div class="input-group">
                 <input id="password" class="form-control" type="password" name="password" required autocomplete="current-password">
@@ -36,14 +36,21 @@
             <div class="text-danger mt-2 d-none" id="recaptcha-client-error"></div>
         @enderror
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-end align-items-center mb-2">
             @if (Route::has('password.request'))
-            <a class="text-decoration-none text-muted" href="{{ route('password.request') }}">
+            <a class="text-decoration-none text-info" href="{{ route('password.request') }}">
                 {{ __('Forgot password?') }}
             </a>
             @endif
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            @if (Route::has('register'))
+            <a class="text-decoration-none text-info" href="{{ route('register') }}">
+                {{ __('Create a new account') }}
+            </a>
+            @endif
 
-            <button type="submit" class="btn btn-sm btn-outline-dark" id="login-button">
+            <button type="submit" class="btn btn-sm btn-outline-primary" id="login-button">
                 {{ __('Log in') }}
             </button>
         </div>
@@ -55,8 +62,8 @@
     </div>
 
     <!-- 🔹 Google Login Button -->
-    <div class="d-grid">
-        <a href="{{ route('google.redirect') }}" class="btn btn-outline-danger">
+    <div class="d-flex align-items-center justify-content-center">
+        <a href="{{ route('google.redirect') }}" class="btn btn-sm btn-outline-dark">
             <i class="fab fa-google me-2"></i> {{ __('Continue with Google') }}
         </a>
     </div>
