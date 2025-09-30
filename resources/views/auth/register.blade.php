@@ -64,23 +64,22 @@
                 {{ __('Already registered?') }}
             </a>
 
-            <button type="submit" class="btn btn-sm btn-outline-primary" id="register-button">
+            <button type="submit" class="btn btn-sm btn-outline-info" id="register-button">
                 {{ __('Register') }}
             </button>
         </div>
     </form>
 
     <!-- 🔹 Divider -->
-    <div class="text-center my-3">
-        <span class="text-muted">or</span>
+    <div class="d-flex align-items-center my-3">
+        <hr class="flex-grow-1">
+        <span class="mx-2 text-muted">or</span>
+        <hr class="flex-grow-1">
     </div>
 
     <!-- 🔹 Google Login Button -->
-    <div class="d-flex align-items-center justify-content-center">
-        <a href="{{ route('google.redirect') }}" class="btn btn-sm btn-outline-dark">
-            <i class="fab fa-google me-2"></i> {{ __('Continue with Google') }}
-        </a>
-    </div>
+    @include('usermanagement::components.signin-with-google-button')
+    
 </div>
 
 <script>

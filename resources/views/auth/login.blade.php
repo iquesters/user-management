@@ -16,7 +16,14 @@
 
         <!-- Password -->
         <div class="mb-2">
-            <label for="password" class="form-label">{{ __('Password') }}</label>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label for="password" class="form-label">{{ __('Password') }}</label>
+                @if (Route::has('password.request'))
+                    <a class="text-decoration-none text-info" href="{{ route('password.request') }}">
+                        {{ __('Forgot password?') }}
+                    </a>
+                @endif
+            </div>
             <div class="input-group">
                 <input id="password" class="form-control" type="password" name="password" required autocomplete="current-password">
                 <button class="btn btn-outline-secondary toggle-password" type="button">
@@ -35,14 +42,7 @@
         @else
             <div class="text-danger mt-2 d-none" id="recaptcha-client-error"></div>
         @enderror
-
-        <div class="d-flex justify-content-end align-items-center mb-2">
-            @if (Route::has('password.request'))
-            <a class="text-decoration-none text-info" href="{{ route('password.request') }}">
-                {{ __('Forgot password?') }}
-            </a>
-            @endif
-        </div>
+    
         <div class="d-flex justify-content-between align-items-center mb-3">
             @if (Route::has('register'))
             <a class="text-decoration-none text-info" href="{{ route('register') }}">
@@ -50,23 +50,23 @@
             </a>
             @endif
 
-            <button type="submit" class="btn btn-sm btn-outline-primary" id="login-button">
+            <button type="submit" class="btn btn-sm btn-outline-info" id="login-button">
                 {{ __('Log in') }}
             </button>
         </div>
     </form>
 
     <!-- 🔹 Divider -->
-    <div class="text-center my-3">
-        <span class="text-muted">or</span>
+    <div class="d-flex align-items-center my-3">
+        <hr class="flex-grow-1">
+        <span class="mx-2 text-muted">or</span>
+        <hr class="flex-grow-1">
     </div>
 
     <!-- 🔹 Google Login Button -->
-    <div class="d-flex align-items-center justify-content-center">
-        <a href="{{ route('google.redirect') }}" class="btn btn-sm btn-outline-dark">
-            <i class="fab fa-google me-2"></i> {{ __('Continue with Google') }}
-        </a>
-    </div>
+    @include('usermanagement::components.signin-with-google-button')
+
+
 </div>
 
 <script>

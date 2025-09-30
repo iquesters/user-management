@@ -68,7 +68,7 @@
         @endif
 
         <div class="d-flex justify-content-end">
-            <button type="submit" class="btn btn-sm btn-outline-dark" id="submitButton">
+            <button type="submit" class="btn btn-sm btn-outline-info" id="submitButton">
                 {{ __('Reset Password') }}
             </button>
         </div>
