@@ -6,8 +6,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\File;
-use Illuminate\Filesystem\Filesystem;
+use Illuminate\Console\Command;
+use Iquesters\UserManagement\Database\Seeders\UserManagementSeeder;
 
 class UserManagementServiceProvider extends ServiceProvider
 {
@@ -18,6 +18,8 @@ class UserManagementServiceProvider extends ServiceProvider
             __DIR__ . '/../config/user-management.php',
             'usermanagement'
         );
+
+        $this->registerSeedCommand();
     }
 
     public function boot(): void
@@ -33,7 +35,13 @@ class UserManagementServiceProvider extends ServiceProvider
 
         // Register asset route to serve package files without publishing
         $this->registerAssetRoute();
-
+        
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                'command.user-management.seed'
+            ]);
+        }
+        
         // Publish config + layout
         $this->publishes([
             __DIR__ . '/../config/user-management.php' => config_path('user-management.php'),
@@ -56,6 +64,26 @@ class UserManagementServiceProvider extends ServiceProvider
                 'services.google.redirect'      => config('usermanagement.google.redirect'),
             ]);
         }
+    }
+
+    protected function registerSeedCommand(): void
+    {
+        $this->app->singleton('command.user-management.seed', function ($app) {
+            return new class extends Command {
+                protected $signature = 'user-management:seed';
+                protected $description = 'Seed User Management module data';
+
+                public function handle()
+                {
+                    $this->info('Running User Management Seeder...');
+                    $seeder = new UserManagementSeeder();
+                    $seeder->setCommand($this);
+                    $seeder->run();
+                    $this->info('User Management seeding completed!');
+                    return 0;
+                }
+            };
+        });
     }
 
     /**

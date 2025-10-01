@@ -17,7 +17,8 @@
   "license": "MIT",
   "autoload": {
     "psr-4": {
-      "Iquesters\\UserManagement\\": "src/"
+        "Iquesters\\UserManagement\\": "src/",
+        "Iquesters\\UserManagement\\Database\\Seeders\\": "database/seeders/"
     }
   },
   "autoload-dev": {
