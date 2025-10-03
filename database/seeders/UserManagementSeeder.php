@@ -2,7 +2,7 @@
 
 namespace Iquesters\UserManagement\Database\Seeders;
 
-use Iquesters\UserManagement\Database\Seeders\BaseModuleSeeder;
+use Iquesters\Foundation\Database\Seeders\BaseModuleSeeder;
 
 class UserManagementSeeder extends BaseModuleSeeder
 {
