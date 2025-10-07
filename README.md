@@ -34,7 +34,7 @@ composer require iquesters/user-management
 php artisan migrate
 ```
 
-3. Seed default roles and permissions (if applicable):
+3. Seed:
 
 ```bash
 php artisan user-management:seed
