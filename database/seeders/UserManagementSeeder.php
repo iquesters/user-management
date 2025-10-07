@@ -8,5 +8,7 @@ class UserManagementSeeder extends BaseModuleSeeder
 {
     protected string $moduleName = 'user-management';
     protected string $description = 'user-management module';
-    protected array $metas = [];
+    protected array $metas = [
+        'module_icon' => 'fa-solid fa-box'
+    ];
 }
