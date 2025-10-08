@@ -43,19 +43,18 @@
                         {{ $user->status }}
                     </td>
                     <td>
+                        <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-outline-dark rounded @cannot('edit-users') disabled @endcannot" @cannot('edit-users') disabled @endcannot>
+                            <i class="fas fa-fw fa-edit"></i>
+                        </a>
                         <!-- delete user -->
                         <form action="{{ route('users.destroy', $user) }}" method="POST" class="d-inline">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-outline-danger rounded"
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded @cannot('delete-users') disabled @endcannot" @cannot('delete-users') disabled @endcannot
                                     onclick="return confirm('Are you sure you want to delete this user?')">
                                 <i class="fas fa-fw fa-trash"></i>
                             </button>
-                        <!-- @ can('manage-user') -->
-                        <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-outline-dark rounded">
-                            <i class="fas fa-fw fa-edit"></i>
-                        </a>
-                        <!-- @ endcan -->
+                        </form>
                     </td>
                 </tr>
                 @endforeach
