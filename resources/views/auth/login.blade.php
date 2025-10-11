@@ -35,13 +35,15 @@
             @enderror
         </div>
 
-        <!-- Hidden reCAPTCHA Token -->
-        <input type="hidden" name="recaptcha_token" id="recaptcha_token">
-        @error('recaptcha_token')
-            <div class="text-danger mt-2" id="recaptcha-server-error">{{ $message }}</div>
-        @else
-            <div class="text-danger mt-2 d-none" id="recaptcha-client-error"></div>
-        @enderror
+        @if (config('usermanagement.recaptcha.enabled'))
+            <!-- Hidden reCAPTCHA Token -->
+            <input type="hidden" name="recaptcha_token" id="recaptcha_token">
+            @error('recaptcha_token')
+                <div class="text-danger mt-2" id="recaptcha-server-error">{{ $message }}</div>
+            @else
+                <div class="text-danger mt-2 d-none" id="recaptcha-client-error"></div>
+            @enderror
+        @endif
     
         <div class="d-flex justify-content-between align-items-center mb-3">
             @if (Route::has('register'))
@@ -69,29 +71,31 @@
 
 </div>
 
-<script>
-    grecaptcha.ready(function() {
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const submitButton = document.getElementById('login-button');
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
-            
-            grecaptcha.execute('{{ config('usermanagement.recaptcha.site_key') }}', {action: 'login'})
-            .then(function(token) {
-                document.getElementById('recaptcha_token').value = token;
-                document.getElementById('login-form').submit();
-            })
-            .catch(function() {
-                submitButton.disabled = false;
-                submitButton.innerHTML = '{{ __('Log in') }}';
+@if (config('usermanagement.recaptcha.enabled'))
+    <script>
+        grecaptcha.ready(function() {
+            document.getElementById('login-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const submitButton = document.getElementById('login-button');
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+                
+                grecaptcha.execute('{{ config('usermanagement.recaptcha.site_key') }}', {action: 'login'})
+                .then(function(token) {
+                    document.getElementById('recaptcha_token').value = token;
+                    document.getElementById('login-form').submit();
+                })
+                .catch(function() {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '{{ __('Log in') }}';
 
-                const errorDiv = document.getElementById('recaptcha-client-error');
-                errorDiv.textContent = 'Security verification failed. Please try again.';
-                errorDiv.classList.remove('d-none');
+                    const errorDiv = document.getElementById('recaptcha-client-error');
+                    errorDiv.textContent = 'Security verification failed. Please try again.';
+                    errorDiv.classList.remove('d-none');
+                });
             });
         });
-    });
-</script>
+    </script>
+@endif
 @endsection

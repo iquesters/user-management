@@ -30,12 +30,17 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'recaptcha_token' => ['required', new RecaptchaRule('register', 0.5)]
-        ]);
+        ];
+
+        if (config('usermanagement.recaptcha.enabled')) {
+            $rules['recaptcha_token'] = ['required', new RecaptchaRule('register', 0.5)];
+        }
+
+        $request->validate($rules);
 
         $user = User::create([
             'name' => $request->name,
@@ -44,7 +49,6 @@ class RegisteredUserController extends Controller
         ]);
 
         event(new Registered($user));
-
         Auth::login($user);
 
         return redirect(route('dashboard', absolute: false));

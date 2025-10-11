@@ -34,6 +34,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'recaptcha' => [
+        'enabled' => env('USERMANAGEMENT_RECAPTCHA_ENABLED', true),
         'site_key'   => env('USER_MANAGEMENT_RECAPTCHA_SITE_KEY'),
         'secret_key' => env('USER_MANAGEMENT_RECAPTCHA_SECRET_KEY'),
     ],

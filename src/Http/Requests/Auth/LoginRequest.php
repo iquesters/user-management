@@ -27,11 +27,16 @@ class LoginRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
-            'recaptcha_token' => ['required', new RecaptchaRule('login', 0.5)]
         ];
+
+        if (config('usermanagement.recaptcha.enabled')) {
+            $rules['recaptcha_token'] = ['required', new RecaptchaRule('login', 0.5)];
+        }
+
+        return $rules;
     }
 
     /**

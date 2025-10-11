@@ -20,16 +20,17 @@
             @endif
         </div>
 
-        <!-- Hidden reCAPTCHA Token -->
-        <input type="hidden" name="recaptcha_token" id="recaptcha_token">
-        @if ($errors->has('recaptcha_token'))
-            <div class="text-danger mt-2" id="recaptcha-server-error">
-                {{ $errors->first('recaptcha_token') }}
-            </div>
-        @else
-            <div class="text-danger mt-2 d-none" id="recaptcha-client-error">
-                <!-- This will be filled by JS if needed -->
-            </div>
+        @if (config('usermanagement.recaptcha.enabled'))
+            <!-- Hidden reCAPTCHA Token -->
+            <input type="hidden" name="recaptcha_token" id="recaptcha_token">
+            @if ($errors->has('recaptcha_token'))
+                <div class="text-danger mt-2" id="recaptcha-server-error">
+                    {{ $message }}
+                </div>
+            @else
+                <div class="text-danger mt-2 d-none" id="recaptcha-client-error">
+                </div>
+            @endif
         @endif
 
         <div class="d-flex justify-content-end">
@@ -40,29 +41,31 @@
     </form>
 </div>
 
-<script>
-    grecaptcha.ready(function() {
-        document.getElementById('passwordEmailForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const submitButton = document.getElementById('submitButton');
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-            
-            grecaptcha.execute('{{ config('usermanagement.recaptcha.site_key') }}', {action: 'password_reset_link'})
-            .then(function(token) {
-                document.getElementById('recaptcha_token').value = token;
-                document.getElementById('passwordEmailForm').submit();
-            })
-            .catch(function(error) {
-                submitButton.disabled = false;
-                submitButton.innerHTML = '{{ __('Email Password Reset Link') }}';
+@if (config('usermanagement.recaptcha.enabled'))
+    <script>
+        grecaptcha.ready(function() {
+            document.getElementById('passwordEmailForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const submitButton = document.getElementById('submitButton');
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                
+                grecaptcha.execute('{{ config('usermanagement.recaptcha.site_key') }}', {action: 'password_reset_link'})
+                .then(function(token) {
+                    document.getElementById('recaptcha_token').value = token;
+                    document.getElementById('passwordEmailForm').submit();
+                })
+                .catch(function(error) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '{{ __('Email Password Reset Link') }}';
 
-                const errorDiv = document.getElementById('recaptcha-client-error');
-                errorDiv.textContent = 'Security verification failed. Please try again.';
-                errorDiv.classList.remove('d-none');
+                    const errorDiv = document.getElementById('recaptcha-client-error');
+                    errorDiv.textContent = 'Security verification failed. Please try again.';
+                    errorDiv.classList.remove('d-none');
+                });
             });
         });
-    });
-</script>
+    </script>
+@endif
 @endsection

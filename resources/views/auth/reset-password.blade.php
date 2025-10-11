@@ -55,16 +55,17 @@
             @endif
         </div>
 
-        <!-- Hidden reCAPTCHA Token -->
-        <input type="hidden" name="recaptcha_token" id="recaptcha_token">
-        @if ($errors->has('recaptcha_token'))
-            <div class="text-danger mt-2" id="recaptcha-server-error">
-                {{ $errors->first('recaptcha_token') }}
-            </div>
-        @else
-            <div class="text-danger mt-2 d-none" id="recaptcha-client-error">
-                <!-- This will be filled by JS if needed -->
-            </div>
+        @if (config('usermanagement.recaptcha.enabled'))
+            <!-- Hidden reCAPTCHA Token -->
+            <input type="hidden" name="recaptcha_token" id="recaptcha_token">
+            @if ($errors->has('recaptcha_token'))
+                <div class="text-danger mt-2" id="recaptcha-server-error">
+                    {{ $message }}
+                </div>
+            @else
+                <div class="text-danger mt-2 d-none" id="recaptcha-client-error">
+                </div>
+            @endif
         @endif
 
         <div class="d-flex justify-content-end">
@@ -86,61 +87,50 @@ document.addEventListener('DOMContentLoaded', function() {
     function validatePassword() {
         const password = passwordInput.value;
         const isValid = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
-        
-        if (password.length > 0) {
-            passwordHelp.style.display = isValid ? 'none' : 'block';
-        } else {
-            passwordHelp.style.display = 'none';
-        }
-        
+        passwordHelp.style.display = password.length > 0 && !isValid ? 'block' : 'none';
         return isValid;
     }
 
     function checkPasswordMatch() {
-        if (passwordInput.value !== confirmPasswordInput.value) {
-            passwordMatch.textContent = 'Passwords do not match';
-            return false;
-        } else {
-            passwordMatch.textContent = '';
-            return true;
-        }
+        const match = passwordInput.value === confirmPasswordInput.value;
+        passwordMatch.textContent = match ? '' : 'Passwords do not match';
+        return match;
     }
 
     function validateForm() {
-        const isPasswordValid = validatePassword();
-        const isMatchValid = checkPasswordMatch();
-        submitButton.disabled = !(isPasswordValid && isMatchValid);
+        submitButton.disabled = !(validatePassword() && checkPasswordMatch());
     }
 
     passwordInput.addEventListener('input', validateForm);
     confirmPasswordInput.addEventListener('input', validateForm);
-
-    // Initial validation
     validateForm();
-
-    // reCAPTCHA handling
-    grecaptcha.ready(function() {
-        document.getElementById('passwordResetForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
-            
-            grecaptcha.execute('{{ config('usermanagement.recaptcha.site_key') }}', {action: 'password_reset'})
-            .then(function(token) {
-                document.getElementById('recaptcha_token').value = token;
-                document.getElementById('passwordResetForm').submit();
-            })
-            .catch(function(error) {
-                submitButton.disabled = false;
-                submitButton.innerHTML = '{{ __('Reset Password') }}';
-
-                const errorDiv = document.getElementById('recaptcha-client-error');
-                errorDiv.textContent = 'Security verification failed. Please try again.';
-                errorDiv.classList.remove('d-none');
-            });
-        });
-    });
 });
 </script>
+
+@if (config('usermanagement.recaptcha.enabled'))
+    <script>
+        grecaptcha.ready(function() {
+            document.getElementById('passwordResetForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const submitButton = document.getElementById('submitButton');
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+                
+                grecaptcha.execute('{{ config('usermanagement.recaptcha.site_key') }}', {action: 'password_reset'})
+                .then(function(token) {
+                    document.getElementById('recaptcha_token').value = token;
+                    document.getElementById('passwordResetForm').submit();
+                })
+                .catch(function() {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '{{ __('Reset Password') }}';
+                    const errorDiv = document.getElementById('recaptcha-client-error');
+                    errorDiv.textContent = 'Security verification failed. Please try again.';
+                    errorDiv.classList.remove('d-none');
+                });
+            });
+        });
+    </script>
+@endif
 @endsection
