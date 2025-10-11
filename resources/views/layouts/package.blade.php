@@ -11,8 +11,15 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
 
-    <!-- reCAPTCHA v3 -->
-    <script src="https://www.google.com/recaptcha/api.js?render={{ config('usermanagement.recaptcha.site_key') }}"></script>
+    @if (config('usermanagement.recaptcha.enabled'))
+        <script>
+            window.recaptchaSiteKey = '{{ config('usermanagement.recaptcha.site_key') }}';
+        </script>
+        
+        <!-- reCAPTCHA v3 -->
+        <script src="https://www.google.com/recaptcha/api.js?render={{ config('usermanagement.recaptcha.enabled') ? config('usermanagement.recaptcha.site_key') : 'dummy' }}"></script>
+    @endif
+
 
     @stack('styles')
 </head>
@@ -82,6 +89,8 @@
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     
+    <script src="{{ Iquesters\UserManagement\UserManagementServiceProvider::getJsUrl('js/recaptcha.js') }}"></script>
+
     @stack('scripts')
 </body>
 </html>

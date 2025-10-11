@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="w-100">
-    <form method="POST" action="{{ route('register') }}" id="register-form">
+    <form method="POST" action="{{ route('register') }}" id="register-form" data-recaptcha-action="register">
         @csrf
 
         <!-- Name -->
@@ -51,15 +51,7 @@
             @enderror
         </div>
 
-        @if (config('usermanagement.recaptcha.enabled'))
-            <!-- Hidden reCAPTCHA Token -->
-            <input type="hidden" name="recaptcha_token" id="recaptcha_token">
-            @error('recaptcha_token')
-                <div class="text-danger mt-2" id="recaptcha-server-error">{{ $message }}</div>
-            @else
-                <div class="text-danger mt-2 d-none" id="recaptcha-client-error"></div>
-            @enderror
-        @endif
+        @include('usermanagement::components.recaptcha-field')
 
         <div class="d-flex justify-content-between align-items-center mb-3">
             <a class="text-decoration-none text-info" href="{{ route('login') }}">
@@ -84,31 +76,4 @@
     
 </div>
 
-@if (config('usermanagement.recaptcha.enabled'))
-    <script>
-        grecaptcha.ready(function() {
-            document.getElementById('register-form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const submitButton = document.getElementById('register-button');
-                submitButton.disabled = true;
-                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
-            
-                grecaptcha.execute('{{ config('usermanagement.recaptcha.site_key') }}', {action: 'register'})
-                .then(function(token) {
-                    document.getElementById('recaptcha_token').value = token;
-                    document.getElementById('register-form').submit();
-                })
-                .catch(function() {
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = '{{ __('Register') }}';
-
-                    const errorDiv = document.getElementById('recaptcha-client-error');
-                    errorDiv.textContent = 'Security verification failed. Please try again.';
-                    errorDiv.classList.remove('d-none');
-                });
-            });
-        });
-    </script>
-@endif
 @endsection

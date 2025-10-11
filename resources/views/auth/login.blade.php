@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="w-100">
-    <form method="POST" action="{{ route('login') }}" id="login-form">
+    <form method="POST" action="{{ route('login') }}" id="login-form" data-recaptcha-action="login">
         @csrf
 
         <!-- Email Address -->
@@ -35,15 +35,7 @@
             @enderror
         </div>
 
-        @if (config('usermanagement.recaptcha.enabled'))
-            <!-- Hidden reCAPTCHA Token -->
-            <input type="hidden" name="recaptcha_token" id="recaptcha_token">
-            @error('recaptcha_token')
-                <div class="text-danger mt-2" id="recaptcha-server-error">{{ $message }}</div>
-            @else
-                <div class="text-danger mt-2 d-none" id="recaptcha-client-error"></div>
-            @enderror
-        @endif
+        @include('usermanagement::components.recaptcha-field')
     
         <div class="d-flex justify-content-between align-items-center mb-3">
             @if (Route::has('register'))
@@ -71,7 +63,7 @@
 
 </div>
 
-@if (config('usermanagement.recaptcha.enabled'))
+{{-- @if (config('usermanagement.recaptcha.enabled'))
     <script>
         grecaptcha.ready(function() {
             document.getElementById('login-form').addEventListener('submit', function(e) {
@@ -97,5 +89,5 @@
             });
         });
     </script>
-@endif
+@endif --}}
 @endsection
