@@ -15,7 +15,7 @@
         </div>
 
         <!-- Password -->
-        <div class="mb-2">
+        <div class="mb-3">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <label for="password" class="form-label">{{ __('Password') }}</label>
                 @if (Route::has('password.request'))
@@ -50,44 +50,17 @@
         </div>
     </form>
 
-    <!-- 🔹 Divider -->
-    <div class="d-flex align-items-center my-3">
-        <hr class="flex-grow-1">
-        <span class="mx-2 text-muted">or</span>
-        <hr class="flex-grow-1">
-    </div>
+    @if (config('usermanagement.google.login_enabled'))
+        <!-- 🔹 Divider -->
+        <div class="d-flex align-items-center my-3">
+            <hr class="flex-grow-1">
+            <span class="mx-2 text-muted">or</span>
+            <hr class="flex-grow-1">
+        </div>
 
-    <!-- 🔹 Google Login Button -->
-    @include('usermanagement::components.signin-with-google-button')
-
+        <!-- 🔹 Google Login Button -->
+        @include('usermanagement::components.signin-with-google-button')
+    @endif
 
 </div>
-
-{{-- @if (config('usermanagement.recaptcha.enabled'))
-    <script>
-        grecaptcha.ready(function() {
-            document.getElementById('login-form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const submitButton = document.getElementById('login-button');
-                submitButton.disabled = true;
-                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
-                
-                grecaptcha.execute('{{ config('usermanagement.recaptcha.site_key') }}', {action: 'login'})
-                .then(function(token) {
-                    document.getElementById('recaptcha_token').value = token;
-                    document.getElementById('login-form').submit();
-                })
-                .catch(function() {
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = '{{ __('Log in') }}';
-
-                    const errorDiv = document.getElementById('recaptcha-client-error');
-                    errorDiv.textContent = 'Security verification failed. Please try again.';
-                    errorDiv.classList.remove('d-none');
-                });
-            });
-        });
-    </script>
-@endif --}}
 @endsection

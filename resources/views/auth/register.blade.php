@@ -64,15 +64,17 @@
         </div>
     </form>
 
-    <!-- 🔹 Divider -->
-    <div class="d-flex align-items-center my-3">
-        <hr class="flex-grow-1">
-        <span class="mx-2 text-muted">or</span>
-        <hr class="flex-grow-1">
-    </div>
+    @if (config('usermanagement.google.login_enabled'))
+        <!-- 🔹 Divider -->
+        <div class="d-flex align-items-center my-3">
+            <hr class="flex-grow-1">
+            <span class="mx-2 text-muted">or</span>
+            <hr class="flex-grow-1">
+        </div>
 
-    <!-- 🔹 Google Login Button -->
-    @include('usermanagement::components.signin-with-google-button')
+        <!-- 🔹 Google Login Button -->
+        @include('usermanagement::components.signin-with-google-button')
+    @endif
     
 </div>
 

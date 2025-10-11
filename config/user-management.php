@@ -53,6 +53,7 @@ return [
     |
     */
     'google' => [
+        'login_enabled' => env('USERMANAGEMENT_GOOGLE_LOGIN', false),
         'client_id'     => env('USER_MANAGEMENT_GOOGLE_CLIENT_ID'),
         'client_secret' => env('USER_MANAGEMENT_GOOGLE_CLIENT_SECRET'),
         'redirect'      => env('USER_MANAGEMENT_GOOGLE_REDIRECT_URI', env('APP_URL') . '/auth/google/callback'),
