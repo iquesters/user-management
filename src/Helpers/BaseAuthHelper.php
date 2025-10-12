@@ -5,9 +5,20 @@ namespace Iquesters\UserManagement\Helpers;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Request;
 use Iquesters\UserManagement\Models\UserMeta;
+use Illuminate\Support\Str;
 
 abstract class BaseAuthHelper
 {
+    /**
+     * Generate a unique ULID for user
+     * 
+     * @return string
+     */
+    protected static function generate_uid(): string
+    {
+        return Str::ulid();
+    }
+
     /**
      * Save user meta data
      * 

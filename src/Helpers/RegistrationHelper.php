@@ -7,8 +7,8 @@ use Carbon\Carbon;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Iquesters\UserManagement\Models\UserMeta;
+use Illuminate\Support\Str;
 
 class RegistrationHelper extends BaseAuthHelper
 {
@@ -36,12 +36,18 @@ class RegistrationHelper extends BaseAuthHelper
 
         if ($user) {
             Log::debug('User already exists: ' . $email);
+            
+            // Ensure user has a uid
+            if (empty($user->uid)) {
+                $user->update(['uid' => self::generate_uid()]);
+            }
+            
             return $user;
         }
 
         // Create new user
         $user = User::create([
-            'uid' => Str::ulid(),
+            'uid' => self::generate_uid(),
             'name' => $name,
             'email' => $email,
             'status' => 'active',
