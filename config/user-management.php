@@ -52,11 +52,20 @@ return [
     | USER_MANAGEMENT_GOOGLE_REDIRECT_URI=https://your-app.com/auth/google/callback
     |
     */
-    'google' => [
-        'login_enabled' => env('USERMANAGEMENT_GOOGLE_LOGIN', false),
-        'client_id'     => env('USER_MANAGEMENT_GOOGLE_CLIENT_ID'),
-        'client_secret' => env('USER_MANAGEMENT_GOOGLE_CLIENT_SECRET'),
-        'redirect'      => env('USER_MANAGEMENT_GOOGLE_REDIRECT_URI', env('APP_URL') . '/auth/google/callback'),
+    'social_login' => [
+        'enabled' => env('USERMANAGEMENT_SOCIAL_LOGIN', false),
+        'providers' => [
+            [
+                'provider' => 'google',
+                'enabled' => env('USERMANAGEMENT_GOOGLE_LOGIN', false),
+                'config' => [
+                    'client_id'     => env('USER_MANAGEMENT_GOOGLE_CLIENT_ID'),
+                    'client_secret' => env('USER_MANAGEMENT_GOOGLE_CLIENT_SECRET'),
+                    'redirect'      => env('USER_MANAGEMENT_GOOGLE_REDIRECT_URI', env('APP_URL') . '/auth/google/callback'),
+                ]
+            ],
+            
+        ]
     ],
 
     /*

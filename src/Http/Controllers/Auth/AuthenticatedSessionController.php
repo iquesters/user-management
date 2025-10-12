@@ -3,6 +3,7 @@
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
 use Illuminate\Routing\Controller;
+use Iquesters\UserManagement\Helpers\LoginHelper;
 use Iquesters\UserManagement\Http\Requests\Auth\LoginRequest;
 use Iquesters\UserManagement\Models\UserMeta;
 use Carbon\Carbon;
@@ -26,40 +27,10 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+         $request->authenticate();
 
-        $user = Auth::user();
-
-        // Get the current login time before updating
-        $currentLogin = UserMeta::where('ref_parent', $user->id)
-            ->where('meta_key', 'current_login_at')
-            ->first();
-
-        // If there was a current login, move it to last login
-        if ($currentLogin) {
-            UserMeta::updateOrCreate(
-                [
-                    'ref_parent' => $user->id,
-                    'meta_key' => 'last_login_at'
-                ],
-                [
-                    'meta_value' => $currentLogin->meta_value,
-                    'status' => 'active'
-                ]
-            );
-        }
-
-        // Update the current login time
-        UserMeta::updateOrCreate(
-            [
-                'ref_parent' => $user->id,
-                'meta_key' => 'current_login_at'
-            ],
-            [
-                'meta_value' => Carbon::now()->toDateTimeString(),
-                'status' => 'active'
-            ]
-        );
+        // Use login helper
+        LoginHelper::process_login(Auth::user());
 
         $request->session()->regenerate();
 

@@ -2,6 +2,8 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
+use Iquesters\UserManagement\Helpers\RegistrationHelper;
+use Iquesters\UserManagement\Helpers\LoginHelper;
 use Iquesters\UserManagement\Rules\RecaptchaRule;
 use Illuminate\Routing\Controller;
 use App\Models\User;
@@ -40,16 +42,18 @@ class RegisteredUserController extends Controller
             $rules['recaptcha_token'] = ['required', new RecaptchaRule('register', 0.5)];
         }
 
-        $request->validate($rules);
+        $validated = $request->validate($rules);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+        // Use registration helper
+        $user = RegistrationHelper::register_user(
+            name: $validated['name'],
+            email: $validated['email'],
+            password: $validated['password'],
+            email_verified: false
+        );
 
-        event(new Registered($user));
-        Auth::login($user);
+        // Use login helper
+        LoginHelper::process_login($user);
 
         return redirect(route('dashboard', absolute: false));
     }

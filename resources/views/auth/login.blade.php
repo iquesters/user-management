@@ -50,17 +50,7 @@
         </div>
     </form>
 
-    @if (config('usermanagement.google.login_enabled'))
-        <!-- 🔹 Divider -->
-        <div class="d-flex align-items-center my-3">
-            <hr class="flex-grow-1">
-            <span class="mx-2 text-muted">or</span>
-            <hr class="flex-grow-1">
-        </div>
-
-        <!-- 🔹 Google Login Button -->
-        @include('usermanagement::components.signin-with-google-button')
-    @endif
+    @include('usermanagement::components.social-login-section')
 
 </div>
 @endsection
