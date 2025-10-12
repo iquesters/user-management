@@ -301,6 +301,7 @@ class UserManagementSeeder extends BaseSeeder
                 'uid' => Str::ulid(),
                 'name' => 'Super Admin',
                 'password' => Hash::make('Qwer@1234'), // ⚠️ Change in production
+                'status' => 'active',
             ]
         );
 
