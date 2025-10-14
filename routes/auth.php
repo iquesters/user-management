@@ -55,5 +55,6 @@ Route::middleware('web')->group(function () {
         Route::prefix('dashboard')->group(function () {
             Route::get('/show', [DashboardController::class, 'index'])->name('dashboard');
         });
+        Route::get('/profile-image', [DashboardController::class, 'profileImage'])->name('profile-image');
     });
 });
