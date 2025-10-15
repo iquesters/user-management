@@ -12,7 +12,6 @@ return [
     */
     'layout_auth' => env('USER_MANAGEMENT_AUTH_LAYOUT', 'usermanagement::layouts.package'),
     'layout_app' => env('USER_MANAGEMENT_APP_LAYOUT', 'usermanagement::layouts.app'),
-
     /*
     |--------------------------------------------------------------------------
     | Logo Configuration
@@ -79,4 +78,15 @@ return [
     */
     'default_auth_route' => env('USER_MANAGEMENT_DEFAULT_AUTH_ROUTE', 'dashboard'),
     'default_user_role'  => env('USER_MANAGEMENT_DEFAULT_USER_ROLE', 'user'),
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Need of Organisation 
+    |--------------------------------------------------------------------------
+    |
+    | These settings control whether organisation creation and assigned to user
+    | is needed or not.
+    |
+    */
+    'organisation_needed' => env('ORGANISATION_NEEDED', false),
 ];

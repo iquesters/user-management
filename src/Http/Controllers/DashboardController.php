@@ -4,9 +4,12 @@ namespace Iquesters\UserManagement\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Iquesters\Organisation\Models\Organisation;
+use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -14,8 +17,12 @@ class DashboardController extends Controller
     {
         try {
             $user = User::find(Auth::id());
+            
+            $hasOrganisation = $user && $user->organisations()->count() > 0;
+            
             return view('usermanagement::dashboard.show', [
-                'user' => $user
+                'user' => $user,
+                'hasOrganisation' => $hasOrganisation
             ]);
         } catch (\Exception $e) {
             Log::error('DashboardController index error: ' . $e->getMessage(), [
@@ -24,6 +31,47 @@ class DashboardController extends Controller
             ]);
 
             return back()->with('error', 'Failed to load dashboard. Please try again later.');
+        }
+    }
+    
+    public function createOrganisation(Request $request)
+    {
+        try {
+            $user = User::find(Auth::id());
+            
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+            ]);
+
+            $organisation = Organisation::create([
+                'uid' => Str::ulid(),
+                'name' => $request->name,
+                'description' => $request->description ?? 'Organisation created by ' . $user->name,
+                'status' => 'active',
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]);
+
+            // Assign the organisation to the user
+            $user->assignOrganisation($organisation);
+
+            Log::info('Organisation created and assigned to user', [
+                'user_id' => $user->id,
+                'organisation_id' => $organisation->id,
+                'organisation_uid' => $organisation->uid
+            ]);
+
+            return redirect()->route('dashboard')
+                ->with('success', 'Organisation created successfully!');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create organisation from dashboard', [
+                'user_id' => $user->id ?? 'unknown',
+                'error' => $e->getMessage()
+            ]);
+
+            return back()->with('error', 'Failed to create organisation. Please try again.');
         }
     }
     
