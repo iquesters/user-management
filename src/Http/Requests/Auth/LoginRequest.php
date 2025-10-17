@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Iquesters\Foundation\Support\ConfigProvider;
+use Iquesters\Foundation\Enums\Module;
 
 class LoginRequest extends FormRequest
 {
@@ -31,8 +33,11 @@ class LoginRequest extends FormRequest
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ];
-
-        if (config('usermanagement.recaptcha.enabled')) {
+        
+        $recaptcha = ConfigProvider::from(Module::USER_MGMT)->get('recaptcha');
+        $recaptchaEnabled = $recaptcha ? $recaptcha->isEnabled() : false;
+        
+        if ($recaptchaEnabled) {
             $rules['recaptcha_token'] = ['required', new RecaptchaRule('login', 0.5)];
         }
 

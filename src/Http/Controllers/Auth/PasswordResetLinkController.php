@@ -8,6 +8,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Illuminate\View\View;
+use Iquesters\Foundation\Support\ConfigProvider;
+use Iquesters\Foundation\Enums\Module;
 
 class PasswordResetLinkController extends Controller
 {
@@ -29,8 +31,10 @@ class PasswordResetLinkController extends Controller
         $rules = [
             'email' => ['required', 'email'],
         ];
-
-        if (config('usermanagement.recaptcha.enabled')) {
+        $recaptcha = ConfigProvider::from(Module::USER_MGMT)->get('recaptcha');
+        $recaptchaEnabled = $recaptcha ? $recaptcha->isEnabled() : false;
+        
+        if ($recaptchaEnabled) {
             $rules['recaptcha_token'] = ['required', new RecaptchaRule('password_reset_link', 0.5)];
         }
 

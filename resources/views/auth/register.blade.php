@@ -4,7 +4,7 @@
     use Iquesters\UserManagement\Config\UserManagementKeys;
 
     $layout = ConfigProvider::from(Module::USER_MGMT)
-        ->get(UserManagementKeys::LAYOUT_AUTH);
+        ->get(UserManagementKeys::AUTH_LAYOUT);
 @endphp
 
 @extends($layout)

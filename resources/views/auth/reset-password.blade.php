@@ -1,4 +1,13 @@
-@extends(config('usermanagement.layout_auth'))
+@php
+    use Iquesters\Foundation\Support\ConfigProvider;
+    use Iquesters\Foundation\Enums\Module;
+    use Iquesters\UserManagement\Config\UserManagementKeys;
+
+    $layout = ConfigProvider::from(Module::USER_MGMT)
+        ->get(UserManagementKeys::AUTH_LAYOUT);
+@endphp
+
+@extends($layout)
 
 @section('content')
 <div class="w-100">

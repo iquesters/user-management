@@ -5,7 +5,9 @@
 
     $layout = class_exists(\Iquesters\UserInterface\UserInterfaceServiceProvider::class)
         ? 'userinterface::layouts.app'
-        : ConfigProvider::from(Module::USER_MGMT)->get(UserManagementKeys::AUTH_LAYOUT);
+        : ConfigProvider::from(Module::USER_MGMT)->get(UserManagementKeys::APP_LAYOUT);
+
+    $isOrganisationNeeded = ConfigProvider::from(Module::USER_MGMT)->get(UserManagementKeys::ORGANISATION_NEEDED);
 @endphp
 
 @extends($layout)
@@ -19,7 +21,7 @@
 
         
         <!-- Organisation Section -->
-        @if (config('usermanagement.organisation_needed'))
+        @if ($isOrganisationNeeded)
             <div>
                 <h5 class="fs-6 text-muted">
                     <i class="fas fa-building me-2"></i>Organisation

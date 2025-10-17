@@ -4,7 +4,6 @@ namespace Iquesters\UserManagement\Services;
 
 use Iquesters\Foundation\Support\ConfigProvider;
 use Iquesters\Foundation\Enums\Module;
-use Iquesters\UserManagement\Config\UserManagementKeys; // Add this import
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -15,23 +14,16 @@ class RecaptchaService
 
     public function __construct()
     {
-        $config = ConfigProvider::from(Module::USER_MGMT);
-        $recaptchaConfig = $config->get('recaptcha');
-        
-        // Apply environment variable overrides
-        if (is_array($recaptchaConfig)) {
-            $recaptchaConfig['site_key'] = $config->get(UserManagementKeys::RECAPTCHA_SITE_KEY) ?? $recaptchaConfig['site_key'];
-            $recaptchaConfig['secret_key'] = $config->get(UserManagementKeys::RECAPTCHA_SECRET_KEY) ?? $recaptchaConfig['secret_key'];
-        }
-        
-        $this->secretKey = is_array($recaptchaConfig) ? ($recaptchaConfig['secret_key'] ?? null) : null;
-        $this->siteKey = is_array($recaptchaConfig) ? ($recaptchaConfig['site_key'] ?? null) : null;
+        $recaptcha = ConfigProvider::from(Module::USER_MGMT)->get('recaptcha');
+    
+        $this->secretKey = $recaptcha ? $recaptcha->secret_key : null;
+        $this->siteKey = $recaptcha ? $recaptcha->site_key : null;
 
         // Debug logging
         Log::debug('RecaptchaService initialized', [
             'has_secret_key' => !empty($this->secretKey),
             'has_site_key' => !empty($this->siteKey),
-            'recaptcha_config' => $recaptchaConfig
+            'recaptcha_config' => $recaptcha
         ]);
     }
 
@@ -110,10 +102,9 @@ class RecaptchaService
      */
     public function isEnabled(): bool
     {
-        $config = ConfigProvider::from(Module::USER_MGMT);
-        $recaptchaConfig = $config->get('recaptcha');
+        $recaptcha = ConfigProvider::from(Module::USER_MGMT)->get('recaptcha');
         
-        $enabled = is_array($recaptchaConfig) ? ($recaptchaConfig['enabled'] ?? false) : false;
+        $enabled = $recaptcha ? $recaptcha->isEnabled() : false;
         $hasSecretKey = !empty($this->secretKey);
         $hasSiteKey = !empty($this->siteKey);
         

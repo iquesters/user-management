@@ -6,7 +6,6 @@ use Iquesters\UserManagement\Helpers\LoginHelper;
 use Iquesters\UserManagement\Helpers\RegistrationHelper;
 use Iquesters\Foundation\Support\ConfigProvider;
 use Iquesters\Foundation\Enums\Module;
-use Iquesters\UserManagement\Config\UserManagementKeys;
 use App\Models\User;
 use Google\Client as GoogleClient;
 use Illuminate\Http\Request;
@@ -14,38 +13,34 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
+use Iquesters\UserManagement\Config\UserManagementKeys;
 use Laravel\Socialite\Facades\Socialite;
 use Iquesters\UserManagement\Models\UserMeta;
 
 class GoogleController extends Controller
 {
     /**
-     * Redirect the user to Google's OAuth page.
+     * Redirect to Google's OAuth page.
      */
     public function google_redirect(Request $request)
     {
-        $redirect_url = $request?->query('redirect_url');
-
+        $redirect_url = $request->query('redirect_url');
         if ($redirect_url) {
             Session::put('redirect_url', $redirect_url);
         }
 
-        // ✅ Use your custom config system with UserManagementKeys
-        $config = ConfigProvider::from(Module::USER_MGMT);
-        $googleConfig = $this->getGoogleConfig($config);
-
-        if (empty($googleConfig['client_id']) || empty($googleConfig['client_secret'])) {
-            Log::error('Google OAuth configuration missing');
-            return redirect()->route('login')->with('error', 'Google login is not configured properly.');
+        $googleProvider = $this->getGoogleProvider();
+        if (!$googleProvider || !$googleProvider->isEnabled()) {
+            Log::error('Google login disabled or not configured');
+            return redirect()->route('login')->with('error', 'Google login is not configured.');
         }
 
-        // ✅ Build Socialite provider manually
         $provider = Socialite::buildProvider(
             \Laravel\Socialite\Two\GoogleProvider::class,
             [
-                'client_id'     => $googleConfig['client_id'],
-                'client_secret' => $googleConfig['client_secret'],
-                'redirect'      => $googleConfig['redirect'],
+                'client_id'     => $googleProvider->client_id,
+                'client_secret' => $googleProvider->client_secret,
+                'redirect'      => $googleProvider->redirect,
             ]
         );
 
@@ -53,25 +48,21 @@ class GoogleController extends Controller
     }
 
     /**
-     * Handle the OAuth callback from Google.
+     * Handle Google OAuth callback.
      */
     public function google_callback()
     {
-        // ✅ Use your custom config system with UserManagementKeys
-        $config = ConfigProvider::from(Module::USER_MGMT);
-        $googleConfig = $this->getGoogleConfig($config);
-
-        if (empty($googleConfig['client_id']) || empty($googleConfig['client_secret'])) {
-            Log::error('Google OAuth configuration missing in callback');
-            return redirect()->route('login')->with('error', 'Google login is not configured properly.');
+        $googleProvider = $this->getGoogleProvider();
+        if (!$googleProvider || !$googleProvider->isEnabled()) {
+            return redirect()->route('login')->with('error', 'Google login is not configured.');
         }
 
         $provider = Socialite::buildProvider(
             \Laravel\Socialite\Two\GoogleProvider::class,
             [
-                'client_id'     => $googleConfig['client_id'],
-                'client_secret' => $googleConfig['client_secret'],
-                'redirect'      => $googleConfig['redirect'],
+                'client_id'     => $googleProvider->client_id,
+                'client_secret' => $googleProvider->client_secret,
+                'redirect'      => $googleProvider->redirect,
             ]
         );
 
@@ -86,38 +77,25 @@ class GoogleController extends Controller
             return $this->redirect_after_login();
         } catch (\Exception $e) {
             Log::error('Google OAuth callback error: ' . $e->getMessage());
-            return redirect()->route('login')->with('error', 'Google login failed. Please try again.');
+            return redirect()->route('login')->with('error', 'Google login failed.');
         }
     }
 
     /**
-     * Handle Google One Tap sign-in callback.
+     * Google One Tap callback.
      */
     public function google_onetap_callback(Request $request)
     {
-        Log::debug('Google One Tap callback started');
-
-        // ✅ Use your custom config system with UserManagementKeys
-        $config = ConfigProvider::from(Module::USER_MGMT);
-        $googleConfig = $this->getGoogleConfig($config);
-
-        if (empty($googleConfig['client_id'])) {
-            Log::error('Google client_id missing for One Tap');
-            return redirect()->back()->with('error', 'Google login is not configured properly.');
+        $googleProvider = $this->getGoogleProvider();
+        if (!$googleProvider || !$googleProvider->isEnabled()) {
+            return redirect()->back()->with('error', 'Google login not configured.');
         }
 
-        $client = new GoogleClient([
-            'client_id' => $googleConfig['client_id'],
-        ]);
-
-        $credential = $request->input('credential');
-        Log::debug('Google One Tap credential received');
-
-        $payload = $client->verifyIdToken($credential);
+        $client = new GoogleClient(['client_id' => $googleProvider->client_id]);
+        $payload = $client->verifyIdToken($request->input('credential'));
 
         if (!$payload) {
-            Log::error('Invalid Google token in One Tap');
-            return redirect()->back()->with('error', 'Invalid Google token');
+            return redirect()->back()->with('error', 'Invalid Google token.');
         }
 
         $googleUser = (object)[
@@ -134,75 +112,28 @@ class GoogleController extends Controller
     }
 
     /**
-     * Get Google configuration from your custom config system using UserManagementKeys
+     * Fetch Google provider using SocialLoginConfig object.
      */
-    protected function getGoogleConfig($config): array
+    protected function getGoogleProvider()
     {
-        // Method 1: Direct environment variable access using keys
-        $googleConfig = [
-            'client_id' => $config->get(UserManagementKeys::GOOGLE_CLIENT_ID),
-            'client_secret' => $config->get(UserManagementKeys::GOOGLE_CLIENT_SECRET),
-            'redirect' => $config->get(UserManagementKeys::GOOGLE_REDIRECT),
-        ];
+        $config = ConfigProvider::from(Module::USER_MGMT);
+        $socialLogin = $config->get('social_logins');
 
-        // If direct method doesn't work, fall back to provider structure
-        if (empty($googleConfig['client_id']) || empty($googleConfig['client_secret'])) {
-            Log::debug('Falling back to provider structure for Google config');
-            
-            // Get the entire social_login config
-            $socialLoginRaw = $config->get('social_login');
-            
-            // Get providers
-            $providers = is_array($socialLoginRaw) ? $socialLoginRaw['providers'] ?? [] : [];
-            
-            // Find Google provider
-            foreach ($providers as $provider) {
-                if ($provider['provider'] === 'google') {
-                    $googleConfig = $provider['config'] ?? [];
-                    
-                    // Apply environment overrides using keys
-                    $googleConfig['client_id'] = $config->get(UserManagementKeys::GOOGLE_CLIENT_ID) ?? $googleConfig['client_id'];
-                    $googleConfig['client_secret'] = $config->get(UserManagementKeys::GOOGLE_CLIENT_SECRET) ?? $googleConfig['client_secret'];
-                    $googleConfig['redirect'] = $config->get(UserManagementKeys::GOOGLE_REDIRECT) ?? $googleConfig['redirect'];
-                    
-                    break;
-                }
-            }
+        if (!$socialLogin || !$socialLogin->isEnabled()) {
+            return null;
         }
 
-        return $googleConfig;
+        return $socialLogin->providers['google'] ?? null;
     }
 
     /**
-     * Check if Google login is enabled
-     */
-    protected function isGoogleLoginEnabled($config): bool
-    {
-        // Check if Google login is specifically enabled
-        $googleEnabled = $config->get(UserManagementKeys::GOOGLE_LOGIN);
-        if (!is_null($googleEnabled)) {
-            return filter_var($googleEnabled, FILTER_VALIDATE_BOOLEAN);
-        }
-
-        // Check if social login is globally enabled
-        $socialEnabled = $config->get(UserManagementKeys::SOCIAL_LOGIN_ENABLED);
-        if (!is_null($socialEnabled)) {
-            return filter_var($socialEnabled, FILTER_VALIDATE_BOOLEAN);
-        }
-
-        return false;
-    }
-
-    /**
-     * Sync/Create user from Google data or return existing user.
+     * Sync or create user from Google payload.
      */
     protected function sync_google_user($googleUser): User
     {
-        Log::debug('Google user payload:', (array) $googleUser);
+        $user = User::firstOrNew(['email' => $googleUser->email]);
 
-        $user = User::where('email', $googleUser->email)->first();
-
-        if (!$user) {
+        if (!$user->exists) {
             $user = RegistrationHelper::register_user(
                 name: $googleUser->name,
                 email: $googleUser->email,
@@ -248,8 +179,7 @@ class GoogleController extends Controller
         }
 
         if (Session::has('redirect_url')) {
-            $url = Session::pull('redirect_url');
-            return redirect($url);
+            return redirect(Session::pull('redirect_url'));
         }
 
         return redirect()->route($defaultRoute);

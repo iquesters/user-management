@@ -9,11 +9,8 @@ use Iquesters\Foundation\Support\ConfigProvider;
 use Iquesters\Foundation\Enums\Module;
 use Illuminate\Routing\Controller;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
@@ -35,13 +32,12 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $config = ConfigProvider::from(Module::USER_MGMT);
-        $recaptchaConfig = $config->get('recaptcha');
-        $recaptchaEnabled = is_array($recaptchaConfig) ? ($recaptchaConfig['enabled'] ?? false) : false;
+        $recaptcha = ConfigProvider::from(Module::USER_MGMT)->get('recaptcha');
+        $recaptchaEnabled = $recaptcha ? $recaptcha->isEnabled() : false;
 
         Log::debug('Registration request received', [
             'recaptcha_enabled' => $recaptchaEnabled,
-            'recaptcha_config' => $recaptchaConfig
+            'recaptcha_config' => $recaptcha
         ]);
 
         $rules = [

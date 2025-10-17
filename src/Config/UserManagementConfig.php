@@ -10,8 +10,8 @@ class UserManagementConfig extends BaseConfig
 
     protected array $defaults = [
         // Layouts
-        'layout_auth' => 'usermanagement::layouts.package',
-        'layout_app'  => 'usermanagement::layouts.app',
+        'auth_layout' => 'usermanagement::layouts.package',
+        'app_layout'  => 'usermanagement::layouts.app',
 
         // Logo
         'logo' => 'img/logo.png',
@@ -23,12 +23,11 @@ class UserManagementConfig extends BaseConfig
             'secret_key' => null,
         ],
 
-        // Social OAuth
-        'social_login' => [
+        // Social logins
+        'social_logins' => [
             'enabled' => false,
             'providers' => [
-                [
-                    'provider' => 'google',
+                'google' => [
                     'enabled' => false,
                     'config' => [
                         'client_id' => null,
@@ -36,33 +35,24 @@ class UserManagementConfig extends BaseConfig
                         'redirect' => null,
                     ],
                 ],
-                // [
-                //     'provider' => 'facebook',
-                //     'enabled' => false,
-                //     'config' => [
-                //         'client_id' => null,
-                //         'client_secret' => null,
-                //         'redirect' => null,
-                //     ],
-                // ],
-                // [
-                //     'provider' => 'github',
-                //     'enabled' => false,
-                //     'config' => [
-                //         'client_id' => null,
-                //         'client_secret' => null,
-                //         'redirect' => null,
-                //     ],
-                // ],
-                // Add more providers as needed
             ],
         ],
 
-        // Default auth
+        // Default values
         'default_auth_route' => 'dashboard',
         'default_user_role' => 'user',
-
-        // Organisation
         'organisation_needed' => false,
     ];
+
+    public function get(string $key, $default = null)
+    {
+        $value = parent::get($key, $default);
+
+        return match (strtolower($key)) {
+            'recaptcha'     => new RecaptchaConfig($this, (array) $value),
+            'social_logins' => new SocialLoginConfig($this, (array) $value),
+            default         => $value,
+        };
+    }
+
 }

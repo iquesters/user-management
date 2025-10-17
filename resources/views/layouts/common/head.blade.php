@@ -5,29 +5,18 @@
 @php
     use Iquesters\Foundation\Support\ConfigProvider;
     use Iquesters\Foundation\Enums\Module;
-    use Iquesters\UserManagement\Config\UserManagementKeys;
+    use Iquesters\UserManagement\Config\RecaptchaConfig;
 
-    $config = ConfigProvider::from(Module::USER_MGMT);
-    
-    // Get the recaptcha config array
-    $recaptchaConfig = $config->get('recaptcha');
-    
-    // Apply environment variable overrides to the nested array
-    if (is_array($recaptchaConfig)) {
-        $recaptchaConfig['site_key'] = $config->get(UserManagementKeys::RECAPTCHA_SITE_KEY) ?? $recaptchaConfig['site_key'];
-        $recaptchaConfig['enabled'] = $config->get(UserManagementKeys::RECAPTCHA_ENABLED) ?? $recaptchaConfig['enabled'];
-    }
-    $recaptchaEnabled = is_array($recaptchaConfig) ? ($recaptchaConfig['enabled'] ?? false) : false;
-    $recaptchaSiteKey = is_array($recaptchaConfig) ? ($recaptchaConfig['site_key'] ?? null) : null;
+    $recaptcha = ConfigProvider::from(Module::USER_MGMT)->get('recaptcha');
 @endphp
 
-@if ($recaptchaEnabled && $recaptchaSiteKey)
+@if ($recaptcha->isEnabled())
     <script>
-        window.recaptchaSiteKey = '{{ $recaptchaSiteKey }}';
+        window.recaptchaSiteKey = '{{ $recaptcha->site_key }}';
     </script>
-    
+
     <!-- reCAPTCHA v3 -->
-    <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
+    <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptcha->site_key }}"></script>
 @endif
 
 @include('usermanagement::layouts.common.css')
