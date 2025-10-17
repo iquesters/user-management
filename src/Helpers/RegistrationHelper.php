@@ -4,6 +4,9 @@ namespace Iquesters\UserManagement\Helpers;
 
 use App\Models\User;
 use Carbon\Carbon;
+use Iquesters\Foundation\Support\ConfigProvider;
+use Iquesters\Foundation\Enums\Module;
+use Iquesters\UserManagement\Config\UserManagementKeys;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -60,7 +63,7 @@ class RegistrationHelper extends BaseAuthHelper
         }
 
         // Assign default role
-        $user->assignRole(config('usermanagement.default_user_role', 'user'));
+        $user->assignRole(ConfigProvider::from(Module::USER_MGMT)->get(UserManagementKeys::DEFAULT_USER_ROLE));
 
         // Save registration device/browser/IP info
         self::save_registration_info($user->id);

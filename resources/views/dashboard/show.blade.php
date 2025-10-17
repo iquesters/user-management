@@ -1,7 +1,11 @@
 @php
+    use Iquesters\Foundation\Support\ConfigProvider;
+    use Iquesters\Foundation\Enums\Module;
+    use Iquesters\UserManagement\Config\UserManagementKeys;
+
     $layout = class_exists(\Iquesters\UserInterface\UserInterfaceServiceProvider::class)
         ? 'userinterface::layouts.app'
-        : config('usermanagement.layout_app');
+        : ConfigProvider::from(Module::USER_MGMT)->get(UserManagementKeys::AUTH_LAYOUT);
 @endphp
 
 @extends($layout)

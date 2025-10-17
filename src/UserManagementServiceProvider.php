@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Console\Command;
+use Iquesters\Foundation\Support\ConfigProvider;
+use Iquesters\Foundation\Enums\Module;
+use Iquesters\UserManagement\Config\UserManagementConfig;
+use Iquesters\UserManagement\Config\UserManagementKeys;
 use Iquesters\UserManagement\Database\Seeders\UserManagementSeeder;
 
 class UserManagementServiceProvider extends ServiceProvider
@@ -14,10 +18,12 @@ class UserManagementServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Merge default config
-        $this->mergeConfigFrom(
-            __DIR__ . '/../config/user-management.php',
-            'usermanagement'
-        );
+        // $this->mergeConfigFrom(
+        //     __DIR__ . '/../config/user-management.php',
+        //     'usermanagement'
+        // );
+
+        ConfigProvider::register(Module::USER_MGMT, UserManagementConfig::class);
 
         $this->registerSeedCommand();
     }
@@ -300,7 +306,7 @@ class UserManagementServiceProvider extends ServiceProvider
      */
     public static function getLogoUrl(): string
     {
-        $customLogo = config('usermanagement.logo');
+        $customLogo = ConfigProvider::from(Module::USER_MGMT)->get(UserManagementKeys::LOGO);
 
         // If it's a full URL, return as is
         if (filter_var($customLogo, FILTER_VALIDATE_URL)) {
