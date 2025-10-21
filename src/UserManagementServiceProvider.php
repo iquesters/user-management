@@ -8,8 +8,10 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Console\Command;
 use Iquesters\Foundation\Support\ConfigProvider;
+use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
 use Iquesters\UserManagement\Config\UserManagementConfig;
+use Iquesters\UserManagement\Config\UserManagementConf;
 use Iquesters\UserManagement\Config\UserManagementKeys;
 use Iquesters\UserManagement\Database\Seeders\UserManagementSeeder;
 
@@ -23,7 +25,8 @@ class UserManagementServiceProvider extends ServiceProvider
         //     'usermanagement'
         // );
 
-        ConfigProvider::register(Module::USER_MGMT, UserManagementConfig::class);
+        // ConfigProvider::register(Module::USER_MGMT, UserManagementConfig::class);
+        ConfProvider::register(Module::NEW_USER_MGMT, UserManagementConf::class);
 
         $this->registerSeedCommand();
     }

@@ -7,6 +7,7 @@ use Iquesters\Foundation\Support\BaseConfig;
 class UserManagementConfig extends BaseConfig
 {
     protected string $prefix = 'USER_MANAGEMENT_';
+    protected string $moduleKey = 'user_mgmt';
 
     protected array $defaults = [
         // Layouts

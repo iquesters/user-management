@@ -12,6 +12,7 @@ class RecaptchaConfig
 
     public function __construct(BaseConfig $config, array $data = [])
     {
+        // Use tilde notation for nested keys
         $this->enabled    = (bool) ($config->get(UserManagementKeys::RECAPTCHA_ENABLED) ?? $data['enabled'] ?? true);
         $this->site_key   = $config->get(UserManagementKeys::RECAPTCHA_SITE_KEY) ?? $data['site_key'] ?? null;
         $this->secret_key = $config->get(UserManagementKeys::RECAPTCHA_SECRET_KEY) ?? $data['secret_key'] ?? null;

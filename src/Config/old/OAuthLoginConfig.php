@@ -1,7 +1,7 @@
 <?php
 namespace Iquesters\UserManagement\Config;
 
-class OAuthLoginConfig extends SocialLoginConfig
+class OAuthLoginConfig
 {
     public string $provider;
     public bool $enabled;
@@ -12,14 +12,19 @@ class OAuthLoginConfig extends SocialLoginConfig
 
     public function __construct(UserManagementConfig $config, array $data = [])
     {
-        // This class is a **single provider**, so we don't use $providers from SocialLoginConfig
         $this->provider = $data['provider'] ?? 'oauth';
-        $this->enabled = (bool) ($config->get(strtoupper($this->provider) . '_LOGIN') ?? $data['enabled'] ?? false);
+        
+        // Build the nested key path dynamically
+        // e.g., SOCIAL_LOGINS~PROVIDERS~GOOGLE~ENABLED
+        $providerUpper = strtoupper($this->provider);
+        $baseKey = "SOCIAL_LOGINS~PROVIDERS~{$providerUpper}";
+        
+        $this->enabled = (bool) ($config->get("{$baseKey}~ENABLED") ?? $data['enabled'] ?? false);
 
         $conf = $data['config'] ?? [];
-        $this->client_id = $config->get(strtoupper($this->provider) . '_CLIENT_ID') ?? $conf['client_id'] ?? null;
-        $this->client_secret = $config->get(strtoupper($this->provider) . '_CLIENT_SECRET') ?? $conf['client_secret'] ?? null;
-        $this->redirect = $config->get(strtoupper($this->provider) . '_REDIRECT') ?? $conf['redirect'] ?? null;
+        $this->client_id = $config->get("{$baseKey}~CONFIG~CLIENT_ID") ?? $conf['client_id'] ?? null;
+        $this->client_secret = $config->get("{$baseKey}~CONFIG~CLIENT_SECRET") ?? $conf['client_secret'] ?? null;
+        $this->redirect = $config->get("{$baseKey}~CONFIG~REDIRECT") ?? $conf['redirect'] ?? null;
         $this->scopes = $conf['scopes'] ?? [];
     }
 

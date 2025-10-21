@@ -1,10 +1,30 @@
 @php
     use Iquesters\Foundation\Support\ConfigProvider;
+    use Iquesters\Foundation\Support\ConfProvider;
     use Iquesters\Foundation\Enums\Module;
     use Iquesters\UserManagement\Config\UserManagementKeys;
+    use Iquesters\UserManagement\Config\GoogleConf;
 
-    $layout = ConfigProvider::from(Module::USER_MGMT)
-        ->get(UserManagementKeys::AUTH_LAYOUT);
+    // $layout = ConfigProvider::from(Module::USER_MGMT)
+    //     ->get(UserManagementKeys::AUTH_LAYOUT);
+    $umConf = ConfProvider::from(Module::NEW_USER_MGMT);
+    $flatten = $umConf->getFlattenConfig(null, true);
+    dd($flatten);
+    // dd($umConf);
+    // $umConf->social_login->o_auth_providers = [new GoogleConf()];
+    // $keys = $umConf->generateKeys();
+    // dd($keys);
+
+    // $test = [['key' => 'AUTH_LAYOUT', 'value' => 'hola']];
+    // $test = [
+    //     ['key' => '$RECAPTCHA~ENABLED', 'value' => true],
+    //     ['key' => '$RECAPTCHA~SITE_KEY', 'value' => 'new_site_key'],
+    //     ['key' => '$SOCIAL_LOGIN~@O_AUTH_PROVIDERS~$GOOGLE~CLIENT_ID', 'value' => 'new_client_id'],
+    //     ['key' => 'AUTH_LAYOUT', 'value' => 'hola']
+    // ];
+    // $umConf = $umConf->decipherConf($test);
+
+    // dd($umConf);
 @endphp
 
 @extends($layout)
