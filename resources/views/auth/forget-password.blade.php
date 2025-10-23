@@ -1,10 +1,9 @@
 @php
-    use Iquesters\Foundation\Support\ConfigProvider;
+    use Iquesters\Foundation\Support\ConfProvider;
     use Iquesters\Foundation\Enums\Module;
     use Iquesters\UserManagement\Config\UserManagementKeys;
 
-    $layout = ConfigProvider::from(Module::USER_MGMT)
-        ->get(UserManagementKeys::AUTH_LAYOUT);
+    $layout = ConfProvider::from(Module::USER_MGMT)->auth_layout;
 @endphp
 
 @extends($layout)

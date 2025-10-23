@@ -5,7 +5,7 @@ namespace Iquesters\UserManagement\Http\Controllers\Auth;
 use Iquesters\UserManagement\Helpers\RegistrationHelper;
 use Iquesters\UserManagement\Helpers\LoginHelper;
 use Iquesters\UserManagement\Rules\RecaptchaRule;
-use Iquesters\Foundation\Support\ConfigProvider;
+use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
 use Illuminate\Routing\Controller;
 use App\Models\User;
@@ -32,8 +32,9 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $recaptcha = ConfigProvider::from(Module::USER_MGMT)->get('recaptcha');
-        $recaptchaEnabled = $recaptcha ? $recaptcha->isEnabled() : false;
+        Log::debug('Registration request received');
+        $recaptcha = ConfProvider::from(Module::USER_MGMT)->recaptcha;
+        $recaptchaEnabled = $recaptcha ? $recaptcha->enabled : false;
 
         Log::debug('Registration request received', [
             'recaptcha_enabled' => $recaptchaEnabled,

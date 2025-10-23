@@ -1,18 +1,20 @@
 @php
-    use Iquesters\Foundation\Support\ConfigProvider; 
+    use Iquesters\Foundation\Support\ConfProvider; 
     use Iquesters\Foundation\Enums\Module;
     
-    $config = ConfigProvider::from(Module::USER_MGMT);
-    
-    // Use the get() method to get the transformed SocialLoginConfig object
-    $socialLogin = $config->get('social_logins');
+    $config = ConfProvider::from(Module::USER_MGMT);
+    $socialLogin = $config->social_login;
     
     // Check if global social login is enabled
-    $socialEnabled = $socialLogin->isEnabled();
+    $socialEnabled = $socialLogin->enabled;
+
+    $providers = $socialLogin->o_auth_providers ?? [];
 
     // Get only enabled providers
-    $activeProviders = collect($socialLogin->providers)
-        ->filter(fn($provider) => $provider->isEnabled());
+    $activeProviders = collect($providers)->filter(function ($provider) {
+        // Some of your config objects use ->enabled instead of ->isEnabled()
+        return $provider->enabled ?? false;
+    });
 @endphp
 
 @if ($socialEnabled && $activeProviders->isNotEmpty())
@@ -25,7 +27,7 @@
     @foreach ($activeProviders as $name => $provider)
         @includeIf("usermanagement::components.signin-with-{$name}-button", [
             'provider' => $name,
-            'config'   => $provider->toArray()['config'] ?? [],
+            'config'   => $provider,
         ])
     @endforeach
 @endif

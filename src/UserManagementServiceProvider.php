@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Console\Command;
-use Iquesters\Foundation\Support\ConfigProvider;
 use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
 use Iquesters\UserManagement\Config\UserManagementConfig;
@@ -25,8 +24,7 @@ class UserManagementServiceProvider extends ServiceProvider
         //     'usermanagement'
         // );
 
-        // ConfigProvider::register(Module::USER_MGMT, UserManagementConfig::class);
-        ConfProvider::register(Module::NEW_USER_MGMT, UserManagementConf::class);
+        ConfProvider::register(Module::USER_MGMT, UserManagementConf::class);
 
         $this->registerSeedCommand();
     }
@@ -309,7 +307,7 @@ class UserManagementServiceProvider extends ServiceProvider
      */
     public static function getLogoUrl(): string
     {
-        $customLogo = ConfigProvider::from(Module::USER_MGMT)->get(UserManagementKeys::LOGO);
+        $customLogo = ConfProvider::from(Module::USER_MGMT)->logo;
 
         // If it's a full URL, return as is
         if (filter_var($customLogo, FILTER_VALIDATE_URL)) {

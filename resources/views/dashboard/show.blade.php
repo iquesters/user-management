@@ -1,13 +1,13 @@
 @php
-    use Iquesters\Foundation\Support\ConfigProvider;
+    use Iquesters\Foundation\Support\ConfProvider;
     use Iquesters\Foundation\Enums\Module;
     use Iquesters\UserManagement\Config\UserManagementKeys;
 
     $layout = class_exists(\Iquesters\UserInterface\UserInterfaceServiceProvider::class)
         ? 'userinterface::layouts.app'
-        : ConfigProvider::from(Module::USER_MGMT)->get(UserManagementKeys::APP_LAYOUT);
+        : ConfProvider::from(Module::USER_MGMT)->app_layout;
 
-    $isOrganisationNeeded = ConfigProvider::from(Module::USER_MGMT)->get(UserManagementKeys::ORGANISATION_NEEDED);
+    $isOrganisationNeeded = ConfProvider::from(Module::USER_MGMT)->organisation_needed;
 @endphp
 
 @extends($layout)

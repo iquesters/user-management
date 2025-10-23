@@ -4,6 +4,8 @@ use Iquesters\Foundation\Support\BaseConf;
 
 class SocialLoginConf extends BaseConf
 {
+    protected ?string $identifier = 'social_login';
+    
     protected bool $enabled;
     
     /** @var OAuthConf[] */

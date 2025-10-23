@@ -4,7 +4,7 @@ use Iquesters\Foundation\Support\BaseConf;
 
 class GoogleConf extends OAuthConf
 {
-    protected string $identifier = 'google';
+    protected ?string $identifier = 'google';
     
     protected function prepareDefault(BaseConf $default_values)
     {

@@ -3,14 +3,14 @@
 <title>Auth</title>
 
 @php
-    use Iquesters\Foundation\Support\ConfigProvider;
+    use Iquesters\Foundation\Support\ConfProvider;
     use Iquesters\Foundation\Enums\Module;
     use Iquesters\UserManagement\Config\RecaptchaConfig;
 
-    $recaptcha = ConfigProvider::from(Module::USER_MGMT)->get('recaptcha');
+    $recaptcha = ConfProvider::from(Module::USER_MGMT)->recaptcha;
 @endphp
 
-@if ($recaptcha->isEnabled())
+@if ($recaptcha->enabled)
     <script>
         window.recaptchaSiteKey = '{{ $recaptcha->site_key }}';
     </script>

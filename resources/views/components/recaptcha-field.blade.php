@@ -1,16 +1,13 @@
 @php
-    use Iquesters\Foundation\Support\ConfigProvider;
+    use Iquesters\Foundation\Support\ConfProvider;
     use Iquesters\Foundation\Enums\Module;
     use Iquesters\UserManagement\Config\UserManagementKeys;
     use Iquesters\UserManagement\Config\RecaptchaConfig;
 
     /** @var \Iquesters\UserManagement\Config\UserManagementConfig $config */
-    $config = ConfigProvider::from(Module::USER_MGMT);
+    $config = ConfProvider::from(Module::USER_MGMT);
 
-    /** @var RecaptchaConfig $recaptcha */
-    $recaptcha = $config->get('recaptcha');
-
-    $recaptchaEnabled = $recaptcha->enabled ?? false;
+    $recaptchaEnabled = $config->recaptcha->enabled ?? false;
 @endphp
 
 @if ($recaptchaEnabled)

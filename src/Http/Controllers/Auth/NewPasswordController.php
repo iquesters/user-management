@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
-use Iquesters\Foundation\Support\ConfigProvider;
+use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
 
 class NewPasswordController extends Controller
@@ -39,8 +39,8 @@ class NewPasswordController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ];
         
-        $recaptcha = ConfigProvider::from(Module::USER_MGMT)->get('recaptcha');
-        $recaptchaEnabled = $recaptcha ? $recaptcha->isEnabled() : false;
+        $recaptcha = ConfProvider::from(Module::USER_MGMT)->recaptcha;
+        $recaptchaEnabled = $recaptcha ? $recaptcha->enabled : false;
         
         if ($recaptchaEnabled) {
             $rules['recaptcha_token'] = ['required', new RecaptchaRule('password_reset', 0.5)];

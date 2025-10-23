@@ -2,7 +2,7 @@
 
 namespace Iquesters\UserManagement\Services;
 
-use Iquesters\Foundation\Support\ConfigProvider;
+use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +14,7 @@ class RecaptchaService
 
     public function __construct()
     {
-        $recaptcha = ConfigProvider::from(Module::USER_MGMT)->get('recaptcha');
+        $recaptcha = ConfProvider::from(Module::USER_MGMT)->recaptcha;
     
         $this->secretKey = $recaptcha ? $recaptcha->secret_key : null;
         $this->siteKey = $recaptcha ? $recaptcha->site_key : null;
@@ -102,9 +102,9 @@ class RecaptchaService
      */
     public function isEnabled(): bool
     {
-        $recaptcha = ConfigProvider::from(Module::USER_MGMT)->get('recaptcha');
+        $recaptcha = ConfProvider::from(Module::USER_MGMT)->recaptcha;
         
-        $enabled = $recaptcha ? $recaptcha->isEnabled() : false;
+        $enabled = $recaptcha ? $recaptcha->enabled : false;
         $hasSecretKey = !empty($this->secretKey);
         $hasSiteKey = !empty($this->siteKey);
         

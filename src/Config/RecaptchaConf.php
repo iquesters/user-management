@@ -6,7 +6,7 @@ use Iquesters\Foundation\Support\BaseConf;
 
 class RecaptchaConf extends BaseConf
 {
-    protected string $identifier = 'recaptcha';
+    protected ?string $identifier = 'recaptcha';
     
     protected bool $enabled;
     protected ?string $site_key;
@@ -14,7 +14,7 @@ class RecaptchaConf extends BaseConf
     
     protected function prepareDefault(BaseConf $default_values)
     {
-        $default_values->enabled = true;
+        $default_values->enabled = false;
         $default_values->site_key = 'abc111';
         $default_values->secret_key = 'ppp';
     }

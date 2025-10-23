@@ -4,7 +4,7 @@ namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
 use Iquesters\UserManagement\Helpers\LoginHelper;
 use Iquesters\UserManagement\Helpers\RegistrationHelper;
-use Iquesters\Foundation\Support\ConfigProvider;
+use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
 use App\Models\User;
 use Google\Client as GoogleClient;
@@ -30,7 +30,8 @@ class GoogleController extends Controller
         }
 
         $googleProvider = $this->getGoogleProvider();
-        if (!$googleProvider || !$googleProvider->isEnabled()) {
+
+        if (!$googleProvider || !$googleProvider->enabled) {
             Log::error('Google login disabled or not configured');
             return redirect()->route('login')->with('error', 'Google login is not configured.');
         }
@@ -40,7 +41,7 @@ class GoogleController extends Controller
             [
                 'client_id'     => $googleProvider->client_id,
                 'client_secret' => $googleProvider->client_secret,
-                'redirect'      => $googleProvider->redirect,
+                'redirect'      => $googleProvider->redirect_url,
             ]
         );
 
@@ -53,7 +54,8 @@ class GoogleController extends Controller
     public function google_callback()
     {
         $googleProvider = $this->getGoogleProvider();
-        if (!$googleProvider || !$googleProvider->isEnabled()) {
+
+        if (!$googleProvider || !$googleProvider->enabled) {
             return redirect()->route('login')->with('error', 'Google login is not configured.');
         }
 
@@ -62,7 +64,7 @@ class GoogleController extends Controller
             [
                 'client_id'     => $googleProvider->client_id,
                 'client_secret' => $googleProvider->client_secret,
-                'redirect'      => $googleProvider->redirect,
+                'redirect'      => $googleProvider->redirect_url,
             ]
         );
 
@@ -87,7 +89,7 @@ class GoogleController extends Controller
     public function google_onetap_callback(Request $request)
     {
         $googleProvider = $this->getGoogleProvider();
-        if (!$googleProvider || !$googleProvider->isEnabled()) {
+        if (!$googleProvider || !$googleProvider->enabled) {
             return redirect()->back()->with('error', 'Google login not configured.');
         }
 
@@ -102,7 +104,7 @@ class GoogleController extends Controller
             'name'   => $payload['name'],
             'email'  => $payload['email'],
             'id'     => $payload['sub'],
-            'avatar' => $payload['picture'],
+            'avatar' => $payload['picture'] ?? null,
         ];
 
         $user = $this->sync_google_user($googleUser);
@@ -112,18 +114,18 @@ class GoogleController extends Controller
     }
 
     /**
-     * Fetch Google provider using SocialLoginConfig object.
+     * Fetch Google provider using ConfProvider config.
      */
     protected function getGoogleProvider()
     {
-        $config = ConfigProvider::from(Module::USER_MGMT);
-        $socialLogin = $config->get('social_logins');
+        $config = ConfProvider::from(Module::USER_MGMT); // ✅ Correct provider
 
-        if (!$socialLogin || !$socialLogin->isEnabled()) {
+        $socialLogin = $config->social_login ?? null;
+        if (!$socialLogin || !$socialLogin->enabled) {
             return null;
         }
 
-        return $socialLogin->providers['google'] ?? null;
+        return $socialLogin->o_auth_providers['google'] ?? null;
     }
 
     /**
@@ -156,10 +158,12 @@ class GoogleController extends Controller
                 ['meta_value' => $googleUser->id, 'status' => 'active']
             );
 
-            UserMeta::updateOrCreate(
-                ['ref_parent' => $user->id, 'meta_key' => 'logo'],
-                ['meta_value' => $googleUser->avatar, 'status' => 'active']
-            );
+            if (!empty($googleUser->avatar)) {
+                UserMeta::updateOrCreate(
+                    ['ref_parent' => $user->id, 'meta_key' => 'logo'],
+                    ['meta_value' => $googleUser->avatar, 'status' => 'active']
+                );
+            }
         }
 
         return $user;
@@ -170,7 +174,8 @@ class GoogleController extends Controller
      */
     protected function redirect_after_login($redirect_url = null)
     {
-        $defaultRoute = ConfigProvider::from(Module::USER_MGMT)->get(UserManagementKeys::DEFAULT_AUTH_ROUTE);
+        $config = ConfProvider::from(Module::USER_MGMT);
+        $defaultRoute = $config->default_auth_route ?? 'dashboard';
         
         $base_url = URL::to('/') . '/';
 
