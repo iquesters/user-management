@@ -17,9 +17,13 @@ class DashboardController extends Controller
     {
         try {
             $user = User::find(Auth::id());
-            
-            $hasOrganisation = $user && $user->organisations()->count() > 0;
-            
+
+            $hasOrganisation = false;
+
+            if ($user && method_exists($user, 'organisations')) {
+                $hasOrganisation = $user->organisations()->count() > 0;
+            }
+
             return view('usermanagement::dashboard.show', [
                 'user' => $user,
                 'hasOrganisation' => $hasOrganisation
