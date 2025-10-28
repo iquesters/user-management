@@ -15,8 +15,8 @@ class RecaptchaConf extends BaseConf
     protected function prepareDefault(BaseConf $default_values)
     {
         $default_values->enabled = false;
-        $default_values->site_key = 'abc111';
-        $default_values->secret_key = 'ppp';
+        $default_values->site_key = '';
+        $default_values->secret_key = '';
     }
 
 }

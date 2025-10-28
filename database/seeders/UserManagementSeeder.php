@@ -63,63 +63,7 @@ class UserManagementSeeder extends BaseSeeder
      */
     protected array $entities = [
         'users' => [
-            'fields' => [
-                'name' => [
-                    'name' => 'name',
-                    'type' => 'string',
-                    'label' => 'User Name',
-                    'required' => true,
-                    'maxlength' => 255,
-                    'input_type' => 'text',
-                ],
-                'email' => [
-                    'name' => 'email',
-                    'type' => 'string',
-                    'label' => 'Email Address',
-                    'required' => true,
-                    'unique' => true,
-                    'input_type' => 'email',
-                ],
-                'phone' => [
-                    'name' => 'phone',
-                    'type' => 'string',
-                    'label' => 'Phone Number',
-                    'required' => false,
-                    'nullable' => true,
-                    'input_type' => 'tel',
-                ],
-                'password' => [
-                    'name' => 'password',
-                    'type' => 'string',
-                    'label' => 'Password',
-                    'required' => true,
-                    'input_type' => 'password',
-                    'hidden' => true,
-                ],
-                'status' => [
-                    'name' => 'status',
-                    'type' => 'string',
-                    'label' => 'Status',
-                    'required' => true,
-                    'default' => 'active',
-                    'input_type' => 'select',
-                    'options' => ['active', 'inactive', 'suspended'],
-                ],
-                'email_verified_at' => [
-                    'name' => 'email_verified_at',
-                    'type' => 'timestamp',
-                    'label' => 'Email Verified At',
-                    'nullable' => true,
-                    'display' => false,
-                ],
-                'phone_verified_at' => [
-                    'name' => 'phone_verified_at',
-                    'type' => 'timestamp',
-                    'label' => 'Phone Verified At',
-                    'nullable' => true,
-                    'display' => false,
-                ],
-            ],
+            'fields' => [],
             'meta_fields' => [
                 'google_id' => [
                     'meta_key' => 'google_id',
@@ -238,44 +182,12 @@ class UserManagementSeeder extends BaseSeeder
             'metas' => [],
         ],
         'roles' => [
-            'fields' => [
-                'name' => [
-                    'name' => 'name',
-                    'type' => 'string',
-                    'label' => 'Role Name',
-                    'required' => true,
-                    'maxlength' => 255,
-                    'input_type' => 'text',
-                ],
-                'guard_name' => [
-                    'name' => 'guard_name',
-                    'type' => 'string',
-                    'label' => 'Guard Name',
-                    'required' => true,
-                    'input_type' => 'text',
-                ],
-            ],
+            'fields' => [],
             'meta_fields' => [],
             'metas' => [],
         ],
         'permissions' => [
-            'fields' => [
-                'name' => [
-                    'name' => 'name',
-                    'type' => 'string',
-                    'label' => 'Permission Name',
-                    'required' => true,
-                    'maxlength' => 255,
-                    'input_type' => 'text',
-                ],
-                'guard_name' => [
-                    'name' => 'guard_name',
-                    'type' => 'string',
-                    'label' => 'Guard Name',
-                    'required' => true,
-                    'input_type' => 'text',
-                ],
-            ],
+            'fields' => [],
             'meta_fields' => [],
             'metas' => [],
         ],
