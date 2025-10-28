@@ -3,9 +3,9 @@
     use Iquesters\Foundation\Enums\Module;
     use Iquesters\UserManagement\Config\UserManagementKeys;
 
-    $umConf = ConfProvider::from(Module::USER_MGMT);
-
-    $layout = $umConf->auth_layout;
+    $layout = class_exists(\Iquesters\UserInterface\UserInterfaceServiceProvider::class)
+        ? ConfProvider::from(Module::USER_INFE)->auth_layout
+        : ConfProvider::from(Module::USER_MGMT)->auth_layout;
 @endphp
 
 @extends($layout)

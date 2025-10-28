@@ -1,10 +1,9 @@
 @php
     use Iquesters\Foundation\Support\ConfProvider;
     use Iquesters\Foundation\Enums\Module;
-    use Iquesters\UserManagement\Config\UserManagementKeys;
 
     $layout = class_exists(\Iquesters\UserInterface\UserInterfaceServiceProvider::class)
-        ? 'userinterface::layouts.app'
+        ? ConfProvider::from(Module::USER_INFE)->app_layout
         : ConfProvider::from(Module::USER_MGMT)->app_layout;
 
     $isOrganisationNeeded = ConfProvider::from(Module::USER_MGMT)->organisation_needed;

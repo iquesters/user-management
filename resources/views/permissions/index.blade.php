@@ -1,7 +1,10 @@
 @php
+    use Iquesters\Foundation\Support\ConfProvider;
+    use Iquesters\Foundation\Enums\Module;
+
     $layout = class_exists(\Iquesters\UserInterface\UserInterfaceServiceProvider::class)
-        ? 'userinterface::layouts.app'
-        : config('usermanagement.layout_app');
+        ? ConfProvider::from(Module::USER_INFE)->app_layout
+        : ConfProvider::from(Module::USER_MGMT)->app_layout;
 @endphp
 
 @extends($layout)

@@ -9,24 +9,25 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Console\Command;
 use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
-use Iquesters\UserManagement\Config\UserManagementConfig;
 use Iquesters\UserManagement\Config\UserManagementConf;
-use Iquesters\UserManagement\Config\UserManagementKeys;
+use Iquesters\UserInterface\Config\UserInterfaceConf;
+use Iquesters\UserInterface\UserInterfaceServiceProvider;
 use Iquesters\UserManagement\Database\Seeders\UserManagementSeeder;
 
 class UserManagementServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Merge default config
-        // $this->mergeConfigFrom(
-        //     __DIR__ . '/../config/user-management.php',
-        //     'usermanagement'
-        // );
-
+        // Register User Management configuration
         ConfProvider::register(Module::USER_MGMT, UserManagementConf::class);
 
+        // Register seeder command
         $this->registerSeedCommand();
+
+        // ✅ Conditionally register UserInterface package if available
+        if (class_exists(UserInterfaceServiceProvider::class)) {
+            ConfProvider::register(Module::USER_INFE, UserInterfaceConf::class);
+        }
     }
 
     public function boot(): void
