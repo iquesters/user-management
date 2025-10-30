@@ -193,34 +193,12 @@ class UserManagementSeeder extends BaseSeeder
         ],
     ];
 
-    /**
-     * Custom seeding logic for User Management
-     * This runs after all module, entity, and permission seeding
+     /**
+     * Implement abstract method from BaseSeeder
      */
     protected function seedCustom(): void
     {
-        $this->createTestSuperAdmin();
-    }
-
-    /**
-     * Create a test super-admin user
-     */
-    protected function createTestSuperAdmin(): void
-    {
-        $user = User::firstOrCreate(
-            ['email' => 'superadmin@example.com'],
-            [
-                'uid' => Str::ulid(),
-                'name' => 'Super Admin',
-                'password' => Hash::make('Qwer@1234'), // ⚠️ Change in production
-                'status' => 'active',
-            ]
-        );
-
-        $user->assignRole('super-admin');
-
-        if (app()->runningInConsole()) {
-            echo "✅ Test super-admin user created/updated.\n";
-        }
+        // Add custom seeding logic here if needed
+        // Leave empty if none
     }
 }
