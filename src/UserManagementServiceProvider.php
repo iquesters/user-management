@@ -50,6 +50,14 @@ class UserManagementServiceProvider extends ServiceProvider
             ]);
         }
         
+        // Determine which auth layout should be used
+        $layout = class_exists(\Iquesters\UserInterface\UserInterfaceServiceProvider::class)
+            ? ConfProvider::from(Module::USER_INFE)->auth_layout
+            : ConfProvider::from(Module::USER_MGMT)->auth_layout;
+
+        // Bind it to the container so any package can access
+        $this->app->instance('auth.layout', $layout);
+        
         // Publish config + layout
         $this->publishes([
             __DIR__ . '/../config/user-management.php' => config_path('user-management.php'),

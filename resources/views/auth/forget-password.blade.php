@@ -1,43 +1,41 @@
-@php
-    use Iquesters\Foundation\Support\ConfProvider;
-    use Iquesters\Foundation\Enums\Module;
-    use Iquesters\UserManagement\Config\UserManagementKeys;
-
-    $layout = class_exists(\Iquesters\UserInterface\UserInterfaceServiceProvider::class)
-        ? ConfProvider::from(Module::USER_INFE)->auth_layout
-        : ConfProvider::from(Module::USER_MGMT)->auth_layout;
-@endphp
-
-@extends($layout)
+@extends(app('auth.layout'))
 
 @section('content')
-<div class="w-100">
-    <div class="mb-4 text-muted">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
-    </div>
+<div class="w-100 row">
+    <div class="col-6">
+        <div class="mb-4 text-muted">
+            {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+        </div>
 
-    <form method="POST" action="{{ route('password.email') }}" id="passwordEmailForm" data-recaptcha-action="password_reset_link">
-        @csrf
+        <form method="POST" action="{{ route('password.email') }}" id="passwordEmailForm" data-recaptcha-action="password_reset_link">
+            @csrf
 
-        <!-- Email Address -->
-        <div class="mb-3">
-            <label for="email" class="form-label">{{ __('Email') }}</label>
-            <input id="email" class="form-control" type="email" name="email" value="{{ old('email') }}" required autofocus>
-            @if ($errors->has('email'))
-            <div class="text-danger mt-2">
-                {{ $errors->first('email') }}
+            <!-- Email Address -->
+            <div class="mb-3">
+                <label for="email" class="form-label">{{ __('Email') }}</label>
+                <input id="email" class="form-control" type="email" name="email" value="{{ old('email') }}" required autofocus>
+                @if ($errors->has('email'))
+                <div class="text-danger mt-2">
+                    {{ $errors->first('email') }}
+                </div>
+                @endif
             </div>
-            @endif
-        </div>
 
-        @include('usermanagement::components.recaptcha-field')
+            @include('usermanagement::components.recaptcha-field')
 
-        <div class="d-flex justify-content-end">
-            <button type="submit" class="btn btn-sm btn-outline-info" id="submitButton">
-                {{ __('Email Password Reset Link') }}
-            </button>
-        </div>
-    </form>
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-sm btn-outline-info" id="submitButton">
+                    {{ __('Email Password Reset Link') }}
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="col-6">
+        @include('userinterface::components.form',
+        [
+            'id' => 'password_reset_link-form'
+        ])
+    </div>
 </div>
 
 @endsection

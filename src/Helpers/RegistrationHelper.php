@@ -35,20 +35,47 @@ class RegistrationHelper extends BaseAuthHelper
         Log::debug('Registering new user for email: ' . $email);
 
         // Check if user already exists
-        $user = User::where('email', $email)->first();
-
-        if ($user) {
+        $existingUser = User::where('email', $email)->first();
+        if ($existingUser) {
             Log::debug('User already exists: ' . $email);
-            
-            // Ensure user has a uid
-            if (empty($user->uid)) {
-                $user->update(['uid' => self::generate_uid()]);
+            if (empty($existingUser->uid)) {
+                $existingUser->update(['uid' => self::generate_uid()]);
             }
-            
-            return $user;
+            return $existingUser;
         }
 
-        // Create new user
+        // ✅ Determine role BEFORE user creation
+        $existingUserCount = User::count();
+        $roleToAssign = null;
+
+        // ✅ Ensure super-admin role exists
+        $superAdminRole = \Spatie\Permission\Models\Role::firstOrCreate(
+            ['name' => 'super-admin'],
+            ['guard_name' => 'web']
+        );
+
+        if ($existingUserCount === 0) {
+            // This is the first-ever user
+            $roleToAssign = $superAdminRole;
+            Log::info("Preparing to assign 'super-admin' role to first registered user: {$email}");
+        } else {
+            // Use configured default role
+            $defaultRole = ConfProvider::from(Module::USER_MGMT)->default_user_role;
+
+            if (!$defaultRole) {
+                throw new \RuntimeException("Default user role is not configured.");
+            }
+
+            $roleToAssign = \Spatie\Permission\Models\Role::where('name', $defaultRole)->first();
+
+            if (!$roleToAssign) {
+                $message = "Default user role '{$defaultRole}' not found in database. Please seed or create it.";
+                Log::error($message);
+                throw new \RuntimeException($message);
+            }
+        }
+
+        // ✅ Only now, create the user (safe to persist)
         $user = User::create([
             'uid' => self::generate_uid(),
             'name' => $name,
@@ -57,33 +84,29 @@ class RegistrationHelper extends BaseAuthHelper
             'password' => $password ? Hash::make($password) : bcrypt(Str::random(16)),
         ]);
 
-        // Mark email as verified if needed
         if ($email_verified) {
             $user->markEmailAsVerified();
         }
 
-        // Assign default role
-        $user->assignRole(ConfProvider::from(Module::USER_MGMT)->default_user_role);
+        // ✅ Assign validated role
+        $user->assignRole($roleToAssign);
 
-        // Save registration device/browser/IP info
+        // Save registration info and meta
         self::save_registration_info($user->id);
 
-        // Save additional metadata (google_id, logo, etc)
-        if (!empty($meta)) {
-            foreach ($meta as $key => $value) {
-                UserMeta::create([
-                    'ref_parent' => $user->id,
-                    'meta_key' => $key,
-                    'meta_value' => $value,
-                    'status' => 'active',
-                ]);
-            }
+        foreach ($meta as $key => $value) {
+            UserMeta::create([
+                'ref_parent' => $user->id,
+                'meta_key' => $key,
+                'meta_value' => $value,
+                'status' => 'active',
+            ]);
         }
 
-        // Fire registered event
+        // Fire Registered event
         event(new Registered($user));
 
-        Log::debug('User created successfully: ' . $email);
+        Log::debug('User created successfully with role: ' . $roleToAssign->name);
 
         return $user;
     }

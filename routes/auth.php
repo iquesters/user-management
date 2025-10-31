@@ -12,10 +12,15 @@ use Iquesters\UserManagement\Http\Controllers\Auth\PasswordResetLinkController;
 use Iquesters\UserManagement\Http\Controllers\Auth\RegisteredUserController;
 use Iquesters\UserManagement\Http\Controllers\Auth\VerifyEmailController;
 use Iquesters\UserManagement\Http\Controllers\Auth\GoogleController;
+use Iquesters\UserManagement\Http\Controllers\Auth\SetupController;
 
 Route::middleware('web')->group(function () {
     
     Route::middleware('guest')->group(function () {
+
+        Route::get('/setup', [SetupController::class, 'show'])->name('ui.setup');
+        Route::post('/setup', [SetupController::class, 'store'])->name('ui.setup.store');
+        
         // Register & Login
         Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
         Route::post('register', [RegisteredUserController::class, 'store']);
