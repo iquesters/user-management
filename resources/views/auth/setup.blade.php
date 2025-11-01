@@ -19,6 +19,7 @@
             <div class="mb-3">
                 <label class="form-label">Logo</label>
                 <input type="file" name="logo" class="form-control" accept="image/*" required>
+                <small id="logo-error" class="text-danger d-none"></small>
                 @error('logo') <small class="text-danger">{{ $message }}</small> @enderror
             </div>
 
@@ -38,10 +39,64 @@
         </form>
     </div>
     <div class="col-6">
-        @include('userinterface::components.form',
-        [
-            'id' => 'setup-form'
-        ])
+        @include('userinterface::components.form', ['id' => 'setup-form'])
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('setup-form');
+    const logoInput = form.querySelector('input[name="logo"]');
+    const errorMsg = document.getElementById('logo-error');
+    const submitBtn = document.getElementById('setup-button');
+    const maxSize = 2 * 1024 * 1024; // 2 MB
+
+    // Function to validate the logo file
+    const validateLogo = () => {
+        const file = logoInput.files[0];
+        errorMsg.classList.add('d-none');
+        errorMsg.textContent = '';
+        submitBtn.disabled = false; // reset before checking
+
+        if (!file) return true;
+
+        if (!file.type.startsWith('image/')) {
+            errorMsg.textContent = 'Please upload a valid image file.';
+            errorMsg.classList.remove('d-none');
+            logoInput.value = '';
+            submitBtn.disabled = true;
+            return false;
+        }
+
+        if (file.size > maxSize) {
+            errorMsg.textContent = 'File size must not exceed 2 MB.';
+            errorMsg.classList.remove('d-none');
+            logoInput.value = '';
+            submitBtn.disabled = true;
+            return false;
+        }
+
+        // Valid file
+        return true;
+    };
+
+    // Check file when changed
+    logoInput.addEventListener('change', validateLogo);
+
+    // Disable button on invalid submit
+    form.addEventListener('submit', (e) => {
+        const isValid = validateLogo();
+        if (!isValid) {
+            e.preventDefault();
+            return;
+        }
+
+        // Disable button to prevent double-submit
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Please wait...';
+    });
+});
+</script>
+@endpush
