@@ -90,6 +90,34 @@ class RegistrationHelper extends BaseAuthHelper
 
         // ✅ Assign validated role
         $user->assignRole($roleToAssign);
+        
+        // 🆕 If super admin, assign all modules automatically
+        if ($roleToAssign->name === 'super-admin') {
+            try {
+                $modules = \Iquesters\Foundation\Models\Module::active()->get();
+
+                foreach ($modules as $module) {
+                    $assignedRoles = $module->getAssignedRoleIds() ?? [];
+
+                    if (!in_array($roleToAssign->id, $assignedRoles)) {
+                        $assignedRoles[] = $roleToAssign->id;
+                        $module->assignRoles($assignedRoles);
+                    }
+                }
+
+                \Log::info("✅ All modules assigned to 'super-admin' automatically after first user registration.", [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'total_modules' => $modules->count(),
+                ]);
+
+            } catch (\Throwable $e) {
+                \Log::error("⚠️ Failed to auto-assign modules to super-admin", [
+                    'error' => $e->getMessage(),
+                    'line' => $e->getLine(),
+                ]);
+            }
+        }
 
         // Save registration info and meta
         self::save_registration_info($user->id);
