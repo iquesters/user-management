@@ -50,12 +50,21 @@ class UserManagementServiceProvider extends ServiceProvider
             ]);
         }
         
-        // Determine which auth layout should be used
-        $layout = class_exists(\Iquesters\UserInterface\UserInterfaceServiceProvider::class)
-            ? ConfProvider::from(Module::USER_INFE)->auth_layout
-            : ConfProvider::from(Module::USER_MGMT)->auth_layout;
+        $uiConf = ConfProvider::from(Module::USER_INFE);
+        if (method_exists($uiConf, 'loadConfigOnce')) {
+            $uiConf->ensureLoaded();
+        }
 
-        // Bind it to the container so any package can access
+        $mgmtConf = ConfProvider::from(Module::USER_MGMT);
+        if (method_exists($mgmtConf, 'loadConfigOnce')) {
+            $mgmtConf->ensureLoaded();
+        }
+
+        // ✅ Now safely access the auth_layout property
+        $layout = class_exists(\Iquesters\UserInterface\UserInterfaceServiceProvider::class)
+            ? $uiConf->auth_layout
+            : $mgmtConf->auth_layout;
+
         $this->app->instance('auth.layout', $layout);
         
         // Publish config + layout
