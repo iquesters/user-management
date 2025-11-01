@@ -97,4 +97,26 @@ class DashboardController extends Controller
             abort(404);
         }
     }
+    
+    /**
+     * ✅ Super Admin Dashboard
+     */
+    public function adminDashboard()
+    {
+        $user = Auth::user();
+
+        // Hardcoded roles allowed to access this dashboard
+        $roles = ['super-admin'];
+
+        // 🔒 If user's role is not in the allowed list, show 404
+        if (!$user->hasAnyRole($roles)) {
+            abort(404);
+        }
+
+        // ✅ Only pass the logged-in user to the view
+        return view('usermanagement::dashboard.admin', [
+            'user' => $user,
+        ]);
+    }
+
 }

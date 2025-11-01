@@ -58,7 +58,7 @@ Route::middleware('web')->group(function () {
             
         // Dashboard
         Route::prefix('dashboard')->group(function () {
-            Route::get('/show', [DashboardController::class, 'index'])->name('dashboard');
+            Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
             Route::post('/create-organisation', [DashboardController::class, 'createOrganisation'])->name('dashboard.create-organisation');
         });
         Route::get('/profile-image', [DashboardController::class, 'profileImage'])->name('profile-image');
