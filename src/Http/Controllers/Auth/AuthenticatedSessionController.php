@@ -27,7 +27,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-         $request->authenticate();
+        $request->authenticate();
 
         // Use login helper
         LoginHelper::process_login(Auth::user());
@@ -42,10 +42,13 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Revoke Sanctum tokens
+        if (Auth::check()) {
+            LoginHelper::process_logout(Auth::user());
+        }
+
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
         return redirect('/');
