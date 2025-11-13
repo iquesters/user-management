@@ -14,6 +14,8 @@ use Iquesters\UserManagement\Http\Controllers\Auth\VerifyEmailController;
 use Iquesters\UserManagement\Http\Controllers\Auth\GoogleController;
 use Iquesters\UserManagement\Http\Controllers\Auth\SetupController;
 
+use Iquesters\UserManagement\Http\Controllers\ProfileController;
+
 Route::middleware('web')->group(function () {
     
     Route::middleware('guest')->group(function () {
@@ -62,5 +64,8 @@ Route::middleware('web')->group(function () {
             Route::post('/create-organisation', [DashboardController::class, 'createOrganisation'])->name('dashboard.create-organisation');
         });
         Route::get('/profile-image', [DashboardController::class, 'profileImage'])->name('profile-image');
+
+        // User Profile Update
+        Route::patch('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     });
 });
