@@ -199,7 +199,7 @@ class ProfileController extends Controller
     }
 
 
-    public function setting(){
+    public function settings(){
         try{
             $user = Auth::user();
             $userMetas = UserMeta::where('ref_parent', $user->id)->pluck('meta_value', 'meta_key');
@@ -212,6 +212,22 @@ class ProfileController extends Controller
         }catch(\Exception $e){
             Log::error('Failed to load profile settings', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Failed to load profile settings: ' . $e->getMessage());
+        }
+        
+    }
+
+    public function myprofile(){
+        try{
+            $user = Auth::user();
+            $userMetas = UserMeta::where('ref_parent', $user->id)->pluck('meta_value', 'meta_key');
+            $sessions = \DB::table('sessions')
+            ->where('user_id', $user->id)
+            ->orderBy('last_activity', 'desc')
+            ->get();
+            return view('usermanagement::profile.my-profile',compact('user','userMetas','sessions'));
+        }catch(\Exception $e){
+            Log::error('Failed to load my profile', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Failed to load my profile: ' . $e->getMessage());
         }
         
     }

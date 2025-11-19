@@ -66,7 +66,7 @@
 
                 <!-- Save Button and Status Message -->
                 <div class="d-flex align-items-center gap-3">
-                    <button type="submit" class="btn btn-sm btn-outline-primary" id="updateSubmitButton">{{ __('Update') }}</button>
+                    <button type="submit" class="btn btn-sm btn-outline-primary" id="updateSubmitButton" disabled>{{ __('Update') }}</button>
 
                     @if (session('status') === 'password-updated')
                     <p class="text-muted small mb-0" x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 2000)">
@@ -84,3 +84,15 @@
         </div>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initPasswordValidation(
+        'update_password_password',
+        'update_password_password_confirmation',
+        'updatePasswordHelp',
+        'updatePasswordMatch',
+        'updateSubmitButton'
+    );
+});
+</script>
