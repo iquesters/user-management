@@ -51,33 +51,36 @@ $library_options = (object)(['selectable'=>true]);
     }
 
     function removeProfilePicture() {
-        fetch('/remove-profile-picture', { // replace with your route URL
-            method: 'POST', // or DELETE if your route uses DELETE
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') // CSRF for Laravel
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                window.location.reload();
-                // alert(data.message);
-                // Update UI
-                // const profileImg = document.getElementById('profile-picture');
-                // if (profileImg) {
-                //     profileImg.src = 'https://placehold.co/120x120?text=User';
-                // }
-            } else {
-                // alert(data.message || 'Something went wrong');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            // alert('Could not remove profile picture. Please try again.');
-        });
+
+        let form = document.createElement('form');
+        form.action = "/remove-profile-picture"; // your route
+        form.method = "post";
+
+        // CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = "hidden";
+        csrfInput.name = "_token";
+        csrfInput.value = csrfToken;
+        csrfInput.setAttribute('autocomplete', "off");
+        form.appendChild(csrfInput);
+
+        // OPTIONAL: if backend expects any extra field
+        const actionInput = document.createElement('input');
+        actionInput.type = "hidden";
+        actionInput.name = "action";
+        actionInput.value = "remove";
+        form.appendChild(actionInput);
+
+        // Append + submit
+        document.body.appendChild(form);
+        form.submit();
+        document.getElementById('shozModal').style.display = 'none';
+        setTimeout(() => {
+            window.location.href = "/myprofile";
+        }, 50);
     }
+
 
     // let mediaContent = document.getElementById("media-library").innerHTML
 

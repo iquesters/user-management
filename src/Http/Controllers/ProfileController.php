@@ -6,7 +6,7 @@ use Illuminate\Routing\Controller;
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use App\Constants\EntityStatus;
+use Iquesters\Foundation\Constants\EntityStatus;
 use App\Logging\Logger;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
@@ -224,7 +224,13 @@ class ProfileController extends Controller
             ->where('user_id', $user->id)
             ->orderBy('last_activity', 'desc')
             ->get();
-            return view('usermanagement::profile.my-profile',compact('user','userMetas','sessions'));
+
+            $profilePic = UserMeta::where('ref_parent', $user->id)
+                ->where('meta_key', 'profile_picture')
+                ->where('status', EntityStatus::ACTIVE)
+                ->first();
+
+            return view('usermanagement::profile.my-profile',compact('user','userMetas','sessions','profilePic'));
         }catch(\Exception $e){
             Log::error('Failed to load my profile', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Failed to load my profile: ' . $e->getMessage());

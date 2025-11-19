@@ -13,9 +13,10 @@
 
 <?php
 // $user_logo = isset($user?->meta()?->logo) ? $user?->meta()?->logo : null;
-$user_logo = isset($userMetas['profile_picture'])
-    ? $userMetas['profile_picture_path'] . $userMetas['profile_picture']
-    : null;
+$initial = strtoupper(substr($user->name ?? 'S', 0, 1));
+$user_logo = isset($profilePic)
+    ? $userMetas['profile_picture_path'] . $profilePic->meta_value
+    : 'https://placehold.co/400x400/faf3e0/d72638/png?text=' . $initial;
 
 $options = (object)array(
     'form' => (object)array(
