@@ -1,3 +1,17 @@
+<?php 
+$options = (object)array(
+    'img' => (object)array(
+        'id' => 'image',
+        'src' => null,
+        'alt' => 'Image',
+        'width' => '100%',
+        'class' => 'rounded',
+        'container_class' => '',
+        'aspect_ratio' => ''
+    ),
+);
+?>
+
 @push('styles')
 <style>
     .dropbox__file,
@@ -56,17 +70,9 @@
 @endpush
 
 
-<div id = "media-dropbox" class="">
-    <div class="col-md-6 col-lg-6 media-dropbox-container">
-        {{-- <div class="text-center p-3">
-        <img src="https://placehold.co/400x400/faf3e0/d72638/png?text=A" 
-            class="img-fluid mb-2" 
-            style="height: 200px; width : 200px; border-radius: 100px;"
-            alt="Dropbox Image">
-        <p>Drag photo here</p>
-        <p>-- or --</p>
-        </div> --}}
-        <div class="img-thumbnail h-100 d-flex align-items-center row">
+<div id = "media-dropbox" class="d-none">
+    <div id="uploadMediaSection" class="col-md-6 col-lg-6 media-dropbox-container d-flex justify-content-center align-items-center w-100">
+        <div class="img-thumbnail h-100 d-flex align-items-center row" style="width: 70%">
             <div class="col-md-6">
                 <form class="dropbox h-100 w-100 d-flex align-items-center justify-contents-center"
                     {{-- method="post" --}}
@@ -115,254 +121,493 @@
                         </a>
                     </label>
                 </form>
+
+                <div class="mt-3">
+                    <video id="liveCamera" autoplay playsinline 
+                        style="width:100%;border:1px solid #ccc;border-radius:8px; display:none;">
+                    </video>
+
+                    <button id="captureFromCamera" 
+                            class="btn btn-primary btn-sm mt-2"
+                            style="display:none;">
+                        Capture
+                    </button>
+                </div>
             </div>
 
 
         </div>
     </div>
 
-    <div id="image-container" style="position: relative; display: none; margin-top: 20px;">
-        <img id="image" src="" alt="" style="max-width: 100%; display: block;">
+    
+    {{-- Image Preview and Crop Area --}}
+    <div id="image-container" style="position: relative; display: none;">
+        
+        <div id="imageWrapper" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+            {{-- <img id="image" src="" alt="" style="max-width: 100%; display: block;"> --}}
+            <div id="imageContainer" style="width: 400px; height: 400px; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;">
+                @include('usermanagement::utils.image', ['options' => $options])
+            </div>
+             <!-- Rotate Button (Crop Button) -->
+            <button id="rotateBtn" class="btn btn-outline-dark btn-sm mt-2" style="display: none;">
+                <i class="fa-solid fa-rotate-right"></i> Rotate
+            </button>
+            <!-- Put crop button below image -->
+            <button id="cropBtn" class="btn btn-outline-primary btn-sm mt-5" style="display: none;">
+                Next
+            </button>
+        </div>
+
         <div id="crop-area" 
             style="position: absolute; border: 2px dashed red; background-color: rgba(255,0,0,0.15); cursor: move; display: none;">
-        <div id="resize-handle"></div>
+            <div id="resize-handle"></div>
         </div>
     </div>
-    <button id="cropBtn" class="btn btn-outline-primary btn-sm mt-2" style="display: none;">Crop Image</button>
-    <h6 id="cropPreview" class="mt-3" style="display: none;">Cropped Preview</h6>
-    <canvas id="canvas" style="display:none; border:1px solid #ccc;"></canvas>
-    <button id="saveBtn" class="btn btn-success btn-sm mt-2" style="display:none;">Save Cropped Image</button>
+
+    {{-- Cropped Image Preview --}}
+    <div id="cropImgPreview" class="text-center w-100">
+        <canvas id="canvas" class="mx-auto" style="display:none"></canvas>
+        <button id="saveBtn" class="btn btn-success btn-sm mt-2 d-none">Save Cropped Image</button>
+    </div>
+    
+
 </div>
 
 
 @pushonce('scripts')
 <script>
-var isAdvancedUpload = function() {
-    var div = document.createElement('div');
-    return (('draggable' in div) || ('ondragstart' in div && 'ondrop' in div)) && 'FormData' in window && 'FileReader' in window;
-}();
-
-$('.dropbox').each(function() {
-    var $form = $(this);
-    var $input = $form.find('input[type="file"]');
-    var droppedFiles = false;
-
-    if (isAdvancedUpload) {
-        $form.addClass('has-advanced-upload');
-
-        $form.on('drag dragstart dragend dragover dragenter dragleave drop', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            })
-            .on('dragover dragenter', function() {
-                $form.addClass('is-dragover');
-            })
-            .on('dragleave dragend drop', function() {
-                $form.removeClass('is-dragover');
-            })
-            .on('drop', function(e) {
-                droppedFiles = e.originalEvent.dataTransfer.files;
-
-                if (droppedFiles) {
-                    $input.prop("files", droppedFiles);
-                }
-
-                $form.trigger('submit');
-            });
-    }
-
-    $input.on('change', function() {
-        // console.log("pppppp",this.files);
-        // if (this.files && this.files[0]) {
-        //     var reader = new FileReader();
-        //     reader.onload = function(e) {
-        //         $('#dropbox-placeholder').attr('src', e.target.result);
-        //     }
-        //     reader.readAsDataURL(this.files[0]);
-        // }
-        // $form.trigger('submit');
-    });
-});
-
-
-
-// ---- Crop UI variables and initial values ----
+// // ---- Crop UI variables and initial values ----
 const imageContainer = document.getElementById('image-container');
 const image = document.getElementById('image');
 const cropArea = document.getElementById('crop-area');
 const resizeHandle = document.getElementById('resize-handle');
 const cropBtn = document.getElementById('cropBtn');
+const rotateBtn = document.getElementById('rotateBtn');
 const canvas = document.getElementById('canvas');
+const saveBtn = document.getElementById('saveBtn');
 
 let startX, startY, isDragging = false, isResizing = false;
 let cropX = 50, cropY = 50, cropWidth = 100, cropHeight = 100;
 
-// When a new image is loaded into #dropbox-placeholder, sync to crop UI (and show it!)
+const cameraInput = document.getElementById("cameraInput");
+const video = document.getElementById("liveCamera");
+const captureBtn = document.getElementById("captureFromCamera");
+
+let initialCrop = {
+    x: 0,
+    y: 0,
+    w: 0,
+    h: 0
+};
+
+// Dropzone Initialization
+function initDropzones() {
+    $('.dropbox').each(function () {
+        setupSingleDropzone($(this));
+    });
+}
+
+function setupSingleDropzone($form) {
+    const $input = $form.find('input[type="file"]');
+
+    if (!isAdvancedUploadSupported()) return;
+    $form.addClass('has-advanced-upload');
+
+    $form.on('drag dragstart dragend dragover dragenter dragleave drop', stopDragDefaults);
+    $form.on('dragover dragenter', () => $form.addClass('is-dragover'));
+    $form.on('dragleave dragend drop', () => $form.removeClass('is-dragover'));
+
+    $form.on('drop', function (e) {
+        handleFileDrop(e, $input);
+    });
+}
+
+function isAdvancedUploadSupported() {
+    const div = document.createElement('div');
+    return (
+        ('draggable' in div || ('ondragstart' in div && 'ondrop' in div)) &&
+        'FormData' in window &&
+        'FileReader' in window
+    );
+}
+
+function stopDragDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+function handleFileDrop(e, $input) {
+    const dt = e.originalEvent.dataTransfer;
+    if (!dt || dt.files.length === 0) return;
+
+    const file = dt.files[0];
+    if (!file.type.startsWith('image/')) return;
+
+    try { $input[0].files = dt.files; } catch {}
+
+    readImageFile(file, showImageForCropping);
+}
+
+// File Reader
+function readImageFile(file, callback) {
+    const reader = new FileReader();
+    reader.onload = (ev) => callback(ev.target.result);
+    reader.readAsDataURL(file);
+}
+
+// Setup Crop UI
 function showImageForCropping(src) {
     image.src = src;
+
     image.onload = () => {
-        imageContainer.style.display = "inline-block";
-        cropBtn.style.display = "inline-block";
-        canvas.style.display = "none";
-
-        cropWidth = Math.max(100, image.width/3);
-        cropHeight = Math.max(100, image.height/3);
-        cropX = (image.width - cropWidth) / 2;
-        cropY = (image.height - cropHeight) / 2;
-
-        cropArea.style.width = cropWidth + "px";
-        cropArea.style.height = cropHeight + "px";
-        cropArea.style.left = cropX + "px";
-        cropArea.style.top = cropY + "px";
-        cropArea.style.display = "block";
-        cropArea.style.zIndex = 10;
+        prepareCropUI();
+        resetCropBox();
     };
 }
 
-// ------------------ DRAG CROP AREA ------------------
-cropArea.addEventListener('mousedown', (e) => {
-    if (e.target === resizeHandle) return; // don't drag when resizing
+function prepareCropUI() {
+    // document.getElementById('shozModalHeader').style.display = "none";
+    document.getElementById('uploadMediaSection').classList.add("d-none");
+
+    document.getElementById("headerStep1").classList.add("d-none");
+    document.getElementById("headerStep2").classList.remove("d-none");
+    document.getElementById("headerStep3").classList.add("d-none");
+
+
+    imageContainer.style.display = "flex";
+    imageContainer.style.justifyContent = "center";
+    imageContainer.style.alignItems = "center";
+
+    cropBtn.style.display = "inline-block";
+    rotateBtn.style.display = "inline-block";
+    canvas.style.display = "none";
+
+    document.getElementById("backBtn").onclick = goBackStepUploadArea;
+    document.getElementById('undoBtn').onclick = undoCrop;
+}
+
+function resetCropBox() {
+    cropWidth = Math.max(100, image.width / 3);
+    cropHeight = Math.max(100, image.height / 3);
+
+    cropX = (image.width - cropWidth) / 2;
+    cropY = (image.height - cropHeight) / 2;
+
+    initialCrop = {
+        x: cropX,
+        y: cropY,
+        w: cropWidth,
+        h: cropHeight
+    };
+
+    updateCropAreaUI();
+}
+
+function updateCropAreaUI() {
+    const imgRect = image.getBoundingClientRect();
+    const containerRect = imageContainer.getBoundingClientRect();
+
+    // cropArea should be positioned relative to image (not container)
+    cropArea.style.left = (imgRect.left - containerRect.left + cropX) + "px";
+    cropArea.style.top  = (imgRect.top - containerRect.top + cropY) + "px";
+
+    cropArea.style.width = cropWidth + "px";
+    cropArea.style.height = cropHeight + "px";
+    cropArea.style.display = "block";
+    cropArea.style.zIndex = 10;
+}
+
+
+// Crop Area Drag + Resize
+function enableCropDragging() {
+    cropArea.addEventListener('mousedown', startDragCrop);
+    resizeHandle.addEventListener('mousedown', startResizeCrop);
+
+    document.addEventListener('mousemove', cropMouseMove);
+    document.addEventListener('mouseup', stopCropActions);
+}
+
+function startDragCrop(e) {
+    if (e.target === resizeHandle) return;
 
     isDragging = true;
-    startX = e.clientX - cropArea.offsetLeft;
-    startY = e.clientY - cropArea.offsetTop;
+    // startX = e.clientX - cropArea.offsetLeft;
+    // startY = e.clientY - cropArea.offsetTop;
+    const rect = cropArea.getBoundingClientRect();
+    startX = e.clientX - rect.left;
+    startY = e.clientY - rect.top;
+
     document.body.style.userSelect = "none";
-});
+}
 
-document.addEventListener('mousemove', (e) => {
-    // DRAG
-    if (isDragging) {
-        cropX = e.clientX - startX;
-        cropY = e.clientY - startY;
+function startResizeCrop(e) {
+    e.stopPropagation();
+    isResizing = true;
+}
 
-        cropX = Math.max(0, Math.min(cropX, image.width - cropArea.offsetWidth));
-        cropY = Math.max(0, Math.min(cropY, image.height - cropArea.offsetHeight));
+function cropMouseMove(e) {
+    if (isDragging) dragCrop(e);
+    if (isResizing) resizeCrop(e);
+}
 
-        cropArea.style.left = cropX + "px";
-        cropArea.style.top = cropY + "px";
-    }
+function dragCrop(e) {
+    const imgRect = image.getBoundingClientRect();
 
-    // RESIZE
-    if (isResizing) {
-        cropWidth = e.clientX - cropArea.getBoundingClientRect().left;
-        cropHeight = e.clientY - cropArea.getBoundingClientRect().top;
+    let newX = e.clientX - imgRect.left - startX;
+    let newY = e.clientY - imgRect.top - startY;
 
-        // Keep within image
-        cropWidth = Math.min(cropWidth, image.width - cropX);
-        cropHeight = Math.min(cropHeight, image.height - cropY);
+    newX = Math.max(0, Math.min(newX, imgRect.width - cropWidth));
+    newY = Math.max(0, Math.min(newY, imgRect.height - cropHeight));
 
-        // Minimum size
-        cropWidth = Math.max(50, cropWidth);
-        cropHeight = Math.max(50, cropHeight);
+    cropX = newX;
+    cropY = newY;
 
-        cropArea.style.width = cropWidth + "px";
-        cropArea.style.height = cropHeight + "px";
-    }
-});
+    updateCropAreaUI();
+}
 
-document.addEventListener('mouseup', () => {
+
+function resizeCrop(e) {
+    const imgRect = image.getBoundingClientRect();
+
+    const maxWidth  = imgRect.width  - cropX;
+    const maxHeight = imgRect.height - cropY;
+
+    const newW = e.clientX - cropArea.getBoundingClientRect().left;
+    const newH = e.clientY - cropArea.getBoundingClientRect().top;
+
+    cropWidth  = Math.max(50, Math.min(newW, maxWidth));
+    cropHeight = Math.max(50, Math.min(newH, maxHeight));
+
+    updateCropAreaUI();
+}
+
+
+
+function stopCropActions() {
     isDragging = false;
     isResizing = false;
     document.body.style.userSelect = "";
-});
+}
 
-// ------------------ START RESIZE ------------------
-resizeHandle.addEventListener('mousedown', (e) => {
-    e.stopPropagation();
-    isResizing = true;
-});
 
-// ------------------ CROP BUTTON ------------------
-cropBtn.addEventListener('click', () => {
+// Cropping
+function cropImage() {
     if (!image.src) return;
 
     const img = new Image();
     img.src = image.src;
 
-    img.onload = () => {
-        const scaleX = img.naturalWidth / image.width;
-        const scaleY = img.naturalHeight / image.height;
+    img.onload = () => drawCroppedImage(img);
+}
 
-        canvas.width = cropArea.offsetWidth * scaleX;
-        canvas.height = cropArea.offsetHeight * scaleY;
+function drawCroppedImage(img) {
+    const scaleX = img.naturalWidth / image.width;
+    const scaleY = img.naturalHeight / image.height;
 
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0,0, canvas.width, canvas.height);
+    // canvas.width = cropWidth * scaleX;
+    // canvas.height = cropHeight * scaleY;
 
+    [canvas.width, canvas.height] = (cropWidth * scaleX > 400 || cropHeight * scaleY > 400)
+    ? [cropWidth * scaleX, cropHeight * scaleY].map(v => v * (400 / Math.max(cropWidth * scaleX, cropHeight * scaleY)))
+    : [cropWidth * scaleX, cropHeight * scaleY];
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.drawImage(
+        img,
+        cropX * scaleX,
+        cropY * scaleY,
+        cropWidth * scaleX,
+        cropHeight * scaleY,
+        0, 0,
+        canvas.width, canvas.height
+    );
+
+    showCropResult();
+}
+
+function showCropResult() {
+    canvas.style.display = "block";
+    document.getElementById("saveBtn").classList.remove("d-none");
+    document.getElementById("headerStep1").classList.add("d-none");
+    document.getElementById("headerStep2").classList.add("d-none");
+    document.getElementById("headerStep3").classList.remove("d-none");
+    imageContainer.style.display = "none";
+    
+    document.getElementById("backBtn2").onclick = goBackStepCropArea;
+}
+
+
+// Save Cropped Image
+function saveCroppedImage() {
+    canvas.toBlob(function (blob) {
+        const form = buildUploadForm(blob);
+        document.body.appendChild(form);
+        form.submit();
+    }, 'image/png');
+}
+
+function buildUploadForm(blob) {
+    let form = document.createElement('form');
+    form.method = "POST";
+    form.action = "{{ route('media.upload') }}";
+    form.enctype = "multipart/form-data";
+
+    form.appendChild(hiddenInput("_token", "{{ csrf_token() }}"));
+    form.appendChild(buildFileInput(blob));
+
+    return form;
+}
+
+function hiddenInput(name, value) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    return input;
+}
+
+function buildFileInput(blob) {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.name = "media[]";
+
+    const dt = new DataTransfer();
+    dt.items.add(new File([blob], "cropped.png", { type: "image/png" }));
+    input.files = dt.files;
+
+    return input;
+}
+
+// Camera Functions
+function initCamera() {
+    document.querySelector('label[for="cameraInput"]').addEventListener("click", openCameraModal);
+    captureBtn.addEventListener("click", capturePhoto);
+}
+
+function openCameraModal(e) {
+    e.preventDefault();
+    video.style.display = "block";
+    captureBtn.style.display = "inline-block";
+    openCameraStream();
+}
+
+async function openCameraStream() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+    } catch (err) {
+        alert("Camera not available: " + err);
+    }
+}
+
+function capturePhoto() {
+    const capCanvas = document.createElement("canvas");
+    capCanvas.width = video.videoWidth;
+    capCanvas.height = video.videoHeight;
+
+    capCanvas.getContext("2d").drawImage(video, 0, 0);
+    showImageForCropping(capCanvas.toDataURL("image/jpeg"));
+}
+
+
+// Rotation functionality
+// function initRotation() {
+//     let rotation = 0;
+//     rotateBtn.addEventListener("click", () => {
+//         rotation = (rotation + 90) % 360;
+//         image.style.transform = `rotate(${rotation}deg)`;
+//     });
+// }
+function initRotation() {
+    let rotation = 0;
+    rotateBtn.addEventListener("click", () => {
+        rotation = (rotation + 90) % 360;
+
+        // Create temporary canvas
+        const offCanvas = document.createElement('canvas');
+        const ctx = offCanvas.getContext('2d');
+
+        // Swap width/height for 90° or 270°
+        if (rotation % 180 !== 0) {
+            offCanvas.width = image.naturalHeight;
+            offCanvas.height = image.naturalWidth;
+        } else {
+            offCanvas.width = image.naturalWidth;
+            offCanvas.height = image.naturalHeight;
+        }
+
+        // Rotate around center
+        ctx.translate(offCanvas.width / 2, offCanvas.height / 2);
+        ctx.rotate(rotation * Math.PI / 180);
         ctx.drawImage(
-            img,
-            cropX * scaleX,
-            cropY * scaleY,
-            cropArea.offsetWidth * scaleX,
-            cropArea.offsetHeight * scaleY,
-            0, 0, canvas.width, canvas.height
+            image,
+            -image.naturalWidth / 2,
+            -image.naturalHeight / 2
         );
 
-        canvas.style.display = "block";
-        document.getElementById('cropPreview').style.display = "block";
-        document.getElementById('saveBtn').style.display = "inline-block";
-    };
-});
+        // Update image source with rotated image
+        image.src = offCanvas.toDataURL();
 
-// ---- Sync with jQuery image upload ----
-$('#modal-media-upload').on('change', function() {
-    if (this.files && this.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            $('#dropbox-placeholder').attr('src', e.target.result);
-            showImageForCropping(e.target.result);
-        }
-        reader.readAsDataURL(this.files[0]);
-    }
-});
+        // Reset CSS transform
+        image.style.transform = '';
+    });
+}
 
 
 
+// Init All Functions on DOM Load
+document.addEventListener("DOMContentLoaded", () => {
+    initDropzones();
+    enableCropDragging();
+    initCamera();
+    initRotation();
 
-// document.getElementById('modal-media-upload').addEventListener('change', function() {
-//     if (this.files && this.files[0]) {
-//         var reader = new FileReader();
-//         reader.onload = function(e) {
-//             // Change the placeholder (as in your code)
-//             document.getElementById('dropbox-placeholder').src = e.target.result;
-//             // Also update the cropping image
-//             showImageForCropping(e.target.result);
-//         }
-//         reader.readAsDataURL(this.files[0]);
-//     }
-// });
+    cropBtn.addEventListener("click", cropImage);
+    saveBtn.addEventListener("click", saveCroppedImage);
 
-
-
-document.getElementById('saveBtn').addEventListener('click', function() {
-    canvas.toBlob(function(blob) {
-        let formData = new FormData();
-        formData.append('media[]', blob, 'cropped.png');
-        // CSRF for Laravel
-        formData.append('_token', '{{ csrf_token() }}');
-        fetch('{{ route("media.upload") }}', {  // Use your normal upload route
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (response.redirected) {
-                // If successful, server may redirect — reload or follow location
-                window.location = response.url;
-                return;
-            }
-            // Non-redirect response
-            return response.json();
-        })
-        .then(data => {
-            if (data && data.success) {
-                alert(data.success);
-            }
-        })
-        .catch(error => {
-            alert("Upload failed: " + error);
+    document.getElementById('modal-media-upload')
+        .addEventListener('change', function () {
+            readImageFile(this.files[0], showImageForCropping);
         });
-    }, 'image/png');
 });
+
+//Back button functionality
+function goBackStepUploadArea() {
+    imageContainer.style.display = "none";
+    document.getElementById("uploadMediaSection").classList.remove("d-none");
+
+    document.getElementById("headerStep1").classList.remove("d-none");
+    document.getElementById("headerStep2").classList.add("d-none");
+    document.getElementById("headerStep3").classList.add("d-none");
+
+    cropArea.style.display = "none";
+    canvas.style.display = "none";
+}
+
+function goBackStepCropArea() {
+    canvas.style.display = "none";
+    saveBtn.classList.add("d-none");
+
+    imageContainer.style.display = "flex";
+    cropArea.style.display = "block";
+
+    // Header toggle
+    document.getElementById("headerStep1").classList.add("d-none");
+    document.getElementById("headerStep2").classList.remove("d-none");
+    document.getElementById("headerStep3").classList.add("d-none");
+}
+
+//Undo functionality
+function undoCrop() {
+    cropX = initialCrop.x;
+    cropY = initialCrop.y;
+    cropWidth = initialCrop.w;
+    cropHeight = initialCrop.h;
+
+    updateCropAreaUI();
+}
 
 
 
