@@ -71,6 +71,35 @@ $options = (object)array(
 
 
 <div id = "media-dropbox" class="d-none">
+
+    <div id="headerStep2" class="d-none topButton"> 
+        <!-- Back Icon -->
+        <button id="backBtn" 
+            class="btn btn-light btn-sm"
+            style="position: absolute; top: 10px; left: 80px; z-index: 999;">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+
+        <h5 class="mb-0 mt-1 text-center">Crop and rotate</h5>
+
+        <!-- Undo Icon -->
+        <button id="undoBtn" 
+            class="btn btn-light btn-sm"
+            style="position: absolute; top: 10px; right: 80px; z-index: 999;">
+            <i class="fa-solid fa-rotate-left"></i>
+        </button>
+    </div>
+
+    <div id="headerStep3" class="d-none">
+        <!-- Back Icon -->
+        <button id="backBtn2" 
+            class="btn btn-light btn-sm"
+            style="position: absolute; top: 10px; left: 80px; z-index: 999;">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <h5 class="mb-0 mt-1 text-center">Cropped Preview</h5>
+    </div>
+
     <div id="uploadMediaSection" class="col-md-6 col-lg-6 media-dropbox-container d-flex justify-content-center align-items-center w-100">
         <div class="img-thumbnail h-100 d-flex align-items-center row" style="width: 70%">
             <div class="col-md-6">
@@ -167,7 +196,7 @@ $options = (object)array(
     {{-- Cropped Image Preview --}}
     <div id="cropImgPreview" class="text-center w-100">
         <canvas id="canvas" class="mx-auto" style="display:none"></canvas>
-        <button id="saveBtn" class="btn btn-success btn-sm mt-2 d-none">Save Cropped Image</button>
+        {{-- <button id="saveBtn" class="btn btn-success btn-sm mt-2 d-none">Save Cropped Image</button> --}}
     </div>
     
 
@@ -184,7 +213,7 @@ const resizeHandle = document.getElementById('resize-handle');
 const cropBtn = document.getElementById('cropBtn');
 const rotateBtn = document.getElementById('rotateBtn');
 const canvas = document.getElementById('canvas');
-const saveBtn = document.getElementById('saveBtn');
+// const saveBtn = document.getElementById('saveBtn');
 
 let startX, startY, isDragging = false, isResizing = false;
 let cropX = 50, cropY = 50, cropWidth = 100, cropHeight = 100;
@@ -269,7 +298,7 @@ function prepareCropUI() {
     // document.getElementById('shozModalHeader').style.display = "none";
     document.getElementById('uploadMediaSection').classList.add("d-none");
 
-    document.getElementById("headerStep1").classList.add("d-none");
+    // document.getElementById("headerStep1").classList.add("d-none");
     document.getElementById("headerStep2").classList.remove("d-none");
     document.getElementById("headerStep3").classList.add("d-none");
 
@@ -429,8 +458,8 @@ function drawCroppedImage(img) {
 
 function showCropResult() {
     canvas.style.display = "block";
-    document.getElementById("saveBtn").classList.remove("d-none");
-    document.getElementById("headerStep1").classList.add("d-none");
+    // document.getElementById("saveBtn").classList.remove("d-none");
+    // document.getElementById("headerStep1").classList.add("d-none");
     document.getElementById("headerStep2").classList.add("d-none");
     document.getElementById("headerStep3").classList.remove("d-none");
     imageContainer.style.display = "none";
@@ -550,6 +579,10 @@ function initRotation() {
         // Update image source with rotated image
         image.src = offCanvas.toDataURL();
 
+        
+        image.style.height = "400px";
+        image.style.width = "400px";
+        image.style.objectFit = "contain";
         // Reset CSS transform
         image.style.transform = '';
     });
@@ -565,7 +598,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initRotation();
 
     cropBtn.addEventListener("click", cropImage);
-    saveBtn.addEventListener("click", saveCroppedImage);
+    // saveBtn.addEventListener("click", saveCroppedImage);
 
     document.getElementById('modal-media-upload')
         .addEventListener('change', function () {
@@ -578,7 +611,7 @@ function goBackStepUploadArea() {
     imageContainer.style.display = "none";
     document.getElementById("uploadMediaSection").classList.remove("d-none");
 
-    document.getElementById("headerStep1").classList.remove("d-none");
+    // document.getElementById("headerStep1").classList.remove("d-none");
     document.getElementById("headerStep2").classList.add("d-none");
     document.getElementById("headerStep3").classList.add("d-none");
 
@@ -588,13 +621,13 @@ function goBackStepUploadArea() {
 
 function goBackStepCropArea() {
     canvas.style.display = "none";
-    saveBtn.classList.add("d-none");
+    // saveBtn.classList.add("d-none");
 
     imageContainer.style.display = "flex";
     cropArea.style.display = "block";
 
     // Header toggle
-    document.getElementById("headerStep1").classList.add("d-none");
+    // document.getElementById("headerStep1").classList.add("d-none");
     document.getElementById("headerStep2").classList.remove("d-none");
     document.getElementById("headerStep3").classList.add("d-none");
 }

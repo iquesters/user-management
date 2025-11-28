@@ -93,34 +93,6 @@ $library_options = (object)(['selectable'=>true]);
             <div id="headerStep1">
                 <h5 class="mb-0 mt-1 text-center">Change Profile Picture</h5>
             </div>
-
-            <div id="headerStep2" class="d-none topButton"> 
-                <!-- Back Icon -->
-                <button id="backBtn" 
-                    class="btn btn-light btn-sm"
-                    style="position: absolute; top: 10px; left: 80px; z-index: 999;">
-                    <i class="fa-solid fa-arrow-left"></i>
-                </button>
-
-                <h5 class="mb-0 mt-1 text-center">Crop and rotate</h5>
-
-                <!-- Undo Icon -->
-                <button id="undoBtn" 
-                    class="btn btn-light btn-sm"
-                    style="position: absolute; top: 10px; right: 80px; z-index: 999;">
-                    <i class="fa-solid fa-rotate-left"></i>
-                </button>
-            </div>
-
-            <div id="headerStep3" class="d-none">
-                <!-- Back Icon -->
-                <button id="backBtn2" 
-                    class="btn btn-light btn-sm"
-                    style="position: absolute; top: 10px; left: 80px; z-index: 999;">
-                    <i class="fa-solid fa-arrow-left"></i>
-                </button>
-                <h5 class="mb-0 mt-1 text-center">Cropped Preview</h5>
-            </div>
         `;
 
 
@@ -138,7 +110,12 @@ $library_options = (object)(['selectable'=>true]);
             footer: {
                 enabled: true,
                 allowCancel: true,
-                actions: []
+                actions: [{
+                    label: "Save",
+                    action: () => {
+                        saveCroppedImage()
+                    }
+                }]
             }
 
             
