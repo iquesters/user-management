@@ -14,6 +14,9 @@ use Iquesters\UserManagement\Http\Controllers\Auth\VerifyEmailController;
 use Iquesters\UserManagement\Http\Controllers\Auth\GoogleController;
 use Iquesters\UserManagement\Http\Controllers\Auth\SetupController;
 
+use Iquesters\UserManagement\Http\Controllers\ProfileController;
+use Iquesters\UserManagement\Http\Controllers\MediaController;
+
 Route::middleware('web')->group(function () {
     
     Route::middleware('guest')->group(function () {
@@ -62,5 +65,17 @@ Route::middleware('web')->group(function () {
             Route::post('/create-organisation', [DashboardController::class, 'createOrganisation'])->name('dashboard.create-organisation');
         });
         Route::get('/profile-image', [DashboardController::class, 'profileImage'])->name('profile-image');
+
+        // User Profile Update
+        Route::patch('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+
+        Route::get('/settings', [ProfileController::class, 'settings'])->name('settings');
+        Route::get('/myprofile', [ProfileController::class, 'myprofile'])->name('myprofile');
+        Route::post('/remove-profile-picture', [MediaController::class, 'removeProfilePicture']);
+
+        Route::get('/media/library', [MediaController::class, 'library'])->name('media.library');
+        // Media Related
+        // Route::get('/media/download', [MediaController::class, 'download'])->name('media.download');
+        Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
     });
 });

@@ -59,5 +59,6 @@
             'id' => 'login-form'
         ])
     </div>
+    
 </div>
 @endsection
