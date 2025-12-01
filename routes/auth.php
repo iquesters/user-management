@@ -75,7 +75,7 @@ Route::middleware('web')->group(function () {
 
         Route::get('/media/library', [MediaController::class, 'library'])->name('media.library');
         // Media Related
-        Route::get('/media/download', [MediaController::class, 'download'])->name('media.download');
+        // Route::get('/media/download', [MediaController::class, 'download'])->name('media.download');
         Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
     });
 });

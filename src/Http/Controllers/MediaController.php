@@ -145,27 +145,27 @@ class MediaController extends Controller
     /**
      * Get a newly created resource in storage
      */
-    public function download(Request $request)
-    {
-        try {
-            if ($request->has('media_url')) {
-                $media_url = $request->input('media_url');
-            }
-            Log::info("media_url: " . $media_url);
-            $contents = MediaUtil::getFile(basename($media_url));
+    // public function download(Request $request)
+    // {
+    //     try {
+    //         if ($request->has('media_url')) {
+    //             $media_url = $request->input('media_url');
+    //         }
+    //         Log::info("media_url: " . $media_url);
+    //         $contents = MediaUtil::getFile(basename($media_url));
 
-            if (isset($contents)) {
-                // You can do something with the file contents here, like returning it as a response
-                return response($contents, 200, ['Content-Type' => 'application/octet-stream']);
-            } else {
-                abort(500);
-            }
-        } catch (\Exception $e) {
-            Log::error($e);
-            // Handle other exceptions
-            abort(500);
-        }
-    }
+    //         if (isset($contents)) {
+    //             // You can do something with the file contents here, like returning it as a response
+    //             return response($contents, 200, ['Content-Type' => 'application/octet-stream']);
+    //         } else {
+    //             abort(500);
+    //         }
+    //     } catch (\Exception $e) {
+    //         Log::error($e);
+    //         // Handle other exceptions
+    //         abort(500);
+    //     }
+    // }
 
     /**
      * Remove the specified resource from storage.
