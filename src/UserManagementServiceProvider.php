@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Console\Command;
 use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
@@ -50,20 +51,7 @@ class UserManagementServiceProvider extends ServiceProvider
             ]);
         }
         
-        $uiConf = ConfProvider::from(Module::USER_INFE);
-        if (method_exists($uiConf, 'loadConfigOnce')) {
-            $uiConf->ensureLoaded();
-        }
-
-        $mgmtConf = ConfProvider::from(Module::USER_MGMT);
-        if (method_exists($mgmtConf, 'loadConfigOnce')) {
-            $mgmtConf->ensureLoaded();
-        }
-
-        // ✅ Now safely access the auth_layout property
-        $layout = class_exists(\Iquesters\UserInterface\UserInterfaceServiceProvider::class)
-            ? $uiConf->auth_layout
-            : $mgmtConf->auth_layout;
+        $layout = $this->getAuthLayout();
 
         $this->app->instance('auth.layout', $layout);
         
@@ -89,6 +77,32 @@ class UserManagementServiceProvider extends ServiceProvider
                 'services.google.redirect'      => config('usermanagement.google.redirect'),
             ]);
         }
+    }
+    
+    protected function getAuthLayout(): string
+    {
+        // Try to get UserInterface config first if available
+        if (class_exists(UserInterfaceConf::class)) {
+            try {
+                $uiConf = ConfProvider::from(Module::USER_INFE);
+                if (method_exists($uiConf, 'ensureLoaded')) {
+                    $uiConf->ensureLoaded();
+                }
+                // Use UserInterface layout (userinterface::layouts.auth)
+                return $uiConf->auth_layout;
+            } catch (\Exception $e) {
+                // If UserInterface config fails, fall back to UserManagement
+                Log::warning('Failed to load UserInterface config: ' . $e->getMessage());
+            }
+        }
+
+        // Fall back to UserManagement config (always available in this package)
+        $mgmtConf = ConfProvider::from(Module::USER_MGMT);
+        if (method_exists($mgmtConf, 'ensureLoaded')) {
+            $mgmtConf->ensureLoaded();
+        }
+        // Returns: usermanagement::layouts.package
+        return $mgmtConf->auth_layout;
     }
 
     protected function registerSeedCommand(): void
