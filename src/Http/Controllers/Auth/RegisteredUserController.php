@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
 
 class RegisteredUserController extends Controller
 {
@@ -30,7 +31,7 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store_old(Request $request): RedirectResponse
     {
         Log::debug('Registration request received');
         $recaptcha = ConfProvider::from(Module::USER_MGMT)->recaptcha;
@@ -74,4 +75,104 @@ class RegisteredUserController extends Controller
 
         return redirect(route('dashboard', absolute: false));
     }
+
+
+
+    public function store(Request $request): JsonResponse|RedirectResponse
+    {
+        try {
+            Log::info("Registration API hit");
+
+            // ------------------------------------------------
+            //Fetch config values
+            // ------------------------------------------------
+            $signinIdentifier = ConfProvider::from(Module::USER_MGMT)->signin_identifier;
+            $recaptchaConf    = ConfProvider::from(Module::USER_MGMT)->recaptcha;
+            $recaptchaEnabled = $recaptchaConf ? $recaptchaConf->enabled : false;
+
+            $identifierValue = $request->input($signinIdentifier);
+
+            // ------------------------------------------------
+            //Base validation rules (common)
+            // ------------------------------------------------
+            $rules = [];
+
+            if ($signinIdentifier === 'email') {
+                $rules = [
+                    'name'     => ['required', 'string', 'max:255'],
+                    'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
+                    'password' => ['required', 'confirmed', Rules\Password::defaults()],
+                ];
+            }
+
+            if ($signinIdentifier === 'phone') {
+                $rules = [
+                    'phone' => ['required', 'digits:10', 'unique:users,phone'],
+                    // optional name if you want
+                    'name'  => ['nullable', 'string', 'max:255'],
+                ];
+            }
+
+            // ------------------------------------------------
+            // Add reCAPTCHA conditionally
+            // ------------------------------------------------
+            if ($recaptchaEnabled) {
+                $rules['recaptcha_token'] = ['required', new RecaptchaRule('register', 0.5)];
+            }
+
+            // ------------------------------------------------
+            // Validate
+            // ------------------------------------------------
+            $validated = $request->validate($rules);
+
+            // ------------------------------------------------
+            // Registration
+            // ------------------------------------------------
+            $user = RegistrationHelper::register_user(
+                name: $validated['name'] ?? '',
+                identifierType: $signinIdentifier,
+                identifierValue: $identifierValue,
+                password: $request->password,
+                email_verified: false
+            );
+
+            // ------------------------------------------------
+            // Login automatically (only for web form)
+            // ------------------------------------------------
+            if ($request->wantsJson() === false) {
+                LoginHelper::process_login($user);
+
+                return redirect(route('dashboard', absolute: false));
+            }
+
+            // ------------------------------------------------
+            // 7️⃣ Return API JSON Response
+            // ------------------------------------------------
+            return response()->json([
+                'status'  => true,
+                'message' => 'User registered successfully',
+                'data'    => $validated,
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Validation failed',
+                'errors'  => $e->errors()
+            ], 422);
+
+        } catch (\Throwable $e) {
+
+            Log::error('Registration Error: ' . $e->getMessage());
+
+            return response()->json([
+                'status'  => false,
+                'message' => 'Something went wrong',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
 }

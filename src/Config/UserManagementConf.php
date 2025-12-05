@@ -17,6 +17,8 @@ class UserManagementConf extends BaseConf
     protected string $default_user_role;
     protected string $default_auth_route;
     protected string $organisation_needed;
+    protected string $signin_identifier;
+
     
     protected RecaptchaConf $recaptcha;
     protected SocialLoginConf $social_login;
@@ -29,6 +31,7 @@ class UserManagementConf extends BaseConf
         $default_values->default_user_role = 'user';
         $default_values->default_auth_route = 'dashboard';
         $default_values->organisation_needed = false;
+        $default_values->signin_identifier = 'email';
 
         $default_values->recaptcha = new RecaptchaConf();
         $default_values->recaptcha->prepareDefault($default_values->recaptcha);

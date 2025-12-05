@@ -35,6 +35,7 @@ class UserManagementServiceProvider extends ServiceProvider
     {
         // Load routes
         $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
+        $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
 
         // Load your package migrations
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
