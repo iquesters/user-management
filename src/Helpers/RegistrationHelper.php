@@ -27,17 +27,31 @@ class RegistrationHelper extends BaseAuthHelper
      */
     public static function register_user(
         string $name,
-        string $email,
+        // string $email,
+        string $identifierType,
+        string $identifierValue,
         ?string $password = null,
         bool $email_verified = false,
         array $meta = []
     ): User {
-        Log::debug('Registering new user for email: ' . $email);
+        // Log::debug('Registering new user for email: ' . $email);
+        Log::debug("Registering new user using identifier: $identifierType = $identifierValue");
+
+        //check user already exists
+        switch ($identifierType) {
+            case 'email':
+            case 'phone':
+                $existingUser = User::where($identifierType, $identifierValue)->first();
+                break;
+
+            default:
+                throw new \InvalidArgumentException("Invalid identifier type: $identifierType");
+        }
 
         // Check if user already exists
-        $existingUser = User::where('email', $email)->first();
+        // $existingUser = User::where('email', $email)->first();
         if ($existingUser) {
-            Log::debug('User already exists: ' . $email);
+            // Log::debug('User already exists: ' . $email);
             if (empty($existingUser->uid)) {
                 $existingUser->update(['uid' => self::generate_uid()]);
             }
@@ -57,7 +71,8 @@ class RegistrationHelper extends BaseAuthHelper
         if ($existingUserCount === 0) {
             // This is the first-ever user
             $roleToAssign = $superAdminRole;
-            Log::info("Preparing to assign 'super-admin' role to first registered user: {$email}");
+            // Log::info("Preparing to assign 'super-admin' role to first registered user: {$email}");
+            Log::info("Preparing to assign 'super-admin' role to first registered user: {$identifierValue}");
         } else {
             // Use configured default role
             $defaultRole = ConfProvider::from(Module::USER_MGMT)->default_user_role;
@@ -76,13 +91,32 @@ class RegistrationHelper extends BaseAuthHelper
         }
 
         // ✅ Only now, create the user (safe to persist)
-        $user = User::create([
-            'uid' => self::generate_uid(),
-            'name' => $name,
-            'email' => $email,
-            'status' => 'active',
+        // $user = User::create([
+        //     'uid' => self::generate_uid(),
+        //     'name' => $name,
+        //     'email' => $email,
+        //     'status' => 'active',
+        //     'password' => $password ? Hash::make($password) : bcrypt(Str::random(16)),
+        // ]);
+
+
+        // ----------------------------
+        // CREATE USER
+        // ----------------------------
+        $userData = [
+            'uid'      => self::generate_uid(),
+            'name'     => $name,
+            'status'   => 'active',
             'password' => $password ? Hash::make($password) : bcrypt(Str::random(16)),
-        ]);
+        ];
+
+        // dynamic assignment (email/phone/pan/voter)
+        $userData[$identifierType] = $identifierValue;
+
+        $user = User::create($userData);
+
+
+
 
         if ($email_verified) {
             $user->markEmailAsVerified();
