@@ -66,8 +66,9 @@ class UserManagementServiceProvider extends ServiceProvider
             __DIR__ . '/../public' => public_path('vendor/usermanagement'),
         ], 'user-management-assets');
 
-        // Auto-publish Spatie migrations AND config
+        // Auto-publish Spatie, Sanctum migrations AND config
         $this->autoPublishSpatieFiles();
+        $this->autoSetupSanctum();
 
         // Map Google config to Socialite dynamically
         if (config('usermanagement.google.client_id')) {
@@ -288,6 +289,35 @@ class UserManagementServiceProvider extends ServiceProvider
         }
 
         return false;
+    }
+    
+    /**
+     * Auto-setup Laravel Sanctum if installed
+     */
+    protected function autoSetupSanctum(): void
+    {
+        if (!class_exists(\Laravel\Sanctum\SanctumServiceProvider::class)) {
+            Log::info("Sanctum not installed — API token features disabled.");
+            return;
+        }
+
+        // Publish Sanctum config if missing
+        if (!file_exists(config_path('sanctum.php'))) {
+            Artisan::call('vendor:publish', [
+                '--provider' => 'Laravel\Sanctum\SanctumServiceProvider',
+                '--tag' => 'sanctum-config',
+                '--force' => true
+            ]);
+        }
+
+        // Publish Sanctum migrations only if table missing
+        if (!Schema::hasTable('personal_access_tokens')) {
+            Artisan::call('vendor:publish', [
+                '--provider' => 'Laravel\Sanctum\SanctumServiceProvider',
+                '--tag' => 'sanctum-migrations',
+                '--force' => true
+            ]);
+        }
     }
 
     /**
