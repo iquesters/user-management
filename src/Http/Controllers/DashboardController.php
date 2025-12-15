@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
-use Iquesters\Foundation\Models\Organisation;
+use Iquesters\Organisation\Models\Organisation;
 use Illuminate\Support\Str;
 
 class DashboardController extends Controller
