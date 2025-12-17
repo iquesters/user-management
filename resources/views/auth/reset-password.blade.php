@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="w-100 row">
-    <div class="col-6">
+    <div class="col-12">
         <form method="POST" action="{{ route('password.store') }}" id="passwordResetForm" data-recaptcha-action="password_reset">
             @csrf
 
@@ -65,12 +65,12 @@
             </div>
         </form>
     </div>
-    <div class="col-6">
+    {{-- <div class="col-6">
         @include('userinterface::components.form',
         [
             'id' => 'password_reset-form'
         ])
-    </div>
+    </div> --}}
 </div>
 
 <script>

@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="w-100 row">
-    <div class="col-6">
+    <div class="col-12">
         <form method="POST" action="{{ route('login') }}" id="login-form" data-recaptcha-action="login">
             @csrf
 
@@ -53,12 +53,12 @@
 
         @include('usermanagement::components.social-login-section')
     </div>
-    <div class="col-6">
+    {{-- <div class="col-6">
         @include('userinterface::components.form',
         [
             'id' => 'login-form'
         ])
-    </div>
+    </div> --}}
     
 </div>
 @endsection

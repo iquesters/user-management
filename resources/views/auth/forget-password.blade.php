@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="w-100 row">
-    <div class="col-6">
+    <div class="col-12">
         <div class="mb-4 text-muted">
             {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
         </div>
@@ -30,12 +30,12 @@
             </div>
         </form>
     </div>
-    <div class="col-6">
+    {{-- <div class="col-6">
         @include('userinterface::components.form',
         [
             'id' => 'password_reset_link-form'
         ])
-    </div>
+    </div> --}}
 </div>
 
 @endsection

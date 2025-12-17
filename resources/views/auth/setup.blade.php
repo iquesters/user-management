@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="w-100 row">
-    <div class="col-6">
+    <div class="col-12">
         <form method="POST" 
             action="{{ route('ui.setup.store') }}" 
             enctype="multipart/form-data"
@@ -38,9 +38,9 @@
             </div>
         </form>
     </div>
-    <div class="col-6">
+    {{-- <div class="col-6">
         @include('userinterface::components.form', ['id' => 'setup-form'])
-    </div>
+    </div> --}}
 </div>
 @endsection
 
