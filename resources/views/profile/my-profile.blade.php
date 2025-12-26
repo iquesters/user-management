@@ -60,7 +60,7 @@ $user_sessions = isset($sessions) ? $sessions : null;
     <div class="card-body px-0 pb-0">
         <div class="row g-2 justify-content-center">
             <div class="col-6 col-sm-6 col-md-3">
-                @include('usermanagement::utils.image-changer', ['options' => $options])
+                @include('userinterface::utils.image-changer', ['options' => $options])
             </div>
             <div class="col-12 col-sm-10 col-md-9">
                 <h2 class="mb-2 fw-bold text-truncate">{{ $user->name }}</h2>
@@ -122,7 +122,7 @@ $user_sessions = isset($sessions) ? $sessions : null;
                 @endphp
                 <p class="mb-1 d-flex align-items-center small">Member since: {{ date_format($user->created_at,"d M, Y") }}</p>
                 <p class="mb-1 d-flex align-items-center small text-truncate">Role(s): {{ $roles->isNotEmpty() && $roles->count() > 0 ? implode(',', $roles->toArray()) : 'unknown' }}</p>
-                <p class="mb-2 d-flex align-items-center small">Status: @include('usermanagement::utils.status',['status'=>$user->status])</p>
+                <p class="mb-2 d-flex align-items-center small">Status: @include('userinterface::utils.status',['status'=>$user->status])</p>
             </div>
         </div>
     </div>
@@ -142,7 +142,7 @@ $user_sessions = isset($sessions) ? $sessions : null;
     <div class="card-body px-0">
         <div class="row row-cols-1 g-2">
             <div class="col offset-md-2 col-md-8">
-                @include('usermanagement::utils.session', ['options' => $user_sessions])
+                @include('userinterface::utils.session', ['options' => $user_sessions])
 
                 <div class="card border-0 mb-3">
                     <div class="card-body">
@@ -233,9 +233,9 @@ Screen: 1600 x 689 -->
 @php
 $options = (object)(['selectable'=>true]);
 @endphp
-{{-- @include('usermanagement::media.parts.library', compact('options')) --}}
-@include('usermanagement::media.parts.dropbox')
-@include('usermanagement::media.parts.remove-image')
+{{-- @include('userinterface::media.parts.library', compact('options')) --}}
+@include('userinterface::media.parts.dropbox')
+@include('userinterface::media.parts.remove-image')
 @endsection
 
 @push('rs-content-prepend')
