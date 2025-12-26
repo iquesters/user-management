@@ -1,7 +1,7 @@
 <?php 
-$options = (object)array(
+$optionsCrop = (object)array(
     'img' => (object)array(
-        'id' => 'image',
+        'id' => 'cropImage',
         'src' => null,
         'alt' => 'Image',
         'width' => '100%',
@@ -174,8 +174,8 @@ $options = (object)array(
         
         <div id="imageWrapper" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
             {{-- <img id="image" src="" alt="" style="max-width: 100%; display: block;"> --}}
-            <div id="imageContainer" style="width: 400px; height: 400px; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;">
-                @include('usermanagement::utils.image', ['options' => $options])
+           <div id="imageContainer" style="width:400px;height:400px;">
+                @include('usermanagement::utils.image', ['options' => $optionsCrop])
             </div>
              <!-- Rotate Button (Crop Button) -->
             <button id="rotateBtn" class="btn btn-outline-dark btn-sm mt-2" style="display: none;">
@@ -207,7 +207,7 @@ $options = (object)array(
 <script>
 // // ---- Crop UI variables and initial values ----
 const imageContainer = document.getElementById('image-container');
-const image = document.getElementById('image');
+const image = document.getElementById('cropImage');
 const cropArea = document.getElementById('crop-area');
 const resizeHandle = document.getElementById('resize-handle');
 const cropBtn = document.getElementById('cropBtn');
