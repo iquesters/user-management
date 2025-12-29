@@ -3,6 +3,7 @@
 namespace Iquesters\UserManagement\Config;
 
 use Iquesters\Foundation\Support\BaseConf;
+use Iquesters\Foundation\Support\ApiConf;
 use Iquesters\Foundation\Enums\Module;
 
 class UserManagementConf extends BaseConf
@@ -22,6 +23,8 @@ class UserManagementConf extends BaseConf
     
     protected RecaptchaConf $recaptcha;
     protected SocialLoginConf $social_login;
+    
+    protected ApiConf $api_conf;
 
     protected function prepareDefault(BaseConf $default_values)
     {
@@ -38,6 +41,10 @@ class UserManagementConf extends BaseConf
 
         $default_values->social_login = new SocialLoginConf();
         $default_values->social_login->prepareDefault($default_values->social_login);
+        
+        $default_values->api_conf = new ApiConf();
+        $default_values->api_conf->prefix = 'user-management'; // Must be auto generated from module enum - the vendor name  
+        $default_values->api_conf->prepareDefault($default_values->api_conf);
     }
 
 
