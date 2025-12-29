@@ -29,9 +29,119 @@ class UserManagementSeeder extends BaseSeeder
     protected array $metas = [
         'module_icon' => 'fas fa-user-gear',
         'module_sidebar_menu' => [
-            ["icon" => "fas fa-users", "label" => "Users", "route" => "users.index"],
-            ["icon" => "fas fa-user-shield", "label" => "Roles", "route" => "roles.index"],
-            ["icon" => "fas fa-shield-alt", "label" => "Permissions", "route" => "permissions.index"]
+            /*
+            |-------------------------------------------------
+            | Users
+            |-------------------------------------------------
+            */
+            [
+                "icon" => "fas fa-users",
+                "label" => "Users",
+                "route" => "ui.list",
+                "table_schema" => [
+                    "slug" => "user-table",
+                    "name" => "Users",
+                    "description" => "Datatable schema for users",
+                    "schema" => [
+                        "entity" => "users",
+                        "dt-options" => [
+                            "columns" => [
+                                ["data" => "id", "title" => "ID", "visible" => true],
+                                [
+                                    "data" => "name",
+                                    "title" => "User Name",
+                                    "visible" => true,
+                                    "link" => true,
+                                    "form-schema-uid" => "user-details"
+                                ],
+                                [
+                                    "data" => "email",
+                                    "title" => "Email",
+                                    "visible" => true
+                                ],
+                                [
+                                    "data" => "meta.registered_at",
+                                    "title" => "Registered At",
+                                    "visible" => true
+                                ],
+                                [
+                                    "data" => "meta.login_ip_address",
+                                    "title" => "Login IP",
+                                    "visible" => true
+                                ],
+                            ],
+                            "options" => [
+                                "pageLength" => 10,
+                                "order" => [[0, "desc"]],
+                                "responsive" => true
+                            ]
+                        ],
+                        "default_view_mode" => "inbox"
+                    ]
+                ]
+            ],
+            /*
+            |-------------------------------------------------
+            | Roles
+            |-------------------------------------------------
+            */
+            [
+                "icon" => "fas fa-user-shield",
+                "label" => "Roles",
+                "route" => "ui.list",
+                "schema" => [
+                    "entity" => "roles",
+                    "dt-options" => [
+                        "columns" => [
+                            ["data" => "id", "title" => "ID", "visible" => true],
+                            [
+                                "data" => "name",
+                                "title" => "Role Name",
+                                "visible" => true,
+                                "link" => true,
+                                "form-schema-uid" => "role-details"
+                            ]
+                        ],
+                        "options" => [
+                            "pageLength" => 10,
+                            "order" => [[0, "desc"]],
+                            "responsive" => true
+                        ]
+                    ],
+                    "default_view_mode" => "inbox"
+                ]
+            ],
+            /*
+            |-------------------------------------------------
+            | Permissions
+            |-------------------------------------------------
+            */
+            [
+                "icon" => "fas fa-shield-alt",
+                "label" => "Permissions",
+                "route" => "ui.list",
+                "schema" => [
+                    "entity" => "permissions",
+                    "dt-options" => [
+                        "columns" => [
+                            ["data" => "id", "title" => "ID", "visible" => true],
+                            [
+                                "data" => "name",
+                                "title" => "Permission Name",
+                                "visible" => true,
+                                "link" => true,
+                                "form-schema-uid" => "permission-details"
+                            ]
+                        ],
+                        "options" => [
+                            "pageLength" => 10,
+                            "order" => [[0, "desc"]],
+                            "responsive" => true
+                        ]
+                    ],
+                    "default_view_mode" => "inbox"
+                ]
+            ]
         ]
     ];
 
