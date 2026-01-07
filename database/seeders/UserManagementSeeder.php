@@ -89,26 +89,31 @@ class UserManagementSeeder extends BaseSeeder
                 "icon" => "fas fa-user-shield",
                 "label" => "Roles",
                 "route" => "ui.list",
-                "schema" => [
-                    "entity" => "roles",
-                    "dt-options" => [
-                        "columns" => [
-                            ["data" => "id", "title" => "ID", "visible" => true],
-                            [
-                                "data" => "name",
-                                "title" => "Role Name",
-                                "visible" => true,
-                                "link" => true,
-                                "form-schema-uid" => "role-details"
+                "table_schema" => [
+                    "slug" => "role-table",
+                    "name" => "Roles",
+                    "description" => "Datatable schema for roles",
+                    "schema" => [
+                        "entity" => "roles",
+                        "dt-options" => [
+                            "columns" => [
+                                ["data" => "id", "title" => "ID", "visible" => true],
+                                [
+                                    "data" => "name",
+                                    "title" => "Role Name",
+                                    "visible" => true,
+                                    "link" => true,
+                                    "form-schema-uid" => "role-details"
+                                ]
+                            ],
+                            "options" => [
+                                "pageLength" => 10,
+                                "order" => [[0, "desc"]],
+                                "responsive" => true
                             ]
                         ],
-                        "options" => [
-                            "pageLength" => 10,
-                            "order" => [[0, "desc"]],
-                            "responsive" => true
-                        ]
-                    ],
-                    "default_view_mode" => "inbox"
+                        "default_view_mode" => "inbox"
+                    ]
                 ]
             ],
             /*
@@ -120,26 +125,31 @@ class UserManagementSeeder extends BaseSeeder
                 "icon" => "fas fa-shield-alt",
                 "label" => "Permissions",
                 "route" => "ui.list",
-                "schema" => [
-                    "entity" => "permissions",
-                    "dt-options" => [
-                        "columns" => [
-                            ["data" => "id", "title" => "ID", "visible" => true],
-                            [
-                                "data" => "name",
-                                "title" => "Permission Name",
-                                "visible" => true,
-                                "link" => true,
-                                "form-schema-uid" => "permission-details"
+                "table_schema" => [
+                    "slug" => "permission-table",
+                    "name" => "Permissions",
+                    "description" => "Datatable schema for permissions",
+                    "schema" => [
+                        "entity" => "permissions",
+                        "dt-options" => [
+                            "columns" => [
+                                ["data" => "id", "title" => "ID", "visible" => true],
+                                [
+                                    "data" => "name",
+                                    "title" => "Permission Name",
+                                    "visible" => true,
+                                    "link" => true,
+                                    "form-schema-uid" => "permission-details"
+                                ]
+                            ],
+                            "options" => [
+                                "pageLength" => 10,
+                                "order" => [[0, "desc"]],
+                                "responsive" => true
                             ]
                         ],
-                        "options" => [
-                            "pageLength" => 10,
-                            "order" => [[0, "desc"]],
-                            "responsive" => true
-                        ]
-                    ],
-                    "default_view_mode" => "inbox"
+                        "default_view_mode" => "inbox"
+                    ]
                 ]
             ]
         ]
