@@ -204,10 +204,15 @@ class ProfileController extends Controller
             $user = Auth::user();
             $userMetas = UserMeta::where('ref_parent', $user->id)->pluck('meta_value', 'meta_key');
 
-            $themes = MasterData::where('parent_id', 4)
-            ->where('status', 'active')
-            ->get(['id', 'key', 'value']);
-            
+            $themeParent = MasterData::where('key', 'theme')
+                ->where('status', 'active')
+                ->first();
+
+            $themes = MasterData::where('parent_id', $themeParent->id)
+                ->where('status', 'active')
+                ->where('key', '!=', 'current_theme')
+                ->get(['id', 'key', 'value']);
+
             return view('usermanagement::profile.profile-setting',compact('user','userMetas','themes'));
         }catch(\Exception $e){
             Log::error('Failed to load profile settings', ['error' => $e->getMessage()]);
