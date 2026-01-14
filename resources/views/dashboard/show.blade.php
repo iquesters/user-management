@@ -23,16 +23,20 @@
         @if ($isOrganisationNeeded)
             <div>
                 <h5 class="fs-6 text-muted">
-                    <i class="fas fa-building me-2"></i>Organisation
+                    <i class="fas fa-building me-2"></i>Organisation(s)
                 </h5>
                 <div>
                     @if($hasOrganisation)
-                        {{ $user->organisations?->toJson() }}
+                        @foreach ($user->organisations as $organisation)
+                            <span class="badge bg-primary me-1 mb-1">
+                                {{ $organisation->name }}
+                            </span>
+                        @endforeach
                         <!-- Show when user has organisations -->
-                        <div class="alert alert-success">
+                        {{-- <div class="alert alert-success">
                             <i class="fas fa-check-circle me-2"></i>
                             You are associated with an organisation.
-                        </div>
+                        </div> --}}
                     @else
                         <!-- Show when user has no organisations -->
                         <div>
