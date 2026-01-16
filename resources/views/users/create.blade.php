@@ -18,6 +18,10 @@
             <div class="card-body">
                 @csrf
 
+                @isset($organisation)
+                    <input type="hidden" name="organisation_uid" value="{{ $organisation->uid }}">
+                @endisset
+
                 <!-- User Name -->
                 <div class="mb-3">
                     <label for="name" class="form-label">Name</label>

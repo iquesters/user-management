@@ -11,6 +11,7 @@ use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 use Exception;
 use Illuminate\Support\Facades\Auth;
+use Iquesters\Organisation\Models\Organisation;
 use Illuminate\Support\Str;
 
 class UserController extends Controller
@@ -96,6 +97,18 @@ class UserController extends Controller
                 //         ->with('success', 'User created and added to organisation successfully.');
                 // }
             // }
+            
+            if ($request->filled('organisation_uid')) {
+                $organisation = Organisation::where('uid', $request->organisation_uid)->first();
+
+                if ($organisation) {
+                    $user->assignOrganisation($organisation);
+
+                    return redirect()
+                        ->route('organisations.users.index', $organisation->uid)
+                        ->with('success', 'User created and added to organisation.');
+                }
+            }
 
             // Default redirect if no organisation context
             return redirect()->route('users.index') // Make sure you have this route defined
