@@ -61,15 +61,22 @@ class UserController extends Controller
                 'password' => ['required', 'string', 'min:8', 'confirmed'],
                 'roles' => ['required', 'array'],
                 // 'organisation_uid' => ['nullable', 'string'], // Add this line
+                'country_code' => ['required','regex:/^\+\d{1,4}$/'],
+                'mobile' => ['required','digits_between:7,15'],
             ]);
 
             Log::debug('Validation passed', ['name' => $validated['name'], 'email' => $validated['email']]);
-
+            
+            // Clean and combine phone
+            $mobile = preg_replace('/\D/', '', $request->mobile);
+            $phone = $request->country_code . $mobile;
+        
             $user = User::create([
                 'uid' => Str::ulid(),
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
+                'phone' => $phone,
             ]);
 
             Log::info('User created successfully', ['id' => $user->id]);
