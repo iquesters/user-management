@@ -9,6 +9,9 @@ class GoogleConf extends OAuthConf
     protected function prepareDefault(BaseConf $default_values)
     {
         $default_values->enabled = true;
+        $default_values->popup_login = false;
+        $default_values->one_tap_enabled = false;
+        $default_values->auto_signin = false;
         $default_values->client_id = '';
         $default_values->client_secret = '';
         $default_values->redirect_url= '';

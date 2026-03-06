@@ -28,6 +28,12 @@ class GoogleController extends Controller
         if ($redirect_url) {
             Session::put('redirect_url', $redirect_url);
         }
+        
+        if ($request->boolean('popup')) {
+            Session::put('google_popup_login', true);
+        } else {
+            Session::forget('google_popup_login');
+        }
 
         $googleProvider = $this->getGoogleProvider();
 
@@ -51,11 +57,18 @@ class GoogleController extends Controller
     /**
      * Handle Google OAuth callback.
      */
-    public function google_callback()
+    public function google_callback(Request $request)
     {
         $googleProvider = $this->getGoogleProvider();
+        $isPopup = Session::pull('google_popup_login', false) || $request->boolean('popup');
 
         if (!$googleProvider || !$googleProvider->enabled) {
+            if ($isPopup) {
+                return response()->view('usermanagement::auth.google-popup-result', [
+                    'success' => false,
+                    'redirectUrl' => route('login'),
+                ]);
+            }
             return redirect()->route('login')->with('error', 'Google login is not configured.');
         }
 
@@ -75,10 +88,23 @@ class GoogleController extends Controller
 
             $user = $this->sync_google_user($googleUser);
             LoginHelper::process_login($user);
+            
+            if ($isPopup) {
+                return response()->view('usermanagement::auth.google-popup-result', [
+                    'success' => true,
+                    'redirectUrl' => $this->resolve_redirect_url_after_login(),
+                ]);
+            }
 
             return $this->redirect_after_login();
         } catch (\Exception $e) {
             Log::error('Google OAuth callback error: ' . $e->getMessage());
+            if ($isPopup) {
+                return response()->view('usermanagement::auth.google-popup-result', [
+                    'success' => false,
+                    'redirectUrl' => route('login'),
+                ]);
+            }
             return redirect()->route('login')->with('error', 'Google login failed.');
         }
     }
@@ -89,8 +115,18 @@ class GoogleController extends Controller
     public function google_onetap_callback(Request $request)
     {
         $googleProvider = $this->getGoogleProvider();
-        if (!$googleProvider || !$googleProvider->enabled) {
+        $oneTapEnabled = (bool) ($googleProvider->one_tap_enabled ?? false);
+
+        if (!$googleProvider || !$googleProvider->enabled || !$oneTapEnabled) {
             return redirect()->back()->with('error', 'Google login not configured.');
+        }
+        
+        if (!class_exists(\Google\Client::class)) {
+            Log::error('Google One Tap failed: google/apiclient package is missing.');
+            return redirect()->back()->with(
+                'error',
+                'Google One Tap dependency missing. Run: composer require google/apiclient'
+            );
         }
 
         $client = new GoogleClient(['client_id' => $googleProvider->client_id]);
@@ -138,7 +174,8 @@ class GoogleController extends Controller
         if (!$user->exists) {
             $user = RegistrationHelper::register_user(
                 name: $googleUser->name,
-                email: $googleUser->email,
+                identifierType: 'email',
+                identifierValue: $googleUser->email,
                 password: null,
                 email_verified: true,
                 meta: [
@@ -174,19 +211,27 @@ class GoogleController extends Controller
      */
     protected function redirect_after_login($redirect_url = null)
     {
+        return redirect($this->resolve_redirect_url_after_login($redirect_url));
+    }
+
+    /**
+     * Resolve URL after login.
+     */
+    protected function resolve_redirect_url_after_login($redirect_url = null)
+    {
         $config = ConfProvider::from(Module::USER_MGMT);
         $defaultRoute = $config->default_auth_route ?? 'dashboard';
         
         $base_url = URL::to('/') . '/';
 
         if ($redirect_url && $redirect_url !== $base_url) {
-            return redirect($redirect_url);
+            return $redirect_url;
         }
 
         if (Session::has('redirect_url')) {
-            return redirect(Session::pull('redirect_url'));
+            return Session::pull('redirect_url');
         }
 
-        return redirect()->route($defaultRoute);
+        return route($defaultRoute);
     }
 }

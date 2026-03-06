@@ -8,7 +8,8 @@
     "spatie/laravel-permission": "^6.16",
     "laravel/socialite": "^5.16",
     "laravel/sanctum": "^4.0",
-    "iquesters/foundation": "^1.0"
+    "iquesters/foundation": "^1.0",
+    "google/apiclient": "^2.18"
   },
   "require-dev": {
     "laravel/pint": "^1.0",
