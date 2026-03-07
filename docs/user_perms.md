@@ -1,7 +1,7 @@
 # User Permissions Documentation
 
 ## 1. Purpose
-The Permissions module controls what actions a user can perform in each module. It helps keep access secure, predictable, and aligned with each user�s responsibility.
+The Permissions module controls what actions a user can perform in each module. It helps keep access secure, predictable, and aligned with each users responsibility.
 
 ## 2. Audience
 This document is for:
