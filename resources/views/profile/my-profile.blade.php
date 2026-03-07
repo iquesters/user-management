@@ -122,7 +122,7 @@ $user_sessions = isset($sessions) ? $sessions : null;
                 @endphp
                 <p class="mb-1 d-flex align-items-center small">Member since: {{ date_format($user->created_at,"d M, Y") }}</p>
                 <p class="mb-1 d-flex align-items-center small text-truncate">Role(s): {{ $roles->isNotEmpty() && $roles->count() > 0 ? implode(',', $roles->toArray()) : 'unknown' }}</p>
-                <p class="mb-2 d-flex align-items-center small">Status: @include('userinterface::utils.status',['status'=>$user->status])</p>
+                <p class="mb-2 d-flex align-items-center small">Status: <x-userinterface::status :status="$user->status" /></p>
             </div>
         </div>
     </div>

@@ -40,6 +40,48 @@
                     @enderror
                 </div>
 
+                <!-- Mobile + Country Code Row -->
+                <div class="mb-3">
+                    <div class="row g-2">
+
+                        <!-- Country Code -->
+                        <div class="col-md-2 col-4">
+                            <label for="country_code" class="form-label">Code</label>
+                            <input type="text"
+                                class="form-control"
+                                id="country_code"
+                                name="country_code"
+                                value="{{ old('country_code', '+91') }}"
+                                placeholder="+91"
+                                inputmode="tel"
+                                required>
+                            @error('country_code')
+                                <span class="text-danger text-sm">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <!-- Mobile -->
+                        <div class="col-md-10 col-8">
+                            <label for="mobile" class="form-label">Mobile Number</label>
+                            <input type="text"
+                                class="form-control"
+                                id="mobile"
+                                name="mobile"
+                                value="{{ old('mobile') }}"
+                                placeholder="Enter mobile number"
+                                inputmode="tel"
+                                required>
+                            <small class="form-text text-muted">
+                                Provide your WhatsApp number in mobile.
+                            </small>
+                            @error('mobile')
+                                <span class="text-danger text-sm">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                    </div>
+                </div>
+
                 <!-- Password -->
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
