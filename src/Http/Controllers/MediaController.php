@@ -124,8 +124,8 @@ class MediaController extends Controller
 
                         UserMeta::updateOrCreate(
                             ['ref_parent' => Auth::user()->id,'meta_key'   => 'profile_picture_path'],
-                            ['meta_value' => "storage/media/",'status'     => 'active']
-                        );
+                            ['meta_value' => asset("storage/media") . "/", 'status' => 'active']
+                         );
                 Log::info("medias=" . $medias);
 
                 if (isset($medias)) {
