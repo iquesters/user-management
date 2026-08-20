@@ -2,11 +2,11 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
+use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\UserManagement\Helpers\RegistrationHelper;
 use Iquesters\UserManagement\Helpers\LoginHelper;
 use Iquesters\UserManagement\Rules\RecaptchaRule;
-use Iquesters\Foundation\Support\ConfProvider;
-use Iquesters\Foundation\Enums\Module;
 use Illuminate\Routing\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -21,8 +21,12 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(): View
+    public function create(): View|RedirectResponse
     {
+        if ((ConfProvider::from(Module::USER_MGMT)->signin_flow ?? 'classic') === 'unified') {
+            return redirect()->route('auth.unified');
+        }
+
         return view('usermanagement::auth.register');
     }
 
@@ -65,7 +69,8 @@ class RegisteredUserController extends Controller
         // Use registration helper
         $user = RegistrationHelper::register_user(
             name: $validated['name'],
-            email: $validated['email'],
+            identifierType: 'email',
+            identifierValue: $validated['email'],
             password: $validated['password'],
             email_verified: false
         );

@@ -10,10 +10,14 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Console\Command;
 use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
+use Iquesters\UserManagement\Contracts\WhatsAppOtpSender;
 use Iquesters\UserManagement\Config\UserManagementConf;
 use Iquesters\UserInterface\Config\UserInterfaceConf;
 use Iquesters\UserInterface\UserInterfaceServiceProvider;
 use Iquesters\UserManagement\Database\Seeders\UserManagementSeeder;
+use Iquesters\UserManagement\Services\EmailOtpSender;
+use Iquesters\UserManagement\Services\FakeWhatsAppOtpSender;
+use Iquesters\UserManagement\Services\MetaWhatsAppOtpSender;
 
 class UserManagementServiceProvider extends ServiceProvider
 {
@@ -21,6 +25,30 @@ class UserManagementServiceProvider extends ServiceProvider
     {
         // Register User Management configuration
         ConfProvider::register(Module::USER_MGMT, UserManagementConf::class);
+        $this->app->singleton(EmailOtpSender::class, function ($app) {
+            Log::info('Resolving email OTP sender implementation.', [
+                'auth_method' => 'email_otp',
+                'operation' => 'resolve_sender',
+                'provider' => 'laravel_mailer',
+            ]);
+
+            return new EmailOtpSender();
+        });
+        $this->app->bind(WhatsAppOtpSender::class, function ($app) {
+            $config = ConfProvider::from(Module::USER_MGMT)->whatsapp_login;
+            $provider = strtolower(trim((string) ($config->delivery_provider ?? 'fake')));
+
+            Log::info('Resolving WhatsApp OTP sender implementation.', [
+                'auth_method' => 'whatsapp_otp',
+                'operation' => 'resolve_sender',
+                'provider' => $provider,
+            ]);
+
+            return match ($provider) {
+                'meta' => $app->make(MetaWhatsAppOtpSender::class),
+                default => $app->make(FakeWhatsAppOtpSender::class),
+            };
+        });
 
         // Register seeder command
         $this->registerSeedCommand();
