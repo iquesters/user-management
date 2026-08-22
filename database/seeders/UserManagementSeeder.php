@@ -4,7 +4,9 @@ namespace Iquesters\UserManagement\Database\Seeders;
 
 use Iquesters\Foundation\Database\Seeders\BaseSeeder;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
@@ -318,7 +320,266 @@ class UserManagementSeeder extends BaseSeeder
      */
     protected function seedCustom(): void
     {
-        // Add custom seeding logic here if needed
-        // Leave empty if none
+        $this->seedAuthFormSchemas();
+    }
+
+    /**
+     * Seed FormSchema records that drive schema-rendered auth forms.
+     * Guarded on form_schemas existing since user-management does not
+     * require iquesters/user-interface.
+     */
+    protected function seedAuthFormSchemas(): void
+    {
+        if (! Schema::hasTable('form_schemas')) {
+            return;
+        }
+
+        $existing = DB::table('form_schemas')->where('slug', 'login-with-password')->first();
+
+        DB::table('form_schemas')->updateOrInsert(
+            ['slug' => 'login-with-password'],
+            [
+                'uid' => $existing->uid ?? (string) Str::ulid(),
+                'name' => 'Login',
+                'description' => 'Classic email/password login form',
+                'schema' => json_encode([
+                    'endpoint' => '/login',
+                    'method' => 'POST',
+                    'allowCancel' => false,
+                    // Top-level allowCancel is only the fallback default; the
+                    // page always resolves to 'edit' mode (no /edit/ /view/
+                    // /delete/ in the URL), and applyModeOverrides() in
+                    // form.js hardcodes allowCancel=true for 'edit' mode
+                    // unless overridden here per-mode.
+                    'modes' => [
+                        'edit' => ['allowCancel' => false],
+                    ],
+                    // Plain 12 (no breakpoint keys) resolves to a single
+                    // col-12 class, i.e. full width at every screen size.
+                    'defaultFieldSize' => 12,
+                    'submitButtonLabel' => 'Log in',
+                    'fields' => [
+                        [
+                            'id' => 'email',
+                            'label' => 'Email',
+                            'type' => 'email',
+                            'required' => true,
+                            'autocomplete' => 'username',
+                            'autofocus' => true,
+                        ],
+                        [
+                            'id' => 'password',
+                            'label' => 'Password',
+                            'type' => 'password',
+                            'required' => true,
+                            'autocomplete' => 'current-password',
+                        ],
+                    ],
+                    // Defining 'actions' at all takes over the whole footer
+                    // (form.js only auto-renders a submit button when
+                    // 'actions' is absent/empty) — so the submit button has
+                    // to be listed explicitly here alongside the links.
+                    // Every action needs a truthy 'route' or addAction() in
+                    // form.js renders nothing at all for it, submit included
+                    // — '#' is a harmless no-op for the submit button itself.
+                    'actions' => [
+                        [
+                            'type' => 'link',
+                            'route' => '/forgot-password',
+                            'text' => 'Forgot password?',
+                            'element' => ['type' => 'a', 'variant' => 'link', 'color' => 'info'],
+                            'row' => 0,
+                        ],
+                        [
+                            'type' => 'link',
+                            'route' => '/register',
+                            'text' => 'Create a new account',
+                            'element' => ['type' => 'a', 'variant' => 'link', 'color' => 'info'],
+                            'row' => 1,
+                        ],
+                        [
+                            'type' => 'submit',
+                            'route' => '#',
+                            'text' => 'Log in',
+                            'element' => ['type' => 'button', 'color' => 'primary'],
+                            'row' => 0,
+                        ],
+                    ],
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'extra_info' => $existing->extra_info ?? null,
+                'status' => 'active',
+                'created_by' => $existing->created_by ?? 0,
+                'updated_by' => 0,
+                'created_at' => $existing->created_at ?? now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        $this->upsertFormSchema('register', 'Register', 'Classic name/email/password registration form', [
+            'endpoint' => '/register',
+            'method' => 'POST',
+            'allowCancel' => false,
+            'modes' => [
+                'edit' => ['allowCancel' => false],
+            ],
+            'defaultFieldSize' => 12,
+            'submitButtonLabel' => 'Register',
+            'fields' => [
+                [
+                    'id' => 'name',
+                    'label' => 'Name',
+                    'type' => 'text',
+                    'required' => true,
+                    'maxLength' => 255,
+                    'autocomplete' => 'name',
+                    'autofocus' => true,
+                ],
+                [
+                    'id' => 'email',
+                    'label' => 'Email',
+                    'type' => 'email',
+                    'required' => true,
+                    'maxLength' => 255,
+                    'autocomplete' => 'username',
+                    'unique_table' => 'users',
+                    'unique_column' => 'email',
+                ],
+                [
+                    'id' => 'password',
+                    'label' => 'Password',
+                    'type' => 'password',
+                    'required' => true,
+                    'minLength' => 8,
+                    'autocomplete' => 'new-password',
+                    'confirmed' => true,
+                    'password_policy' => true,
+                    'password_mixed_case' => true,
+                    'password_numbers' => true,
+                    'password_symbols' => true,
+                ],
+                [
+                    'id' => 'password_confirmation',
+                    'label' => 'Confirm Password',
+                    'type' => 'password',
+                    'required' => true,
+                    'minLength' => 8,
+                    'autocomplete' => 'new-password',
+                    'confirms' => 'password',
+                ],
+            ],
+            'actions' => [
+                [
+                    'type' => 'link',
+                    'route' => '/login',
+                    'text' => 'Already registered?',
+                    'element' => ['type' => 'a', 'variant' => 'link', 'color' => 'info'],
+                    'row' => 0,
+                ],
+                [
+                    'type' => 'submit',
+                    'route' => '#',
+                    'text' => 'Register',
+                    'element' => ['type' => 'button', 'color' => 'primary'],
+                    'row' => 0,
+                ],
+            ],
+        ]);
+
+        $this->upsertFormSchema('password_reset_link-form', 'Forgot Password', 'Request a password reset link by email', [
+            'endpoint' => '/forgot-password',
+            'method' => 'POST',
+            'allowCancel' => false,
+            'modes' => [
+                'edit' => ['allowCancel' => false],
+            ],
+            'defaultFieldSize' => 12,
+            'info' => [
+                'innerHTML' => 'Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.',
+            ],
+            'submitButtonLabel' => 'Send reset link',
+            'fields' => [
+                [
+                    'id' => 'email',
+                    'label' => 'Email',
+                    'type' => 'email',
+                    'required' => true,
+                    'autocomplete' => 'username',
+                    'autofocus' => true,
+                ],
+            ],
+        ]);
+
+        $this->upsertFormSchema('password_reset-form', 'Reset Password', 'Set a new password using a reset token', [
+            'endpoint' => '/reset-password',
+            'method' => 'POST',
+            'allowCancel' => false,
+            'modes' => [
+                'edit' => ['allowCancel' => false],
+            ],
+            'defaultFieldSize' => 12,
+            'submitButtonLabel' => 'Reset Password',
+            'fields' => [
+                [
+                    'id' => 'token',
+                    'type' => 'hidden',
+                    'required' => true,
+                ],
+                [
+                    'id' => 'email',
+                    'label' => 'Email',
+                    'type' => 'email',
+                    'required' => true,
+                    'autocomplete' => 'username',
+                    'autofocus' => true,
+                ],
+                [
+                    'id' => 'password',
+                    'label' => 'Password',
+                    'type' => 'password',
+                    'required' => true,
+                    'minLength' => 8,
+                    'autocomplete' => 'new-password',
+                    'confirmed' => true,
+                    'password_policy' => true,
+                    'password_mixed_case' => true,
+                    'password_numbers' => true,
+                    'password_symbols' => true,
+                ],
+                [
+                    'id' => 'password_confirmation',
+                    'label' => 'Confirm Password',
+                    'type' => 'password',
+                    'required' => true,
+                    'minLength' => 8,
+                    'autocomplete' => 'new-password',
+                    'confirms' => 'password',
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Upsert a single form_schemas row by slug, preserving its uid/audit
+     * fields across re-seeds.
+     */
+    protected function upsertFormSchema(string $slug, string $name, string $description, array $schema): void
+    {
+        $existing = DB::table('form_schemas')->where('slug', $slug)->first();
+
+        DB::table('form_schemas')->updateOrInsert(
+            ['slug' => $slug],
+            [
+                'uid' => $existing->uid ?? (string) Str::ulid(),
+                'name' => $name,
+                'description' => $description,
+                'schema' => json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'extra_info' => $existing->extra_info ?? null,
+                'status' => 'active',
+                'created_by' => $existing->created_by ?? 0,
+                'updated_by' => 0,
+                'created_at' => $existing->created_at ?? now(),
+                'updated_at' => now(),
+            ]
+        );
     }
 }

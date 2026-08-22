@@ -7,17 +7,20 @@ use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\UserManagement\Helpers\RegistrationHelper;
 use Iquesters\UserManagement\Helpers\LoginHelper;
 use Iquesters\UserManagement\Rules\RecaptchaRule;
+use Iquesters\UserManagement\Support\AuthFormSchema;
 use Illuminate\Routing\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
+use Iquesters\Foundation\System\Traits\Loggable;
 
 class RegisteredUserController extends Controller
 {
+    use Loggable;
+
     /**
      * Display the registration view.
      */
@@ -37,14 +40,10 @@ class RegisteredUserController extends Controller
      */
     public function store_old(Request $request): RedirectResponse
     {
-        Log::debug('Registration request received');
         $recaptcha = ConfProvider::from(Module::USER_MGMT)->recaptcha;
         $recaptchaEnabled = $recaptcha ? $recaptcha->enabled : false;
 
-        Log::debug('Registration request received', [
-            'recaptcha_enabled' => $recaptchaEnabled,
-            'recaptcha_config' => $recaptcha
-        ]);
+        $this->logDebug("Registration request received | recaptcha_enabled={$recaptchaEnabled}");
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
@@ -53,18 +52,15 @@ class RegisteredUserController extends Controller
         ];
 
         if ($recaptchaEnabled) {
-            Log::debug('reCAPTCHA validation enabled for registration');
+            $this->logDebug('reCAPTCHA validation enabled for registration');
             $rules['recaptcha_token'] = ['required', new RecaptchaRule('register', 0.5)];
         } else {
-            Log::debug('reCAPTCHA validation disabled for registration');
+            $this->logDebug('reCAPTCHA validation disabled for registration');
         }
 
         $validated = $request->validate($rules);
 
-        Log::debug('Registration validation passed', [
-            'email' => $validated['email'],
-            'has_recaptcha_token' => isset($validated['recaptcha_token'])
-        ]);
+        $this->logDebug("Registration validation passed | email={$validated['email']} | has_recaptcha_token=" . (isset($validated['recaptcha_token']) ? 'true' : 'false'));
 
         // Use registration helper
         $user = RegistrationHelper::register_user(
@@ -86,7 +82,7 @@ class RegisteredUserController extends Controller
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         try {
-            Log::info("Registration API hit");
+            $this->logInfo('Registration API hit');
 
             // ------------------------------------------------
             //Fetch config values
@@ -103,7 +99,7 @@ class RegisteredUserController extends Controller
             $rules = [];
 
             if ($signinIdentifier === 'email') {
-                $rules = [
+                $rules = AuthFormSchema::rules('register') ?? [
                     'name'     => ['required', 'string', 'max:255'],
                     'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
                     'password' => ['required', 'confirmed', Rules\Password::defaults()],
@@ -142,26 +138,31 @@ class RegisteredUserController extends Controller
             );
 
             // ------------------------------------------------
-            // Login automatically (only for web form)
+            // Log the new user in either way; only the response shape differs.
             // ------------------------------------------------
-            if ($request->wantsJson() === false) {
-                LoginHelper::process_login($user);
+            LoginHelper::process_login($user);
 
+            if ($request->wantsJson() === false) {
                 return redirect(route('dashboard', absolute: false));
             }
 
             // ------------------------------------------------
-            // 7️⃣ Return API JSON Response
+            // Schema-rendered forms submit via fetch() expecting JSON with a
+            // 'success' key (see AuthenticatedSessionController::store()) and
+            // navigate themselves using redirect_url.
             // ------------------------------------------------
             return response()->json([
+                'success' => true,
                 'status'  => true,
                 'message' => 'User registered successfully',
                 'data'    => $validated,
+                'redirect_url' => route('dashboard', absolute: false),
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
 
             return response()->json([
+                'success' => false,
                 'status'  => false,
                 'message' => 'Validation failed',
                 'errors'  => $e->errors()
@@ -169,9 +170,10 @@ class RegisteredUserController extends Controller
 
         } catch (\Throwable $e) {
 
-            Log::error('Registration Error: ' . $e->getMessage());
+            $this->logError('Registration Error: ' . $e->getMessage());
 
             return response()->json([
+                'success' => false,
                 'status'  => false,
                 'message' => 'Something went wrong',
                 'error'   => $e->getMessage()
