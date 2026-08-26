@@ -12,7 +12,6 @@ use Iquesters\UserManagement\Http\Controllers\Auth\PasswordResetLinkController;
 use Iquesters\UserManagement\Http\Controllers\Auth\RegisteredUserController;
 use Iquesters\UserManagement\Http\Controllers\Auth\VerifyEmailController;
 use Iquesters\UserManagement\Http\Controllers\Auth\GoogleController;
-use Iquesters\UserManagement\Http\Controllers\Auth\OtpController;
 use Iquesters\UserManagement\Http\Controllers\Auth\SetupController;
 use Iquesters\UserManagement\Http\Controllers\Auth\UnifiedAuthController;
 
@@ -50,14 +49,6 @@ Route::middleware('web')->group(function () {
         Route::get('auth/google/redirect', [GoogleController::class, 'google_redirect'])->name('google.redirect');
         Route::get('auth/google/callback', [GoogleController::class, 'google_callback'])->name('google.callback');
         Route::post('auth/google/onetap', [GoogleController::class, 'google_onetap_callback'])->name('google.onetap');
-
-        // WhatsApp OTP Login Routes
-        Route::post('auth/whatsapp/send-otp', [OtpController::class, 'sendOtp'])->name('whatsapp.otp.send');
-        Route::post('auth/whatsapp/verify-otp', [OtpController::class, 'verifyOtp'])->name('whatsapp.otp.verify');
-        Route::post('auth/whatsapp/resend-otp', [OtpController::class, 'resendOtp'])->name('whatsapp.otp.resend');
-        Route::post('auth/whatsapp/register/send-otp', [OtpController::class, 'sendRegistrationOtp'])->name('whatsapp.register.send');
-        Route::post('auth/whatsapp/register/verify-otp', [OtpController::class, 'verifyRegistrationOtp'])->name('whatsapp.register.verify');
-        Route::post('auth/whatsapp/register/complete', [OtpController::class, 'completeRegistration'])->name('whatsapp.register.complete');
     });
 
     Route::middleware('auth')->group(function () {

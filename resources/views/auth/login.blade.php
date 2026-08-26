@@ -11,7 +11,6 @@
         return $provider->enabled ?? false;
     });
     $hasSocialLogin = ($socialLoginConfig->enabled ?? false) && $socialProviders->isNotEmpty();
-    $hasWhatsAppLogin = ($socialLoginConfig->enabled ?? false) && (bool) (($authConfig->whatsapp_login->enabled ?? false));
     // The schema-driven form column has no recaptcha field yet, so submitting
     // it would always fail validation once recaptcha is turned on. Fall back
     // to the classic form alone until that's built.
@@ -70,68 +69,8 @@
             </form>
         </div>
 
-        <div id="whatsapp-login-panel" class="card border-0 bg-light-subtle d-none">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
-                    <div>
-                        <h6 class="mb-1">Log in with WhatsApp OTP</h6>
-                        <p class="text-muted small mb-0">
-                            Enter your WhatsApp number with country code. If it matches an existing account, we will send a verification code.
-                        </p>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="whatsapp-login-back">
-                        Or use classic method
-                    </button>
-                </div>
-
-                {{-- Intentional inline auth-state structure for the login screen; @todo move the WhatsApp OTP UI behavior into dedicated auth assets later. --}}
-                <form id="whatsapp-otp-form" class="d-grid gap-3">
-                    <div>
-                        <label for="whatsapp-phone" class="form-label">WhatsApp number</label>
-                        <input
-                            id="whatsapp-phone"
-                            name="phone"
-                            type="tel"
-                            class="form-control"
-                            placeholder="+919876543210"
-                            inputmode="tel"
-                            autocomplete="tel"
-                        >
-                    </div>
-
-                    <div id="whatsapp-otp-entry" class="d-none">
-                        <label for="whatsapp-otp" class="form-label">Verification code</label>
-                        <input
-                            id="whatsapp-otp"
-                            name="otp"
-                            type="text"
-                            class="form-control"
-                            placeholder="Enter OTP"
-                            inputmode="numeric"
-                            autocomplete="one-time-code"
-                        >
-                    </div>
-
-                    <div id="whatsapp-otp-feedback" class="small text-muted" aria-live="polite"></div>
-
-                    <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-success" id="whatsapp-send-otp">
-                            Send OTP on WhatsApp
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-success d-none" id="whatsapp-verify-otp">
-                            Verify and log in
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="whatsapp-resend-otp">
-                            Resend OTP
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
         <div id="alternate-auth-options">
-            @if ($hasSocialLogin || $hasWhatsAppLogin)
-                {{-- Shared auth-option divider keeps Google visible first and prevents WhatsApp from visually replacing existing social login. --}}
+            @if ($hasSocialLogin)
                 <div class="d-flex align-items-center my-3">
                     <hr class="flex-grow-1">
                     <span class="mx-2 text-muted">or</span>
@@ -140,7 +79,6 @@
             @endif
 
             @include('usermanagement::components.social-login-section', ['showDivider' => false])
-            @include('usermanagement::components.whatsapp-login-section', ['showDivider' => false])
         </div>
     </div>
     @unless ($recaptchaEnabled)

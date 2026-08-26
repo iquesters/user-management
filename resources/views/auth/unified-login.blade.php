@@ -11,6 +11,18 @@
         return $provider->enabled ?? false;
     });
     $hasSocialLogin = ($socialLoginConfig->enabled ?? false) && $socialProviders->isNotEmpty();
+    // Phone-tab identify only leads somewhere if WhatsApp OTP delivery is
+    // actually configured (OtpService::isChannelEnabled gates send/resend on
+    // this same flag) — without it, a phone-identified user hits a dead end
+    // ("WhatsApp registration is currently unavailable"), so don't offer the
+    // tab at all rather than let them walk into that.
+    $whatsappLoginEnabled = (bool) ($authConfig->whatsapp_login->enabled ?? false);
+    // Identify is the unified flow's entry point — the one a bot would hit
+    // to enumerate identifiers or force OTP sends — so it's gated the same
+    // way LoginRequest gates the password path. The 'unified_identify'
+    // action name here must match IdentifyAuthIdentifierRequest's
+    // RecaptchaRule exactly, or Google's action-mismatch check fails it.
+    $recaptchaEnabled = $authConfig->recaptcha->enabled ?? false;
 @endphp
 
 <div class="w-100 row">
@@ -19,80 +31,67 @@
             <div class="card-body p-4">
                 <div class="mb-4">
                     <h4 class="mb-2">Sign in or create your account</h4>
-                    <p class="text-muted mb-0">Start with your email address or phone number. We will guide you to the right next step.</p>
+                    <p class="text-muted mb-0">
+                        @if($whatsappLoginEnabled)
+                            Start with your email address or phone number. We will guide you to the right next step.
+                        @else
+                            Start with your email address. We will guide you to the right next step.
+                        @endif
+                    </p>
                 </div>
 
                 {{-- Intentional inline unified-auth state machine for the package login screen; @todo move this temporary auth UI behavior into dedicated assets once the shared auth module is extracted. --}}
-                <form id="unified-identify-form" class="d-grid gap-3">
-                    <div>
-                        <label for="unified-country-dial-code" class="form-label">Country code</label>
-                        <select id="unified-country-dial-code" class="form-select" autocomplete="tel-country-code">
-                            @foreach ($countryDialCodes as $countryDialCode)
-                                <option value="{{ $countryDialCode['dial_code'] }}">{{ $countryDialCode['label'] }}</option>
-                            @endforeach
-                        </select>
+                {{-- Only one of identify-wrap / password-section / otp-section / registration-section
+                     is visible at a time — each step replaces the previous one in place, rather than
+                     stacking below it. Feedback text and the reset button sit outside all of them so
+                     they stay visible across every step. --}}
+                <div class="d-grid gap-3" id="unified-identify-wrap">
+                    @if($whatsappLoginEnabled)
+                        <ul class="nav nav-tabs" id="unified-identify-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="unified-tab-email-btn" data-bs-toggle="tab" data-bs-target="#unified-tab-email" type="button" role="tab" aria-controls="unified-tab-email" aria-selected="true">Email</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="unified-tab-phone-btn" data-bs-toggle="tab" data-bs-target="#unified-tab-phone" type="button" role="tab" aria-controls="unified-tab-phone" aria-selected="false">Phone</button>
+                            </li>
+                        </ul>
+                    @endif
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="unified-tab-email" role="tabpanel" aria-labelledby="unified-tab-email-btn">
+                            @include('userinterface::components.form', ['id' => 'unified-identify-email', 'recaptchaAction' => $recaptchaEnabled ? 'unified_identify' : null])
+                        </div>
+                        @if($whatsappLoginEnabled)
+                            <div class="tab-pane fade" id="unified-tab-phone" role="tabpanel" aria-labelledby="unified-tab-phone-btn">
+                                @include('userinterface::components.form', ['id' => 'unified-identify-phone', 'recaptchaAction' => $recaptchaEnabled ? 'unified_identify' : null])
+                            </div>
+                        @endif
                     </div>
+                </div>
 
-                    <div>
-                        <label for="unified-identifier" class="form-label">Email or phone</label>
-                        <input
-                            id="unified-identifier"
-                            type="text"
-                            class="form-control"
-                            placeholder="name@example.com or 9876543210"
-                            autocomplete="username"
-                            autofocus
-                        >
-                    </div>
-
-                    <div id="unified-feedback" class="small text-muted" aria-live="polite"></div>
-
-                    <div class="d-flex gap-2 flex-wrap">
-                        <button type="button" class="btn btn-sm btn-outline-info" id="unified-identify-button">Continue</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="unified-reset-button">Use a different email or phone</button>
-                    </div>
-                </form>
-
-                <div id="unified-password-section" class="d-none mt-4">
+                <div id="unified-password-section" class="d-none">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h6 class="mb-0">Login with password</h6>
                         <button type="button" class="btn btn-sm btn-link p-0 d-none" id="unified-switch-to-otp">Or verify with OTP instead</button>
                     </div>
-                    <form method="POST" action="{{ route('login') }}" id="unified-password-form" data-recaptcha-action="login" class="d-grid gap-3">
-                        @csrf
-                        <input type="hidden" name="email" id="unified-password-email">
-                        <div>
-                            <label for="unified-password" class="form-label">Password</label>
-                            <input id="unified-password" class="form-control" type="password" name="password" autocomplete="current-password">
-                        </div>
-                        @include('usermanagement::components.recaptcha-field')
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a class="text-decoration-none text-info" href="{{ route('password.request') }}">Forgot password?</a>
-                            <button type="submit" class="btn btn-sm btn-outline-info">Log in</button>
-                        </div>
-                    </form>
+
+                    @include('userinterface::components.form', ['id' => 'unified-login-with-password', 'recaptchaAction' => $recaptchaEnabled ? 'login' : null])
                 </div>
 
-                <div id="unified-otp-section" class="d-none mt-4">
+                <div id="unified-otp-section" class="d-none">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h6 class="mb-0">Login or verify with OTP</h6>
                         <button type="button" class="btn btn-sm btn-link p-0 d-none" id="unified-switch-to-password">Or login with password instead</button>
                     </div>
-                    <div class="d-grid gap-3">
-                        <div>
-                            <label for="unified-otp" class="form-label">Verification code</label>
-                            <input id="unified-otp" type="text" class="form-control" placeholder="Enter OTP" inputmode="numeric" autocomplete="one-time-code">
-                        </div>
 
-                        <div class="d-flex gap-2 flex-wrap">
-                            <button type="button" class="btn btn-sm btn-success" id="unified-send-otp-button">Send OTP</button>
-                            <button type="button" class="btn btn-sm btn-outline-success d-none" id="unified-verify-otp-button">Verify OTP</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="unified-resend-otp-button">Resend OTP</button>
-                        </div>
+                    @include('userinterface::components.form', ['id' => 'unified-verify-otp'])
+
+                    <div class="d-flex gap-2 flex-wrap mt-2">
+                        <button type="button" class="btn btn-sm btn-success" id="unified-send-otp-button">Send OTP</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="unified-resend-otp-button">Resend OTP</button>
                     </div>
                 </div>
 
-                <div id="unified-registration-section" class="d-none mt-4">
+                <div id="unified-registration-section" class="d-none">
                     <h6 class="mb-2">Complete your registration</h6>
                     <form id="unified-registration-form" class="d-grid gap-3">
                         <div id="unified-registration-fields" class="d-grid gap-3"></div>
@@ -100,6 +99,12 @@
                             <button type="button" class="btn btn-sm btn-primary" id="unified-complete-registration-button">Create account</button>
                         </div>
                     </form>
+                </div>
+
+                <div id="unified-feedback" class="small text-muted mt-3" aria-live="polite"></div>
+
+                <div class="d-flex gap-2 flex-wrap mt-3">
+                    <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="unified-reset-button">Use a different email or phone</button>
                 </div>
             </div>
         </div>
@@ -117,27 +122,24 @@
         // @todo Move the temporary unified auth JavaScript into dedicated auth assets when the package auth UI module is extracted.
         document.addEventListener('DOMContentLoaded', function () {
             const csrfToken = @json(csrf_token());
+            const whatsappLoginEnabled = @json($whatsappLoginEnabled);
+            // 'identify' and 'verifyOtp' aren't listed here — both forms now
+            // carry their own endpoint from the schema (unified-identify-*/
+            // unified-verify-otp), not this object.
             const endpoints = {
                 country: @json(route('auth.unified.country')),
-                identify: @json(route('auth.unified.identify')),
                 sendOtp: @json(route('auth.unified.otp.send')),
-                verifyOtp: @json(route('auth.unified.otp.verify')),
                 resendOtp: @json(route('auth.unified.otp.resend')),
                 completeRegistration: @json(route('auth.unified.register.complete'))
             };
 
             const elements = {
-                countryDialCode: document.getElementById('unified-country-dial-code'),
-                identifier: document.getElementById('unified-identifier'),
+                identifyWrap: document.getElementById('unified-identify-wrap'),
                 feedback: document.getElementById('unified-feedback'),
-                identifyButton: document.getElementById('unified-identify-button'),
                 resetButton: document.getElementById('unified-reset-button'),
                 passwordSection: document.getElementById('unified-password-section'),
-                passwordEmail: document.getElementById('unified-password-email'),
                 otpSection: document.getElementById('unified-otp-section'),
-                otpInput: document.getElementById('unified-otp'),
                 sendOtpButton: document.getElementById('unified-send-otp-button'),
-                verifyOtpButton: document.getElementById('unified-verify-otp-button'),
                 resendOtpButton: document.getElementById('unified-resend-otp-button'),
                 switchToOtpButton: document.getElementById('unified-switch-to-otp'),
                 switchToPasswordButton: document.getElementById('unified-switch-to-password'),
@@ -146,6 +148,53 @@
                 registrationFields: document.getElementById('unified-registration-fields'),
                 completeRegistrationButton: document.getElementById('unified-complete-registration-button')
             };
+
+            // The identifier input now comes from whichever schema-rendered
+            // tab form (#unified-identify-email / #unified-identify-phone)
+            // is currently active — resolved by [name=...] on demand instead
+            // of cached, since each form renders asynchronously after its
+            // own schema fetch. country_dial_code is a real SELECT rendered
+            // inside the phone tab's own schema form, so it no longer needs
+            // external syncing.
+            function getActiveIdentifyFormId() {
+                const activePane = document.querySelector('#unified-identify-wrap .tab-pane.active');
+                const form = activePane && activePane.querySelector('form[id^="unified-identify-"]');
+                return form ? form.id : null;
+            }
+
+            function getIdentifierInput(formId) {
+                const targetFormId = formId || getActiveIdentifyFormId();
+                return targetFormId
+                    ? document.querySelector('#' + targetFormId + ' [name="identifier"]')
+                    : null;
+            }
+
+            // The verify-OTP card is its own schema form (#unified-verify-otp),
+            // separate from the identify tabs — resolved the same on-demand
+            // way as the identifier inputs.
+            function getVerifyOtpInput() {
+                return document.querySelector('#unified-verify-otp [name="otp"]');
+            }
+
+            // Generic setter for a field inside a schema-rendered form that
+            // may not exist yet (schema fetch/render is async) — retries
+            // briefly instead of giving up. Used for the phone tab's
+            // country_dial_code SELECT (default from IP lookup) and the
+            // verify-OTP form's hidden flow/identifier fields (populated
+            // once the identify step resolves).
+            function setSchemaFieldValue(formId, fieldName, value, attemptsRemaining) {
+                const input = document.querySelector('#' + formId + ' [name="' + fieldName + '"]');
+                if (input) {
+                    input.value = value;
+                    return;
+                }
+
+                if ((attemptsRemaining || 0) > 0) {
+                    window.setTimeout(function () {
+                        setSchemaFieldValue(formId, fieldName, value, attemptsRemaining - 1);
+                    }, 200);
+                }
+            }
 
             const state = {
                 flowToken: null,
@@ -198,7 +247,6 @@
 
             function setOtpDispatched(isDispatched) {
                 elements.sendOtpButton.classList.toggle('d-none', isDispatched);
-                elements.verifyOtpButton.classList.toggle('d-none', !isDispatched);
                 elements.resendOtpButton.classList.toggle('d-none', !isDispatched);
             }
 
@@ -209,17 +257,24 @@
                 elements.switchToOtpButton.classList.add('d-none');
                 elements.switchToPasswordButton.classList.add('d-none');
                 elements.registrationFields.innerHTML = '';
-                elements.otpInput.value = '';
+
+                const otpInput = getVerifyOtpInput();
+                if (otpInput) {
+                    otpInput.value = '';
+                }
+
                 state.otpSent = false;
                 setOtpDispatched(false);
             }
 
             function showPasswordPanel() {
+                elements.identifyWrap.classList.add('d-none');
                 elements.passwordSection.classList.remove('d-none');
                 elements.otpSection.classList.add('d-none');
             }
 
             function showOtpPanel() {
+                elements.identifyWrap.classList.add('d-none');
                 elements.otpSection.classList.remove('d-none');
                 setOtpDispatched(state.otpSent);
                 elements.passwordSection.classList.add('d-none');
@@ -237,13 +292,23 @@
                 state.status = null;
                 state.hasPasswordOption = false;
                 resetPanels();
+                elements.identifyWrap.classList.remove('d-none');
                 setFeedback('', 'muted');
                 elements.resetButton.classList.add('d-none');
-                elements.identifyButton.classList.remove('d-none');
-                elements.identifier.disabled = false;
-                elements.countryDialCode.disabled = false;
-                elements.identifier.value = '';
-                elements.identifier.focus();
+
+                ['unified-identify-email', 'unified-identify-phone'].forEach(function (formId) {
+                    const input = getIdentifierInput(formId);
+                    if (input) {
+                        input.disabled = false;
+                        input.value = '';
+                    }
+                });
+
+                const activeInput = getIdentifierInput();
+                if (activeInput) {
+                    activeInput.focus();
+                }
+
                 log('info', 'Unified auth state reset.', {});
             }
 
@@ -329,6 +394,11 @@
             }
 
             async function detectCountry() {
+                if (!whatsappLoginEnabled) {
+                    // No phone tab rendered in this case — nothing to set.
+                    return;
+                }
+
                 try {
                     const response = await fetch(endpoints.country, {
                         headers: { 'Accept': 'application/json' }
@@ -336,7 +406,7 @@
                     const data = await response.json();
 
                     if (data && data.dial_code) {
-                        elements.countryDialCode.value = data.dial_code;
+                        setSchemaFieldValue('unified-identify-phone', 'country_dial_code', data.dial_code, 15);
                         log('info', 'Loaded default country dial code.', data);
                     }
                 } catch (error) {
@@ -344,55 +414,59 @@
                 }
             }
 
-            async function identify() {
-                const identifier = elements.identifier.value.trim();
+            // Submission itself is now handled by the schema engine (each
+            // tab's own form POSTing to /auth/identify, with its own loading
+            // state and inline validation errors) — this only reacts to the
+            // *result*, via the lab-form:submitted event, since that response
+            // is flow state (existing vs new, available login methods) the
+            // engine has no way to act on by itself.
+            function handleIdentifySubmitted(response, formId) {
+                const data = (response && response.data) || response || {};
 
-                if (!identifier) {
-                    setFeedback('Enter your email address or phone number first.', 'error');
+                if (!data.flow_token) {
+                    // A non-2xx/parse-failure case reaches here too (the
+                    // engine already rendered its own inline error) — nothing
+                    // useful to branch on.
                     return;
                 }
 
-                setLoading(elements.identifyButton, true, 'Checking...');
-                setFeedback('Checking your account details.', 'muted');
                 resetPanels();
 
-                try {
-                    const data = await postJson(endpoints.identify, {
-                        identifier: identifier,
-                        country_dial_code: elements.countryDialCode.value
-                    });
+                state.identifierType = data.identifier_type;
+                state.flowToken = data.flow_token;
+                state.identifier = data.normalized_identifier;
+                state.deliveryChannel = data.delivery_channel;
+                state.status = data.status;
+                state.hasPasswordOption = (data.available_login_methods || []).includes('password') && Boolean(data.password_login_email);
 
-                    state.identifierType = data.identifier_type;
-                    state.flowToken = data.flow_token;
-                    state.identifier = data.normalized_identifier;
-                    state.deliveryChannel = data.delivery_channel;
-                    state.status = data.status;
-                    state.hasPasswordOption = (data.available_login_methods || []).includes('password') && Boolean(data.password_login_email);
+                // The verify-OTP form's flow_token/identifier_type/identifier/
+                // delivery_channel are hidden fields — VerifyIdentifierOtpRequest
+                // requires all four alongside the otp digits, but only the
+                // identify step's response tells us their values.
+                setSchemaFieldValue('unified-verify-otp', 'flow_token', state.flowToken, 20);
+                setSchemaFieldValue('unified-verify-otp', 'identifier_type', state.identifierType, 20);
+                setSchemaFieldValue('unified-verify-otp', 'identifier', state.identifier, 20);
+                setSchemaFieldValue('unified-verify-otp', 'delivery_channel', state.deliveryChannel, 20);
 
-                    elements.resetButton.classList.remove('d-none');
-                    elements.identifyButton.classList.add('d-none');
-                    elements.identifier.disabled = true;
-                    elements.countryDialCode.disabled = true;
-
-                    if (state.hasPasswordOption) {
-                        elements.passwordEmail.value = data.password_login_email;
-                        elements.switchToOtpButton.classList.remove('d-none');
-                        elements.switchToPasswordButton.classList.remove('d-none');
-                        showPasswordPanel();
-                    } else {
-                        showOtpPanel();
-                    }
-
-                    setFeedback(data.status === 'existing'
-                        ? 'Account found. Continue with password or request an OTP.'
-                        : 'No account found yet. Verify this identifier to create one.', 'success');
-                    log('info', 'Unified auth identifier resolved.', data);
-                } catch (error) {
-                    setFeedback(error.message || 'Unable to process that identifier right now.', 'error');
-                    log('error', 'Unified auth identify failed.', { error: error.message || 'unknown_error' });
-                } finally {
-                    setLoading(elements.identifyButton, false, 'Checking...');
+                elements.resetButton.classList.remove('d-none');
+                const identifierInput = getIdentifierInput(formId);
+                if (identifierInput) {
+                    identifierInput.disabled = true;
                 }
+
+                if (state.hasPasswordOption) {
+                    setSchemaFieldValue('unified-login-with-password', 'email', data.password_login_email, 20);
+                    elements.switchToOtpButton.classList.remove('d-none');
+                    elements.switchToPasswordButton.classList.remove('d-none');
+                    showPasswordPanel();
+                } else {
+                    showOtpPanel();
+                }
+
+                setFeedback(data.status === 'existing'
+                    ? 'Account found. Continue with password or request an OTP.'
+                    : 'No account found yet. Verify this identifier to create one.', 'success');
+                log('info', 'Unified auth identifier resolved.', data);
             }
 
             async function sendOtp(url, operation) {
@@ -410,7 +484,10 @@
                     state.otpSent = true;
                     setOtpDispatched(true);
                     startCooldown(Number(data.cooldown_seconds || 60));
-                    elements.otpInput.focus();
+                    const otpInput = getVerifyOtpInput();
+                    if (otpInput) {
+                        otpInput.focus();
+                    }
                     log('info', 'Unified auth OTP dispatched.', { operation: operation });
                 } catch (error) {
                     setFeedback(error.message || 'Unable to send a verification code right now.', 'error');
@@ -421,38 +498,23 @@
                 }
             }
 
-            async function verifyOtp() {
-                const otp = elements.otpInput.value.trim();
+            // Submission itself is now handled by the schema engine (the
+            // #unified-verify-otp form's own POST to /auth/unified/otp/verify,
+            // with its own loading state and inline validation errors) — this
+            // only reacts to the *result*. A redirect_url in the response
+            // (existing-user login) is already followed automatically by the
+            // engine itself; this only needs to handle the non-redirect
+            // "verified, now complete registration" branch.
+            function handleVerifyOtpSubmitted(response) {
+                const data = (response && response.data) || response || {};
 
-                if (!otp) {
-                    setFeedback('Enter the verification code first.', 'error');
-                    return;
+                if (data.requires_registration_fields) {
+                    renderRegistrationFields(data.fields || []);
+                    elements.registrationSection.classList.remove('d-none');
                 }
 
-                setLoading(elements.verifyOtpButton, true, 'Verifying...');
-                setFeedback('Verifying your code.', 'muted');
-
-                try {
-                    const data = await postJson(endpoints.verifyOtp, Object.assign({}, otpPayload(), { otp: otp }));
-
-                    if (data.redirect_url) {
-                        window.location.href = data.redirect_url;
-                        return;
-                    }
-
-                    if (data.requires_registration_fields) {
-                        renderRegistrationFields(data.fields || []);
-                        elements.registrationSection.classList.remove('d-none');
-                    }
-
-                    setFeedback(data.message || 'Verification successful.', 'success');
-                    log('info', 'Unified auth OTP verification succeeded.', data);
-                } catch (error) {
-                    setFeedback(error.message || 'Verification failed.', 'error');
-                    log('warn', 'Unified auth OTP verification failed.', { error: error.message || 'unknown_error' });
-                } finally {
-                    setLoading(elements.verifyOtpButton, false, 'Verifying...');
-                }
+                setFeedback(data.message || 'Verification successful.', 'success');
+                log('info', 'Unified auth OTP verification succeeded.', data);
             }
 
             async function completeRegistration() {
@@ -488,14 +550,21 @@
                 }
             }
 
-            elements.identifyButton.addEventListener('click', identify);
             elements.resetButton.addEventListener('click', resetState);
             elements.switchToOtpButton.addEventListener('click', showOtpPanel);
             elements.switchToPasswordButton.addEventListener('click', showPasswordPanel);
             elements.sendOtpButton.addEventListener('click', function () { sendOtp(endpoints.sendOtp, 'send'); });
             elements.resendOtpButton.addEventListener('click', function () { sendOtp(endpoints.resendOtp, 'resend'); });
-            elements.verifyOtpButton.addEventListener('click', verifyOtp);
             elements.completeRegistrationButton.addEventListener('click', completeRegistration);
+
+            window.addEventListener('lab-form:submitted', function (event) {
+                const formId = event.detail && event.detail.formId;
+                if (formId === 'unified-identify-email' || formId === 'unified-identify-phone') {
+                    handleIdentifySubmitted(event.detail.response, formId);
+                } else if (formId === 'unified-verify-otp') {
+                    handleVerifyOtpSubmitted(event.detail.response);
+                }
+            });
 
             detectCountry();
         });

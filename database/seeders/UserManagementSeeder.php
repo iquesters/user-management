@@ -556,6 +556,173 @@ class UserManagementSeeder extends BaseSeeder
                 ],
             ],
         ]);
+
+        // Two tabs, two independent schemas — both render + submit through
+        // the generic engine, both post to the same /auth/identify (the
+        // controller doesn't need to guess email-vs-phone since the active
+        // tab already tells it via which schema/fields were submitted).
+        // The response still needs custom handling either way — it returns
+        // flow state (existing vs new, available login methods) for the
+        // page's JS to branch on (show password vs OTP panel), not a
+        // redirect_url the engine could act on by itself — wired via the
+        // lab-form:submitted event instead of the engine's defaults.
+        $identifyCommon = [
+            'endpoint' => '/auth/identify',
+            'method' => 'POST',
+            'allowCancel' => false,
+            'modes' => [
+                'edit' => ['allowCancel' => false],
+            ],
+            'defaultFieldSize' => 12,
+            'submitButtonLabel' => 'Continue',
+            // The page's own lab-form:submitted handler drives the next
+            // panel — a generic "submitted successfully" snackbar on top of
+            // that would just be redundant/confusing.
+            'disableSnackbar' => true,
+        ];
+
+        $this->upsertFormSchema('unified-identify-email', 'Unified Sign-in — Email', 'Identifier-first login/registration entry step (email tab)', $identifyCommon + [
+            'fields' => [
+                [
+                    'id' => 'identifier',
+                    'label' => 'Email address',
+                    'type' => 'email',
+                    'required' => true,
+                    'minLength' => 3,
+                    'maxLength' => 255,
+                    'placeholder' => 'name@example.com',
+                    'autocomplete' => 'username',
+                    'autofocus' => true,
+                ],
+            ],
+        ]);
+
+        // Small, static list (matches IdentifierResolverService::getCountryDialCodes())
+        // — worth embedding directly rather than fetching separately, since
+        // the list itself never changes, only the auto-detected default
+        // selection does (synced in via JS after the IP-lookup resolves).
+        $countryDialCodeOptions = [
+            ['value' => '+1', 'label' => 'United States (+1)'],
+            ['value' => '+1', 'label' => 'Canada (+1)'],
+            ['value' => '+44', 'label' => 'United Kingdom (+44)'],
+            ['value' => '+91', 'label' => 'India (+91)'],
+            ['value' => '+61', 'label' => 'Australia (+61)'],
+            ['value' => '+971', 'label' => 'United Arab Emirates (+971)'],
+            ['value' => '+880', 'label' => 'Bangladesh (+880)'],
+            ['value' => '+49', 'label' => 'Germany (+49)'],
+            ['value' => '+33', 'label' => 'France (+33)'],
+            ['value' => '+81', 'label' => 'Japan (+81)'],
+            ['value' => '+254', 'label' => 'Kenya (+254)'],
+            ['value' => '+234', 'label' => 'Nigeria (+234)'],
+            ['value' => '+92', 'label' => 'Pakistan (+92)'],
+            ['value' => '+65', 'label' => 'Singapore (+65)'],
+            ['value' => '+27', 'label' => 'South Africa (+27)'],
+        ];
+
+        $this->upsertFormSchema('unified-identify-phone', 'Unified Sign-in — Phone', 'Identifier-first login/registration entry step (phone tab)', $identifyCommon + [
+            'fields' => [
+                [
+                    'id' => 'country_dial_code',
+                    'label' => 'Country code',
+                    'type' => 'select',
+                    'required' => false,
+                    'options' => $countryDialCodeOptions,
+                ],
+                [
+                    'id' => 'identifier',
+                    'label' => 'Phone number',
+                    'type' => 'tel',
+                    'required' => true,
+                    'minLength' => 3,
+                    'maxLength' => 255,
+                    'placeholder' => '9876543210',
+                    'autocomplete' => 'tel',
+                ],
+            ],
+        ]);
+
+        // Verify-OTP is its own schema/card, deliberately separate from the
+        // two identify tabs above — flow_token/identifier_type/identifier/
+        // delivery_channel are carried as hidden fields, populated by JS
+        // from the identify step's response (VerifyIdentifierOtpRequest
+        // requires all four alongside otp). Send/Resend stay custom buttons
+        // outside this form — their auto-trigger/cooldown behavior doesn't
+        // map onto the generic submit-button engine.
+        $this->upsertFormSchema('unified-verify-otp', 'Unified Sign-in — Verify OTP', 'Identifier-first login/registration OTP verification step', [
+            'endpoint' => '/auth/otp/verify',
+            'method' => 'POST',
+            'allowCancel' => false,
+            'modes' => [
+                'edit' => ['allowCancel' => false],
+            ],
+            'defaultFieldSize' => 12,
+            'submitButtonLabel' => 'Verify OTP',
+            'disableSnackbar' => true,
+            'fields' => [
+                ['id' => 'flow_token', 'type' => 'hidden', 'required' => true],
+                ['id' => 'identifier_type', 'type' => 'hidden', 'required' => true],
+                ['id' => 'identifier', 'type' => 'hidden', 'required' => true],
+                ['id' => 'delivery_channel', 'type' => 'hidden', 'required' => true],
+                [
+                    'id' => 'otp',
+                    'label' => 'Verification code',
+                    'type' => 'text',
+                    'required' => true,
+                    'minLength' => 4,
+                    'maxLength' => 8,
+                    'placeholder' => 'Enter OTP',
+                    'autocomplete' => 'one-time-code',
+                    'autofocus' => true,
+                ],
+            ],
+        ]);
+
+        // The unified flow's password step for an already-identified,
+        // already-has-a-password account. Posts to the same /login as
+        // classic — LoginRequest's rules always come from the
+        // 'login-with-password' schema regardless of which rendered form
+        // submitted the request, so this one only needs to render
+        // correctly. email is hidden/pre-filled by JS from the identify
+        // step's response (setSchemaFieldValue) rather than user-editable,
+        // since the identifier is already locked in by that point.
+        $this->upsertFormSchema('unified-login-with-password', 'Unified Sign-in — Password', 'Password login step for an already-identified unified sign-in flow', [
+            'endpoint' => '/login',
+            'method' => 'POST',
+            'allowCancel' => false,
+            'modes' => [
+                'edit' => ['allowCancel' => false],
+            ],
+            'defaultFieldSize' => 12,
+            'submitButtonLabel' => 'Log in',
+            'disableSnackbar' => true,
+            'fields' => [
+                ['id' => 'email', 'type' => 'hidden', 'required' => true],
+                [
+                    'id' => 'password',
+                    'label' => 'Password',
+                    'type' => 'password',
+                    'required' => true,
+                    'autocomplete' => 'current-password',
+                    'autofocus' => true,
+                ],
+            ],
+            'actions' => [
+                [
+                    'type' => 'link',
+                    'route' => '/forgot-password',
+                    'text' => 'Forgot password?',
+                    'element' => ['type' => 'a', 'variant' => 'link', 'color' => 'info'],
+                    'row' => 0,
+                ],
+                [
+                    'type' => 'submit',
+                    'route' => '#',
+                    'text' => 'Log in',
+                    'element' => ['type' => 'button', 'color' => 'primary'],
+                    'row' => 0,
+                ],
+            ],
+        ]);
     }
 
     /**
