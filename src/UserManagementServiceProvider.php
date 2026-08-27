@@ -16,7 +16,6 @@ use Iquesters\UserInterface\Config\UserInterfaceConf;
 use Iquesters\UserInterface\UserInterfaceServiceProvider;
 use Iquesters\UserManagement\Database\Seeders\UserManagementSeeder;
 use Iquesters\UserManagement\Services\EmailOtpSender;
-use Iquesters\UserManagement\Services\FakeWhatsAppOtpSender;
 use Iquesters\UserManagement\Services\MetaWhatsAppOtpSender;
 
 class UserManagementServiceProvider extends ServiceProvider
@@ -36,7 +35,7 @@ class UserManagementServiceProvider extends ServiceProvider
         });
         $this->app->bind(WhatsAppOtpSender::class, function ($app) {
             $config = ConfProvider::from(Module::USER_MGMT)->whatsapp_login;
-            $provider = strtolower(trim((string) ($config->delivery_provider ?? 'fake')));
+            $provider = strtolower(trim((string) ($config->delivery_provider ?? '')));
 
             Log::info('Resolving WhatsApp OTP sender implementation.', [
                 'auth_method' => 'whatsapp_otp',
@@ -44,10 +43,14 @@ class UserManagementServiceProvider extends ServiceProvider
                 'provider' => $provider,
             ]);
 
-            return match ($provider) {
-                'meta' => $app->make(MetaWhatsAppOtpSender::class),
-                default => $app->make(FakeWhatsAppOtpSender::class),
-            };
+            // Meta is the only supported delivery provider — fail loudly on
+            // anything else (blank/misconfigured value included) instead of
+            // silently faking OTP sends that never actually reach a user.
+            if ($provider !== 'meta') {
+                throw new \RuntimeException("Unsupported WhatsApp delivery_provider: '{$provider}'. Only 'meta' is supported.");
+            }
+
+            return $app->make(MetaWhatsAppOtpSender::class);
         });
 
         // Register seeder command
