@@ -14,20 +14,33 @@
     $activeProviders = collect($providers)->filter(function ($provider) {
         // Some of your config objects use ->enabled instead of ->isEnabled()
         return $provider->enabled ?? false;
-    });
+    })->map(function ($provider, $name) {
+        $providerName = is_string($name) ? $name : ($provider->identifier ?? null);
+
+        return [
+            'name' => $providerName,
+            'config' => $provider,
+        ];
+    })->filter(function ($providerData) {
+        return !empty($providerData['name']);
+    })->unique('name')->values();
+
+    $showDivider = $showDivider ?? true;
 @endphp
 
 @if ($socialEnabled && $activeProviders->isNotEmpty())
-    <div class="d-flex align-items-center my-3">
-        <hr class="flex-grow-1">
-        <span class="mx-2 text-muted">or</span>
-        <hr class="flex-grow-1">
-    </div>
+    @if ($showDivider)
+        <div class="d-flex align-items-center my-3">
+            <hr class="flex-grow-1">
+            <span class="mx-2 text-muted">or</span>
+            <hr class="flex-grow-1">
+        </div>
+    @endif
 
-    @foreach ($activeProviders as $name => $provider)
-        @includeIf("usermanagement::components.signin-with-{$name}-button", [
-            'provider' => $name,
-            'config'   => $provider,
+    @foreach ($activeProviders as $providerData)
+        @includeIf("usermanagement::components.signin-with-{$providerData['name']}-button", [
+            'provider' => $providerData['name'],
+            'config'   => $providerData['config'],
         ])
     @endforeach
 @endif

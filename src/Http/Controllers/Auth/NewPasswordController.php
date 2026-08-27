@@ -3,9 +3,11 @@
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
 use Iquesters\UserManagement\Rules\RecaptchaRule;
+use Iquesters\UserManagement\Support\AuthFormSchema;
 use Illuminate\Routing\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -31,17 +33,17 @@ class NewPasswordController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
-        $rules = [
+        $rules = AuthFormSchema::rules('password_reset-form') ?? [
             'token' => ['required'],
             'email' => ['required', 'email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ];
-        
+
         $recaptcha = ConfProvider::from(Module::USER_MGMT)->recaptcha;
         $recaptchaEnabled = $recaptcha ? $recaptcha->enabled : false;
-        
+
         if ($recaptchaEnabled) {
             $rules['recaptcha_token'] = ['required', new RecaptchaRule('password_reset', 0.5)];
         }
@@ -60,7 +62,21 @@ class NewPasswordController extends Controller
             }
         );
 
-        return $status === Password::PASSWORD_RESET
+        $reset = $status === Password::PASSWORD_RESET;
+
+        // Schema-rendered forms submit via fetch() expecting JSON, not a
+        // redirect (which fetch would follow silently without navigating or
+        // surfacing the message). Classic form POSTs are unaffected.
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => $reset,
+                'message' => __($status),
+                'errors' => $reset ? null : ['email' => [__($status)]],
+                'redirect_url' => $reset ? route('login') : null,
+            ], $reset ? 200 : 422);
+        }
+
+        return $reset
             ? redirect()->route('login')->with('status', __($status))
             : back()->withInput($request->only('email'))
                 ->withErrors(['email' => __($status)]);

@@ -1,8 +1,17 @@
 @extends(app('auth.layout'))
 
 @section('content')
+@php
+    use Iquesters\Foundation\Enums\Module;
+    use Iquesters\Foundation\Support\ConfProvider;
+
+    // The schema-driven form column has no recaptcha field yet, so submitting
+    // it would always fail validation once recaptcha is turned on. Fall back
+    // to the classic form alone until that's built.
+    $recaptchaEnabled = ConfProvider::from(Module::USER_MGMT)->recaptcha->enabled ?? false;
+@endphp
 <div class="w-100 row">
-    <div class="col-12">
+    <div class="col-6">
         <form method="POST" action="{{ route('password.store') }}" id="passwordResetForm" data-recaptcha-action="password_reset">
             @csrf
 
@@ -65,12 +74,18 @@
             </div>
         </form>
     </div>
-    {{-- <div class="col-6">
+    @unless ($recaptchaEnabled)
+    <div class="col-6">
         @include('userinterface::components.form',
         [
-            'id' => 'password_reset-form'
+            'id' => 'password_reset-form',
+            'formData' => json_encode([
+                'token' => $request->route('token'),
+                'email' => $request->email,
+            ]),
         ])
-    </div> --}}
+    </div>
+    @endunless
 </div>
 
 <script>

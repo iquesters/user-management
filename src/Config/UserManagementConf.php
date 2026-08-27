@@ -19,10 +19,12 @@ class UserManagementConf extends BaseConf
     protected string $default_auth_route;
     protected string $organisation_needed;
     protected string $signin_identifier;
+    protected string $signin_flow;
 
-    
     protected RecaptchaConf $recaptcha;
     protected SocialLoginConf $social_login;
+    protected WhatsAppLoginConf $whatsapp_login;
+    protected RegistrationFieldsConf $registration_fields;
     
     protected ApiConf $api_conf;
 
@@ -35,12 +37,19 @@ class UserManagementConf extends BaseConf
         $default_values->default_auth_route = 'dashboard';
         $default_values->organisation_needed = false;
         $default_values->signin_identifier = 'email';
+        $default_values->signin_flow = 'classic';
 
         $default_values->recaptcha = new RecaptchaConf();
         $default_values->recaptcha->prepareDefault($default_values->recaptcha);
 
         $default_values->social_login = new SocialLoginConf();
         $default_values->social_login->prepareDefault($default_values->social_login);
+
+        $default_values->whatsapp_login = new WhatsAppLoginConf();
+        $default_values->whatsapp_login->prepareDefault($default_values->whatsapp_login);
+
+        $default_values->registration_fields = new RegistrationFieldsConf();
+        $default_values->registration_fields->prepareDefault($default_values->registration_fields);
         
         $default_values->api_conf = new ApiConf();
         $default_values->api_conf->prefix = 'user-management'; // Must be auto generated from module enum - the vendor name  

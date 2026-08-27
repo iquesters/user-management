@@ -13,6 +13,7 @@ use Iquesters\UserManagement\Http\Controllers\Auth\RegisteredUserController;
 use Iquesters\UserManagement\Http\Controllers\Auth\VerifyEmailController;
 use Iquesters\UserManagement\Http\Controllers\Auth\GoogleController;
 use Iquesters\UserManagement\Http\Controllers\Auth\SetupController;
+use Iquesters\UserManagement\Http\Controllers\Auth\UnifiedAuthController;
 
 use Iquesters\UserManagement\Http\Controllers\ProfileController;
 use Iquesters\UserManagement\Http\Controllers\MediaController;
@@ -30,6 +31,13 @@ Route::middleware('web')->group(function () {
         
         Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
         Route::post('login', [AuthenticatedSessionController::class, 'store']);
+        Route::get('auth/unified', [UnifiedAuthController::class, 'show'])->name('auth.unified');
+        Route::get('auth/unified/country', [UnifiedAuthController::class, 'country'])->name('auth.unified.country');
+        Route::post('auth/identify', [UnifiedAuthController::class, 'identify'])->name('auth.unified.identify');
+        Route::post('auth/otp/send', [UnifiedAuthController::class, 'sendOtp'])->name('auth.unified.otp.send');
+        Route::post('auth/otp/verify', [UnifiedAuthController::class, 'verifyOtp'])->name('auth.unified.otp.verify');
+        Route::post('auth/otp/resend', [UnifiedAuthController::class, 'resendOtp'])->name('auth.unified.otp.resend');
+        Route::post('auth/register/complete', [UnifiedAuthController::class, 'completeRegistration'])->name('auth.unified.register.complete');
 
         // Forgot/Reset Password
         Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');

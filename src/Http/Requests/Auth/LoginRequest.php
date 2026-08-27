@@ -29,11 +29,11 @@ class LoginRequest extends FormRequest
      */
     public function rules(): array
     {
-        $rules = [
+        $rules = $this->baseRulesFromSchema() ?? [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ];
-        
+
         $recaptcha = ConfProvider::from(Module::USER_MGMT)->recaptcha;
         $recaptchaEnabled = $recaptcha->enabled;
         
@@ -42,6 +42,28 @@ class LoginRequest extends FormRequest
         }
 
         return $rules;
+    }
+
+    /**
+     * Derive email/password rules from the login-with-password FormSchema so
+     * the schema-rendered form and this request validate identically. Returns
+     * null (falling back to the hardcoded rules above) if user-interface
+     * isn't installed or the schema hasn't been seeded yet.
+     */
+    protected function baseRulesFromSchema(): ?array
+    {
+        if (! class_exists(\Iquesters\UserInterface\Models\FormSchema::class)
+            || ! class_exists(\Iquesters\UserInterface\Support\DynamicFormSchema::class)) {
+            return null;
+        }
+
+        $formSchema = \Iquesters\UserInterface\Models\FormSchema::where('slug', 'login-with-password')->first();
+
+        if (! $formSchema || empty($formSchema->schema['fields'])) {
+            return null;
+        }
+
+        return \Iquesters\UserInterface\Support\DynamicFormSchema::toRules($formSchema->schema);
     }
 
     /**

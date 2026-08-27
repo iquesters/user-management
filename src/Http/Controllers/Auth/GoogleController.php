@@ -161,7 +161,19 @@ class GoogleController extends Controller
             return null;
         }
 
-        return $socialLogin->o_auth_providers['google'] ?? null;
+        $providers = $socialLogin->o_auth_providers ?? [];
+
+        if (isset($providers['google'])) {
+            return $providers['google'];
+        }
+
+        foreach ($providers as $provider) {
+            if (($provider->identifier ?? null) === 'google') {
+                return $provider;
+            }
+        }
+
+        return null;
     }
 
     /**

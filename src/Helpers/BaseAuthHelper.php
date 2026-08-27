@@ -52,20 +52,7 @@ abstract class BaseAuthHelper
      */
     protected static function get_client_ip(): string
     {
-        // Check for shared internet
-        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-            return $_SERVER['HTTP_CLIENT_IP'];
-        }
-        // Check for proxied requests
-        elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            // Can be multiple IPs, take the first one
-            $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-            return trim($ips[0]);
-        }
-        // Fall back to remote address
-        else {
-            return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-        }
+        return Request::ip() ?? '0.0.0.0';
     }
 
     /**
@@ -112,6 +99,11 @@ abstract class BaseAuthHelper
             Log::warning('Could not determine country: ' . $e->getMessage());
             return 'UNKNOWN';
         }
+    }
+
+    public static function getDetectedCountryCode(): string
+    {
+        return self::get_country();
     }
 
     /**
