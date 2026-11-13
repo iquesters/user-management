@@ -9,7 +9,11 @@
     "laravel/socialite": "^5.16",
     "laravel/sanctum": "^4.0",
     "iquesters/foundation": "^1.0",
+    "iquesters/user-interface": "^1.0",
     "google/apiclient": "^2.18"
+  },
+  "suggest": {
+    "iquesters/organisation": "Organisation menu and the create-organisation onboarding step"
   },
   "require-dev": {
     "laravel/pint": "^1.0",
