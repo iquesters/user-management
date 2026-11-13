@@ -19,6 +19,24 @@
     "laravel/pint": "^1.0",
     "laravel/tinker": "^2.8"
   },
+  "require-dev": {
+    "orchestra/testbench": "^10.0|^11.0"
+  },
+  "repositories": [
+    {
+      "type": "path",
+      "url": "../foundation",
+      "options": { "symlink": true, "versions": { "iquesters/foundation": "1.x-dev" } }
+    },
+    {
+      "type": "path",
+      "url": "../user-interface",
+      "options": { "symlink": true, "versions": { "iquesters/user-interface": "1.x-dev" } }
+    }
+  ],
+  "scripts": {
+    "test": "phpunit"
+  },
   "license": "MIT",
   "autoload": {
     "psr-4": {
