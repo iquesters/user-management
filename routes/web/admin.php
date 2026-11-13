@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 use Iquesters\UserManagement\Http\Controllers\DashboardController;
 
 Route::middleware('web')->group(function () {
-    Route::middleware(['auth'])->group(function () {
+    Route::middleware(['auth', 'ensure.admin'])->group(function () {
         Route::prefix('admin')->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
             
