@@ -2,7 +2,7 @@
 
 namespace Iquesters\UserManagement\Helpers;
 
-use App\Models\User;
+use Illuminate\Contracts\Auth\Authenticatable as User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
