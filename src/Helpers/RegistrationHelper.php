@@ -2,7 +2,7 @@
 
 namespace Iquesters\UserManagement\Helpers;
 
-use App\Models\User;
+use Iquesters\Foundation\Support\UserModel;
 use Carbon\Carbon;
 use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
@@ -35,7 +35,7 @@ class RegistrationHelper extends BaseAuthHelper
         bool $email_verified = false,
         array $meta = [],
         array $extraAttributes = []
-    ): User {
+    ): \Illuminate\Database\Eloquent\Model {
         $resolvedIdentifier = self::normalizeIdentifier($identifierType, $identifierValue);
         $resolvedName = trim((string) $name);
         $resolvedName = $resolvedName !== '' ? $resolvedName : self::default_name_for_identifier($resolvedIdentifier);
@@ -50,7 +50,7 @@ class RegistrationHelper extends BaseAuthHelper
         $existingUser = app(IdentifierResolverService::class)->findUserByIdentifier($identifierType, $resolvedIdentifier);
 
         // Check if user already exists
-        // $existingUser = User::where('email', $email)->first();
+        // $existingUser = UserModel::query()->where('email', $email)->first();
         if ($existingUser) {
             // Log::debug('User already exists: ' . $email);
             if (empty($existingUser->uid)) {
@@ -60,7 +60,7 @@ class RegistrationHelper extends BaseAuthHelper
         }
 
         // ✅ Determine role BEFORE user creation
-        $existingUserCount = User::count();
+        $existingUserCount = UserModel::query()->count();
         $roleToAssign = null;
 
         // ✅ Ensure super-admin role exists
@@ -92,7 +92,7 @@ class RegistrationHelper extends BaseAuthHelper
         }
 
         // ✅ Only now, create the user (safe to persist)
-        // $user = User::create([
+        // $user = UserModel::query()->create([
         //     'uid' => self::generate_uid(),
         //     'name' => $name,
         //     'email' => $email,
@@ -115,7 +115,7 @@ class RegistrationHelper extends BaseAuthHelper
         $userData[$identifierType] = $resolvedIdentifier;
         $userData = array_merge($userData, $extraAttributes);
 
-        $user = User::create($userData);
+        $user = UserModel::query()->create($userData);
 
 
 

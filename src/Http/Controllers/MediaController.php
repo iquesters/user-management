@@ -8,7 +8,7 @@ use Iquesters\UserManagement\Http\Controllers\Utils\MediaUtil;
 use App\Models\Event;
 use App\Models\MediaResources;
 use App\Models\Organization;
-use App\Models\User;
+use Iquesters\Foundation\Support\UserModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -32,7 +32,7 @@ class MediaController extends Controller
      */
     public function library()
     {
-        $user = User::find(Auth::user()->id);
+        $user = UserModel::query()->find(Auth::user()->id);
 
         return view('media.library');
     }

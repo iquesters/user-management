@@ -4,7 +4,7 @@ namespace Iquesters\UserManagement\Http\Controllers;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Routing\Controller;
-use App\Models\User;
+use Iquesters\Foundation\Support\UserModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -23,7 +23,7 @@ class UserController extends Controller
     {
         try {
             Log::info('Fetching all users');
-            $users = User::with('roles')->get();
+            $users = UserModel::query()->with('roles')->get();
             $roles = Role::all();
             Log::debug('Users fetched successfully', ['count' => $users->count()]);
             return view('usermanagement::users.index', compact('users', 'roles'));
@@ -71,7 +71,7 @@ class UserController extends Controller
             $mobile = preg_replace('/\D/', '', $request->mobile);
             $phone = $request->country_code . $mobile;
         
-            $user = User::create([
+            $user = UserModel::query()->create([
                 'uid' => Str::ulid(),
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -131,9 +131,10 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(User $user)
+    public function edit($user)
     {
         try {
+            $user = UserModel::findOrFail($user);
             Log::info('Displaying the user edit form', ['id' => $user->id]);
             $roles = Role::all();
             $userRoles = $user->roles->pluck('id')->toArray();
@@ -147,9 +148,10 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user)
+    public function update(Request $request, $user)
     {
         try {
+            $user = UserModel::findOrFail($user);
             Log::info('Starting user update process', ['id' => $user->id]);
             $validated = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
@@ -190,9 +192,10 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $user)
+    public function destroy($user)
     {
         try {
+            $user = UserModel::findOrFail($user);
             Log::info('Starting user deletion process', ['id' => $user->id]);
 
             // Prevent deleting yourself

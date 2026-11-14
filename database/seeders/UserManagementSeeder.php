@@ -3,7 +3,7 @@
 namespace Iquesters\UserManagement\Database\Seeders;
 
 use Iquesters\Foundation\Database\Seeders\BaseSeeder;
-use App\Models\User;
+use Iquesters\Foundation\Support\UserModel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;

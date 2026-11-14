@@ -2,7 +2,7 @@
 
 namespace Iquesters\UserManagement\Services;
 
-use App\Models\User;
+use Iquesters\Foundation\Support\UserModel;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -191,7 +191,7 @@ class OtpService
     }
 
     /**
-     * @return array{success:bool,message:string,user:?User}
+     * @return array{success:bool,message:string,user:?\Illuminate\Database\Eloquent\Model}
      */
     public function verifyLoginOtp(
         string $identifierType,
@@ -466,7 +466,7 @@ class OtpService
         });
     }
 
-    public function findUserByPhone(string $phone): ?User
+    public function findUserByPhone(string $phone): ?\Illuminate\Database\Eloquent\Model
     {
         return $this->identifierResolverService->findUserByIdentifier('phone', $phone);
     }
@@ -492,7 +492,7 @@ class OtpService
         string $successMessage,
         string $failureMessage,
         array $genericResponse,
-        ?User $user = null
+        ?\Illuminate\Database\Eloquent\Model $user = null
     ): array {
         $config = $this->otpConfig();
         $maskedIdentifier = $this->identifierResolverService->maskIdentifier($identifierType, $identifierValue);

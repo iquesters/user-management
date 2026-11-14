@@ -5,7 +5,7 @@ namespace Iquesters\UserManagement\Http\Controllers\Auth;
 use Iquesters\UserManagement\Rules\RecaptchaRule;
 use Iquesters\UserManagement\Support\AuthFormSchema;
 use Illuminate\Routing\Controller;
-use App\Models\User;
+use Iquesters\Foundation\Support\UserModel;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -52,7 +52,7 @@ class NewPasswordController extends Controller
 
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user) use ($request) {
+            function ($user) use ($request) {
                 $user->forceFill([
                     'password' => Hash::make($request->password),
                     'remember_token' => Str::random(60),

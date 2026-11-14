@@ -2,7 +2,7 @@
 
 namespace Iquesters\UserManagement\Services;
 
-use App\Models\User;
+use Iquesters\Foundation\Support\UserModel;
 use Illuminate\Support\Facades\Log;
 
 class IdentifierResolverService
@@ -13,7 +13,7 @@ class IdentifierResolverService
     }
 
     /**
-     * @return array{identifier_type:string,normalized_identifier:string,masked_identifier:string,delivery_channel:string,user:?User}
+     * @return array{identifier_type:string,normalized_identifier:string,masked_identifier:string,delivery_channel:string,user:?\Illuminate\Database\Eloquent\Model}
      */
     public function resolve(string $identifier, ?string $countryDialCode = null): array
     {
@@ -88,13 +88,13 @@ class IdentifierResolverService
         return $this->phoneNumberService->mask($identifier);
     }
 
-    public function findUserByIdentifier(string $identifierType, string $identifierValue): ?User
+    public function findUserByIdentifier(string $identifierType, string $identifierValue): ?\Illuminate\Database\Eloquent\Model
     {
         if ($identifierValue === '') {
             return null;
         }
 
-        $query = User::query()->where(function ($statusQuery) {
+        $query = UserModel::query()->where(function ($statusQuery) {
             $statusQuery->whereNull('status')->orWhere('status', 'active');
         });
 

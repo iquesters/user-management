@@ -6,7 +6,7 @@ use Iquesters\UserManagement\Helpers\LoginHelper;
 use Iquesters\UserManagement\Helpers\RegistrationHelper;
 use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
-use App\Models\User;
+use Iquesters\Foundation\Support\UserModel;
 use Google\Client as GoogleClient;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -179,9 +179,9 @@ class GoogleController extends Controller
     /**
      * Sync or create user from Google payload.
      */
-    protected function sync_google_user($googleUser): User
+    protected function sync_google_user($googleUser): \Illuminate\Database\Eloquent\Model
     {
-        $user = User::firstOrNew(['email' => $googleUser->email]);
+        $user = UserModel::query()->firstOrNew(['email' => $googleUser->email]);
 
         if (!$user->exists) {
             $user = RegistrationHelper::register_user(

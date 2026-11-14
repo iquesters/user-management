@@ -9,7 +9,7 @@ use Iquesters\UserManagement\Helpers\LoginHelper;
 use Iquesters\UserManagement\Rules\RecaptchaRule;
 use Iquesters\UserManagement\Support\AuthFormSchema;
 use Illuminate\Routing\Controller;
-use App\Models\User;
+use Iquesters\Foundation\Support\UserModel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules;
@@ -47,7 +47,7 @@ class RegisteredUserController extends Controller
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . UserModel::name()],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ];
 
@@ -101,7 +101,7 @@ class RegisteredUserController extends Controller
             if ($signinIdentifier === 'email') {
                 $rules = AuthFormSchema::rules('register') ?? [
                     'name'     => ['required', 'string', 'max:255'],
-                    'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
+                    'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . UserModel::name()],
                     'password' => ['required', 'confirmed', Rules\Password::defaults()],
                 ];
             }

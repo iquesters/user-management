@@ -5,7 +5,7 @@ namespace Iquesters\UserManagement\Http\Controllers;
 use Illuminate\Routing\Controller;
 use App\Models\Event;
 use App\Models\Organization;
-use App\Models\User;
+use Iquesters\Foundation\Support\UserModel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
@@ -37,7 +37,7 @@ class ContextController extends Controller
 
     public static function get_context_model()
     {
-        $model = User::class;
+        $model = UserModel::name();
         $model_id = Auth::user()->id;
         $event_ctx = self::get_event();
         if (isset($event_ctx)) {

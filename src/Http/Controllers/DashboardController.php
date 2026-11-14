@@ -3,7 +3,7 @@
 namespace Iquesters\UserManagement\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use App\Models\User;
+use Iquesters\Foundation\Support\UserModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +16,7 @@ class DashboardController extends Controller
     public function index()
     {
         try {
-            $user = User::find(Auth::id());
+            $user = UserModel::query()->find(Auth::id());
 
             $hasOrganisation = false;
 
@@ -41,7 +41,7 @@ class DashboardController extends Controller
     public function createOrganisation(Request $request)
     {
         try {
-            $user = User::find(Auth::id());
+            $user = UserModel::query()->find(Auth::id());
             
             $request->validate([
                 'name' => 'required|string|max:255',
