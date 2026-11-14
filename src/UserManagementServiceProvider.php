@@ -367,42 +367,9 @@ class UserManagementServiceProvider extends ServiceProvider
      */
     protected function registerAssetRoute(): void
     {
+        // Serve only files inside this module's public/ dir (no path traversal, static types only).
         Route::get('/vendor/usermanagement/{path}', function ($path) {
-            $filePath = __DIR__ . '/../public/' . $path;
-
-            // Check if file exists
-            if (!file_exists($filePath)) {
-                abort(404);
-            }
-
-            // Get MIME type
-            $mimeTypes = [
-                'css' => 'text/css',
-                'js' => 'application/javascript',
-                'png' => 'image/png',
-                'jpg' => 'image/jpeg',
-                'jpeg' => 'image/jpeg',
-                'gif' => 'image/gif',
-                'svg' => 'image/svg+xml',
-                'ico' => 'image/x-icon',
-                'woff' => 'font/woff',
-                'woff2' => 'font/woff2',
-                'ttf' => 'font/ttf',
-                'eot' => 'application/vnd.ms-fontobject',
-            ];
-
-            $extension = pathinfo($filePath, PATHINFO_EXTENSION);
-            $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
-
-            // Set appropriate cache headers
-            $cacheControl = in_array($extension, ['css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'woff', 'woff2', 'ttf', 'eot'])
-                ? 'public, max-age=31536000' // 1 year for assets
-                : 'no-cache';
-
-            return response()->file($filePath, [
-                'Content-Type' => $mimeType,
-                'Cache-Control' => $cacheControl,
-            ]);
+            return \Iquesters\Foundation\Support\PackageAsset::response(__DIR__ . '/../public', $path);
         })->where('path', '.*')->name('usermanagement.asset');
     }
 

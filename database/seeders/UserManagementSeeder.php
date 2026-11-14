@@ -512,12 +512,12 @@ class UserManagementSeeder extends BaseSeeder
                     'type' => 'file',
                     'required' => true,
                     'accept' => 'image/png,image/jpeg,image/gif,image/webp',
-                    'helperText' => 'PNG, JPG, GIF or WebP, up to 2 MB.',
                 ],
                 [
                     'id' => 'description',
                     'label' => 'Description',
                     'type' => 'textarea',
+                    'rows' => 3,
                     'required' => false,
                     'maxLength' => 500,
                 ],
