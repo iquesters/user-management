@@ -94,9 +94,10 @@ class UserManagementServiceProvider extends ServiceProvider
         ], 'user-management-config');
 
         // Publish assets (logo, etc.) - Optional for customization
+        // 'laravel-assets' is re-published after every `composer update` (see PackageAsset::url).
         $this->publishes([
             __DIR__ . '/../public' => public_path('vendor/usermanagement'),
-        ], 'user-management-assets');
+        ], ['laravel-assets', 'user-management-assets']);
 
         // Auto-publish Spatie, Sanctum migrations AND config
         $this->autoPublishSpatieFiles();
@@ -368,9 +369,14 @@ class UserManagementServiceProvider extends ServiceProvider
     protected function registerAssetRoute(): void
     {
         // Serve only files inside this module's public/ dir (no path traversal, static types only).
-        Route::get('/vendor/usermanagement/{path}', function ($path) {
-            return \Iquesters\Foundation\Support\PackageAsset::response(__DIR__ . '/../public', $path);
-        })->where('path', '.*')->name('usermanagement.asset');
+        // The fallback lives under /module-assets/ so it never collides with the published
+        // copy in public/vendor/usermanagement (which the web server serves directly).
+        $serve = fn ($path) => \Iquesters\Foundation\Support\PackageAsset::response(__DIR__ . '/../public', $path);
+
+        Route::get('/module-assets/usermanagement/{path}', $serve)->where('path', '.*')->name('usermanagement.asset');
+
+        // Legacy URL, kept for hard-coded links (when assets are not published).
+        Route::get('/vendor/usermanagement/{path}', $serve)->where('path', '.*')->name('usermanagement.asset.legacy');
     }
 
     /**
@@ -393,11 +399,11 @@ class UserManagementServiceProvider extends ServiceProvider
         // If it contains "::" format, convert to path
         if (str_contains($customLogo, '::')) {
             $path = str_replace('::', '/', $customLogo);
-            return route('usermanagement.asset', ['path' => $path]);
+            return \Iquesters\Foundation\Support\PackageAsset::url(__DIR__ . '/../public', 'vendor/usermanagement', $path, 'usermanagement.asset');
         }
 
         // For regular relative paths, use the asset route
-        return route('usermanagement.asset', ['path' => ltrim($customLogo, '/')]);
+        return \Iquesters\Foundation\Support\PackageAsset::url(__DIR__ . '/../public', 'vendor/usermanagement', ltrim($customLogo, '/'), 'usermanagement.asset');
     }
 
     /**
@@ -405,7 +411,7 @@ class UserManagementServiceProvider extends ServiceProvider
      */
     public static function getCssUrl(string $file = 'css/app.css'): string
     {
-        return route('usermanagement.asset', ['path' => $file]);
+        return \Iquesters\Foundation\Support\PackageAsset::url(__DIR__ . '/../public', 'vendor/usermanagement', $file, 'usermanagement.asset');
     }
 
     /**
@@ -413,6 +419,6 @@ class UserManagementServiceProvider extends ServiceProvider
      */
     public static function getJsUrl(string $file = 'js/app.js'): string
     {
-        return route('usermanagement.asset', ['path' => $file]);
+        return \Iquesters\Foundation\Support\PackageAsset::url(__DIR__ . '/../public', 'vendor/usermanagement', $file, 'usermanagement.asset');
     }
 }
