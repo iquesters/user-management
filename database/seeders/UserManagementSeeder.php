@@ -485,6 +485,54 @@ class UserManagementSeeder extends BaseSeeder
             ],
         ]);
 
+        // First-run application setup (/setup). Multipart because of the logo upload;
+        // SetupController::store answers JSON with redirect_url for this form.
+        $this->upsertFormSchema('setup-form', 'Application Setup', 'First-run setup: application name, logo and description', [
+            'endpoint' => '/setup',
+            'method' => 'POST',
+            'enctype' => 'multipart/form-data',
+            'allowCancel' => false,
+            'modes' => [
+                'edit' => ['allowCancel' => false],
+            ],
+            'defaultFieldSize' => 12,
+            'submitButtonLabel' => 'Continue',
+            'fields' => [
+                [
+                    'id' => 'app_name',
+                    'label' => 'Application Name',
+                    'type' => 'text',
+                    'required' => true,
+                    'maxLength' => 255,
+                    'autofocus' => true,
+                ],
+                [
+                    'id' => 'logo',
+                    'label' => 'Logo',
+                    'type' => 'file',
+                    'required' => true,
+                    'accept' => 'image/png,image/jpeg,image/gif,image/webp',
+                    'helperText' => 'PNG, JPG, GIF or WebP, up to 2 MB.',
+                ],
+                [
+                    'id' => 'description',
+                    'label' => 'Description',
+                    'type' => 'textarea',
+                    'required' => false,
+                    'maxLength' => 500,
+                ],
+            ],
+            'actions' => [
+                [
+                    'type' => 'submit',
+                    'route' => '#',
+                    'text' => 'Continue',
+                    'element' => ['type' => 'button', 'color' => 'primary'],
+                    'row' => 0,
+                ],
+            ],
+        ]);
+
         $this->upsertFormSchema('password_reset_link-form', 'Forgot Password', 'Request a password reset link by email', [
             'endpoint' => '/forgot-password',
             'method' => 'POST',

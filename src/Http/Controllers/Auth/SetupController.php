@@ -18,13 +18,7 @@ class SetupController extends Controller
     public function show()
     {
         try {
-            $superadminExists = false;
-
-            if (Schema::hasTable('roles') && Schema::hasTable('model_has_roles')) {
-                $superadminExists = Role::where('name', 'super-admin')
-                    ->whereHas('users')
-                    ->exists();
-            }
+            $superadminExists = $this->setupCompleted();
 
             Log::info('[Setup] Superadmin exists? ' . ($superadminExists ? 'Yes' : 'No'));
 
@@ -41,17 +35,30 @@ class SetupController extends Controller
 
     public function store(Request $request)
     {
+        // Setup is a one-time step: once a super-admin exists, nobody (including
+        // guests) may change the app name/logo through this endpoint.
+        if ($this->setupCompleted()) {
+            Log::warning('[Setup] Rejected: setup already completed.');
+
+            return $request->wantsJson()
+                ? response()->json(['success' => false, 'message' => 'Setup has already been completed.'], 403)
+                : redirect()->route('register');
+        }
+
         $validated = $request->validate([
             'app_name' => 'required|string|max:255',
-            'logo' => 'required|image|max:2048',
+            // Real image types only (checked by content); SVG excluded (can carry scripts).
+            'logo' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
             'description' => 'nullable|string|max:500',
         ]);
 
         try {
-            // ✅ Upload logo
+            // Extension comes from the file content, never from the client's file name,
+            // so a "logo.php" can't be written into public/.
             $logoFile = $request->file('logo');
-            $filename = 'logo_' . Str::slug($validated['app_name']) . '.' . $logoFile->getClientOriginalExtension();
-            $path = $logoFile->move(public_path('img'), $filename);
+            $extension = $logoFile->guessExtension() ?: 'png';
+            $filename = 'logo_' . Str::slug($validated['app_name']) . '.' . $extension;
+            $logoFile->move(public_path('img'), $filename);
             $logoUrl = 'img/' . $filename; // store relative path
 
             Log::info('[Setup] Logo uploaded', ['path' => $logoUrl]);
@@ -67,16 +74,38 @@ class SetupController extends Controller
             \Artisan::call('cache:clear');
             Log::info('[Setup] Cache cleared successfully after setup.');
 
-            return redirect()
-                ->route('register')
-                ->with('success', 'Setup completed successfully! Please create your Superadmin account.');
+            $message = 'Setup completed successfully! Please create your Superadmin account.';
+
+            // Schema-rendered forms submit via fetch() and navigate using redirect_url.
+            if ($request->wantsJson()) {
+                session()->flash('success', $message);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'redirect_url' => route('register', absolute: false),
+                ]);
+            }
+
+            return redirect()->route('register')->with('success', $message);
 
         } catch (\Throwable $e) {
             Log::error('[Setup] Failed: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Setup failed: ' . $e->getMessage()]);
+
+            return $request->wantsJson()
+                ? response()->json(['success' => false, 'message' => 'Setup failed. Please try again.'], 500)
+                : back()->withErrors(['error' => 'Setup failed. Please try again.']);
         }
     }
 
+    protected function setupCompleted(): bool
+    {
+        if (! Schema::hasTable('roles') || ! Schema::hasTable('model_has_roles')) {
+            return false;
+        }
+
+        return Role::where('name', 'super-admin')->whereHas('users')->exists();
+    }
 
     /**
      * ✅ Save app configuration to master_data / master_data_metas in uppercase format

@@ -6,7 +6,7 @@
         <form method="POST" 
             action="{{ route('ui.setup.store') }}" 
             enctype="multipart/form-data"
-            id="setup-form"
+            id="setupClassicForm"
             data-recaptcha-action="setup">
             @csrf
 
@@ -47,7 +47,7 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('setup-form');
+    const form = document.getElementById('setupClassicForm');
     const logoInput = form.querySelector('input[name="logo"]');
     const errorMsg = document.getElementById('logo-error');
     const submitBtn = document.getElementById('setup-button');
