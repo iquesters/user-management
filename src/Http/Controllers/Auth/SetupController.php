@@ -74,6 +74,9 @@ class SetupController extends Controller
             \Artisan::call('cache:clear');
             Log::info('[Setup] Cache cleared successfully after setup.');
 
+            // Login/registration pages unlock from here on (see RequireSetup).
+            \Iquesters\UserManagement\Support\SetupState::markConfigured();
+
             $message = 'Setup completed successfully! Please create your Superadmin account.';
 
             // Schema-rendered forms submit via fetch() and navigate using redirect_url.

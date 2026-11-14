@@ -24,7 +24,11 @@ Route::middleware('web')->group(function () {
 
         Route::get('/setup', [SetupController::class, 'show'])->name('ui.setup');
         Route::post('/setup', [SetupController::class, 'store'])->name('ui.setup.store');
-        
+    });
+
+    // Everything below is unreachable until the first-run setup is submitted.
+    Route::middleware(['guest', \Iquesters\UserManagement\Http\Middleware\RequireSetup::class])->group(function () {
+
         // Register & Login
         Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
         Route::post('register', [RegisteredUserController::class, 'store']);
