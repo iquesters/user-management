@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\Authenticatable as User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Iquesters\Foundation\Support\ConfSecret;
 use Iquesters\UserManagement\Models\UserMeta;
 
 class LoginHelper extends BaseAuthHelper
@@ -27,8 +28,8 @@ class LoginHelper extends BaseAuthHelper
             // Ensure Sanctum token exists for API access
             $plainTextToken = self::ensure_sanctum_token($user);
 
-            // Store the plain text token in user meta for later retrieval
-            self::save_user_meta($user->id, 'sanctum_plain_token', $plainTextToken);
+            // Store the token (encrypted at rest) for later retrieval by the web UI
+            self::save_user_meta($user->id, 'sanctum_plain_token', ConfSecret::encrypt($plainTextToken));
 
             // Update login timestamps and device info
             self::update_login_info($user);
@@ -66,8 +67,10 @@ class LoginHelper extends BaseAuthHelper
                 ->where('name', 'web-app')
                 ->exists();
                 
-            if ($tokenExists) {
-                return $storedToken->meta_value;
+            $plain = self::decrypt_stored_token($storedToken->meta_value);
+
+            if ($tokenExists && $plain !== null) {
+                return $plain;
             } else {
                 Log::debug('Stored token no longer valid, creating new one');
                 // Token was revoked, delete the stored plain text token
@@ -80,7 +83,6 @@ class LoginHelper extends BaseAuthHelper
         $plainTextToken = $tokenResult->plainTextToken;
         
         Log::debug('New Sanctum token created for user: ' . $user->email);
-        Log::debug('New Plain Text Token (first 20 chars): ' . substr($plainTextToken, 0, 20) . '...');
         
         // Store token reference in user meta
         self::save_user_meta($user->id, 'sanctum_token_created_at', Carbon::now()->toDateTimeString());
@@ -119,8 +121,30 @@ class LoginHelper extends BaseAuthHelper
             return null;
         }
 
+        $plain = self::decrypt_stored_token($storedToken->meta_value);
+
+        if ($plain === null) {
+            $storedToken->delete();
+            return null;
+        }
+
         Log::debug('Retrieved plain text token for user: ' . $user->email);
-        return $storedToken->meta_value;
+        return $plain;
+    }
+
+    /**
+     * Stored tokens are encrypted (enc:...). Legacy plain values pass through;
+     * a value that can't be decrypted (e.g. APP_KEY rotated) counts as missing.
+     */
+    private static function decrypt_stored_token(?string $value): ?string
+    {
+        try {
+            $plain = ConfSecret::decrypt($value);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return is_string($plain) && $plain !== '' ? $plain : null;
     }
 
     /**

@@ -42,7 +42,12 @@ class DashboardController extends Controller
     {
         try {
             $user = UserModel::query()->find(Auth::id());
-            
+
+            // Organisations are provided by the optional iquesters/organisation package.
+            if (! class_exists(Organisation::class) || ! method_exists($user, 'assignOrganisation')) {
+                return back()->with('error', 'Organisations are not available in this application.');
+            }
+
             $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',

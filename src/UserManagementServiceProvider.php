@@ -222,13 +222,16 @@ class UserManagementServiceProvider extends ServiceProvider
 
         // Use Artisan command to publish Spatie migrations AND config
         try {
-            // Publish both migrations and config with a single command
-            Artisan::call('vendor:publish', [
-                '--provider' => 'Spatie\Permission\PermissionServiceProvider',
-                '--force' => true
-            ]);
-
-            $output = Artisan::output();
+            // Publish only what is missing: re-publishing the migration creates a
+            // second timestamped copy and `migrate` then fails.
+            $output = '';
+            foreach (array_filter([
+                empty($spatieFiles) ? 'permission-migrations' : null,
+                $configExists ? null : 'permission-config',
+            ]) as $tag) {
+                Artisan::call('vendor:publish', ['--tag' => $tag]);
+                $output .= Artisan::output();
+            }
 
             if (str_contains($output, 'Publishing complete')) {
                 echo "✅ Spatie Permission files published successfully!" . PHP_EOL;
