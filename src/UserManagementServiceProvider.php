@@ -331,6 +331,13 @@ class UserManagementServiceProvider extends ServiceProvider
      */
     protected function autoSetupSanctum(): void
     {
+        // Only during `package:discover` (like the Spatie auto-publish). Running
+        // on every boot cost a DB query per request and re-published the
+        // migration whenever the table was missing, creating duplicates.
+        if (!$this->app->runningInConsole() || !$this->isDuringPackageDiscovery()) {
+            return;
+        }
+
         if (!class_exists(\Laravel\Sanctum\SanctumServiceProvider::class)) {
             Log::info("Sanctum not installed — API token features disabled.");
             return;
@@ -338,20 +345,20 @@ class UserManagementServiceProvider extends ServiceProvider
 
         // Publish Sanctum config if missing
         if (!file_exists(config_path('sanctum.php'))) {
-            Artisan::call('vendor:publish', [
-                '--provider' => 'Laravel\Sanctum\SanctumServiceProvider',
-                '--tag' => 'sanctum-config',
-                '--force' => true
-            ]);
+            Artisan::call('vendor:publish', ['--tag' => 'sanctum-config']);
         }
 
-        // Publish Sanctum migrations only if table missing
-        if (!Schema::hasTable('personal_access_tokens')) {
-            Artisan::call('vendor:publish', [
-                '--provider' => 'Laravel\Sanctum\SanctumServiceProvider',
-                '--tag' => 'sanctum-migrations',
-                '--force' => true
-            ]);
+        // Publish the migration only if neither a copy nor the table exists.
+        $published = glob(database_path('migrations') . '/*_create_personal_access_tokens_table.php');
+        $tableExists = false;
+        try {
+            $tableExists = Schema::hasTable('personal_access_tokens');
+        } catch (\Throwable) {
+            // Database not reachable during discovery; rely on the file check.
+        }
+
+        if (empty($published) && !$tableExists) {
+            Artisan::call('vendor:publish', ['--tag' => 'sanctum-migrations']);
         }
     }
 

@@ -3,14 +3,14 @@
   "description": "A modular and extendable Laravel package that provides user management, role-based access control, and authentication features.",
   "type": "library",
   "require": {
-    "php": ">=8.1",
-    "laravel/framework": "^10.0|^11.0|^12.0|^13.0",
-    "spatie/laravel-permission": "^6.16",
+    "php": "^8.3",
+    "laravel/framework": "^12.0|^13.0",
+    "spatie/laravel-permission": "^8.0",
     "laravel/socialite": "^5.16",
     "laravel/sanctum": "^4.0",
-    "iquesters/foundation": "^1.0",
-    "iquesters/user-interface": "^1.0",
-    "google/apiclient": "^2.18"
+    "iquesters/foundation": "^2.0",
+    "iquesters/user-interface": "^2.0",
+    "firebase/php-jwt": "^6.10|^7.0"
   },
   "suggest": {
     "iquesters/organisation": "Organisation menu and the create-organisation onboarding step"
@@ -26,12 +26,12 @@
     {
       "type": "path",
       "url": "../foundation",
-      "options": { "symlink": true, "versions": { "iquesters/foundation": "1.x-dev" } }
+      "options": { "symlink": true, "versions": { "iquesters/foundation": "2.x-dev" } }
     },
     {
       "type": "path",
       "url": "../user-interface",
-      "options": { "symlink": true, "versions": { "iquesters/user-interface": "1.x-dev" } }
+      "options": { "symlink": true, "versions": { "iquesters/user-interface": "2.x-dev" } }
     }
   ],
   "scripts": {

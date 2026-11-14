@@ -7,7 +7,7 @@ use Iquesters\UserManagement\Helpers\RegistrationHelper;
 use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
 use Iquesters\Foundation\Support\UserModel;
-use Google\Client as GoogleClient;
+use Iquesters\UserManagement\Services\GoogleIdTokenVerifier;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
@@ -121,23 +121,17 @@ class GoogleController extends Controller
             return redirect()->back()->with('error', 'Google login not configured.');
         }
         
-        if (!class_exists(\Google\Client::class)) {
-            Log::error('Google One Tap failed: google/apiclient package is missing.');
-            return redirect()->back()->with(
-                'error',
-                'Google One Tap dependency missing. Run: composer require google/apiclient'
-            );
-        }
-
-        $client = new GoogleClient(['client_id' => $googleProvider->client_id]);
-        $payload = $client->verifyIdToken($request->input('credential'));
+        $payload = app(GoogleIdTokenVerifier::class)->verify(
+            $request->input('credential'),
+            (string) ($googleProvider->client_id ?? '')
+        );
 
         if (!$payload) {
             return redirect()->back()->with('error', 'Invalid Google token.');
         }
 
         $googleUser = (object)[
-            'name'   => $payload['name'],
+            'name'   => $payload['name'] ?? $payload['email'],
             'email'  => $payload['email'],
             'id'     => $payload['sub'],
             'avatar' => $payload['picture'] ?? null,
