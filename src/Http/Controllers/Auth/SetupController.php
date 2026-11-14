@@ -11,7 +11,8 @@ use Spatie\Permission\Models\Role;
 use Iquesters\Foundation\Models\MasterData;
 use Iquesters\Foundation\Constants\EntityStatus;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
+use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\ConfProvider;
 
 class SetupController extends Controller
 {
@@ -156,9 +157,8 @@ class SetupController extends Controller
             'APP_DESCRIPTION' => $description ?? '',
         ], $userId);
 
-        // 4️⃣ Clear cache
-        $cacheKey = "conf_user_interface_flattened";
-        Cache::forget($cacheKey);
+        // 4️⃣ Clear the conf cache (the conf builds its own key from the module identifier)
+        ConfProvider::from(Module::USER_INFE)->clearCache();
 
         static::logInfo('Application settings saved (name, logo, description)', [
             'module' => $moduleKey,
