@@ -49,7 +49,7 @@ class UserMeta extends Model
      */
     protected $attributes = [
         'status' => 'unknown',
-        'created_by' => 0,
-        'updated_by' => 0,
+        'created_by' => null,
+        'updated_by' => null,
     ];
 }

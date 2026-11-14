@@ -32,8 +32,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['uid', 'phone', 'phone_verified_at', 'status']);
-        });
+        // Intentionally empty: this file was renamed from an unprefixed migration.
+        // On existing installs it ran as a no-op, so rolling it back must not drop
+        // live data. Use migrate:fresh to rebuild from scratch.
     }
 };

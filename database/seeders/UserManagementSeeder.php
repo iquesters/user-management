@@ -408,8 +408,8 @@ class UserManagementSeeder extends BaseSeeder
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 'extra_info' => $existing->extra_info ?? null,
                 'status' => 'active',
-                'created_by' => $existing->created_by ?? 0,
-                'updated_by' => 0,
+                'created_by' => $existing->created_by ?? null,
+                'updated_by' => null,
                 'created_at' => $existing->created_at ?? now(),
                 'updated_at' => now(),
             ]
@@ -742,8 +742,8 @@ class UserManagementSeeder extends BaseSeeder
                 'schema' => json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 'extra_info' => $existing->extra_info ?? null,
                 'status' => 'active',
-                'created_by' => $existing->created_by ?? 0,
-                'updated_by' => 0,
+                'created_by' => $existing->created_by ?? null,
+                'updated_by' => null,
                 'created_at' => $existing->created_at ?? now(),
                 'updated_at' => now(),
             ]

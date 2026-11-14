@@ -83,7 +83,7 @@ class SetupController extends Controller
      */
     protected function saveAppConfigToMasterData(string $appName, string $logoPath, ?string $description): void
     {
-        $userId = Auth::id() ?? 0;
+        $userId = Auth::id();
 
         // 1️⃣ Ensure root config exists
         $configRoot = MasterData::firstOrCreate(
