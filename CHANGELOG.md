@@ -25,6 +25,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 - Logging uses foundation's `Loggable`.
 
 ### Fixed
+- Fresh installs skipped first-run setup: `user-interface:seed` stores the default `APP_NAME` ("Iquesters"), which
+  `SetupState` took as "setup submitted". The seeded default no longer counts.
 - Setup cleared the wrong conf cache key, so the saved app name/logo/description stayed cached; it now calls `clearCache()` on the user-interface conf.
 - Roles pages extended a layout read from a config key that never existed; they now use the DB layout.
 - confirm-password and verify-email pages failed to render.

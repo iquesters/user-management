@@ -51,6 +51,22 @@ class SetupGateTest extends TestCase
         $this->get('/register')->assertOk();
     }
 
+    public function test_seeded_default_app_name_does_not_count_as_setup(): void
+    {
+        // user-interface:seed stores every conf default, APP_NAME included.
+        $confId = \Illuminate\Support\Facades\DB::table('master_data')->insertGetId([
+            'key' => 'user-interface-conf', 'value' => 'user-interface-conf', 'status' => 'active',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        \Illuminate\Support\Facades\DB::table('master_data_metas')->insert([
+            'ref_parent' => $confId, 'meta_key' => 'APP_NAME', 'meta_value' => 'Iquesters',
+            'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->assertFalse(SetupState::isConfigured());
+        $this->get('/login')->assertRedirect(route('ui.setup'));
+    }
+
     public function test_existing_installs_with_users_count_as_configured(): void
     {
         $this->makeUser('user');
