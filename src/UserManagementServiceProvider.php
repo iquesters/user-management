@@ -2,11 +2,11 @@
 
 namespace Iquesters\UserManagement;
 
+use Iquesters\Foundation\System\Traits\Loggable;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Console\Command;
 use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
@@ -20,12 +20,14 @@ use Iquesters\UserManagement\Services\MetaWhatsAppOtpSender;
 
 class UserManagementServiceProvider extends ServiceProvider
 {
+    use Loggable;
+
     public function register(): void
     {
         // Register User Management configuration
         ConfProvider::register(Module::USER_MGMT, UserManagementConf::class);
         $this->app->singleton(EmailOtpSender::class, function ($app) {
-            Log::info('Resolving email OTP sender implementation.', [
+            static::logInfo('Resolving email OTP sender implementation.', [
                 'auth_method' => 'email_otp',
                 'operation' => 'resolve_sender',
                 'provider' => 'laravel_mailer',
@@ -37,7 +39,7 @@ class UserManagementServiceProvider extends ServiceProvider
             $config = ConfProvider::from(Module::USER_MGMT)->whatsapp_login;
             $provider = strtolower(trim((string) ($config->delivery_provider ?? '')));
 
-            Log::info('Resolving WhatsApp OTP sender implementation.', [
+            static::logInfo('Resolving WhatsApp OTP sender implementation.', [
                 'auth_method' => 'whatsapp_otp',
                 'operation' => 'resolve_sender',
                 'provider' => $provider,
@@ -126,7 +128,7 @@ class UserManagementServiceProvider extends ServiceProvider
                 return $uiConf->auth_layout;
             } catch (\Exception $e) {
                 // If UserInterface config fails, fall back to UserManagement
-                Log::warning('Failed to load UserInterface config: ' . $e->getMessage());
+                static::logWarning('Failed to load UserInterface config: ' . $e->getMessage());
             }
         }
 
@@ -340,7 +342,7 @@ class UserManagementServiceProvider extends ServiceProvider
         }
 
         if (!class_exists(\Laravel\Sanctum\SanctumServiceProvider::class)) {
-            Log::info("Sanctum not installed — API token features disabled.");
+            static::logInfo("Sanctum not installed — API token features disabled.");
             return;
         }
 

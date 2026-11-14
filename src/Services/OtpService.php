@@ -2,11 +2,11 @@
 
 namespace Iquesters\UserManagement\Services;
 
+use Iquesters\Foundation\System\Traits\Loggable;
 use Iquesters\Foundation\Support\UserModel;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Iquesters\Foundation\Enums\Module;
 use Iquesters\Foundation\Support\ConfProvider;
@@ -16,6 +16,8 @@ use Iquesters\UserManagement\Models\OtpAttempt;
 
 class OtpService
 {
+    use Loggable;
+
     public function __construct(
         protected IdentifierResolverService $identifierResolverService,
         protected PhoneNumberService $phoneNumberService
@@ -44,7 +46,7 @@ class OtpService
             'cooldown_seconds' => $cooldownSeconds,
         ];
 
-        Log::info('Processing OTP send request for login.', [
+        static::logInfo('Processing OTP send request for login.', [
             'auth_method' => $deliveryChannel . '_otp',
             'operation' => 'send_otp',
             'identifier_type' => $identifierType,
@@ -54,7 +56,7 @@ class OtpService
         ]);
 
         if (!$this->isChannelEnabled($deliveryChannel)) {
-            Log::warning('OTP send attempted while delivery channel is disabled.', [
+            static::logWarning('OTP send attempted while delivery channel is disabled.', [
                 'auth_method' => $deliveryChannel . '_otp',
                 'operation' => 'send_otp',
                 'identifier_type' => $identifierType,
@@ -70,7 +72,7 @@ class OtpService
         }
 
         if ($normalizedIdentifier === '') {
-            Log::warning('OTP send request rejected because identifier normalization failed.', [
+            static::logWarning('OTP send request rejected because identifier normalization failed.', [
                 'auth_method' => $deliveryChannel . '_otp',
                 'operation' => 'send_otp',
                 'identifier_type' => $identifierType,
@@ -83,7 +85,7 @@ class OtpService
 
         $user = $this->identifierResolverService->findUserByIdentifier($identifierType, $normalizedIdentifier);
 
-        Log::info('Resolved login OTP user lookup.', [
+        static::logInfo('Resolved login OTP user lookup.', [
             'auth_method' => $deliveryChannel . '_otp',
             'operation' => 'send_otp',
             'identifier_type' => $identifierType,
@@ -121,7 +123,7 @@ class OtpService
         ?string $requestIp = null,
         ?string $userAgent = null
     ): array {
-        Log::info('Processing OTP resend request for login.', [
+        static::logInfo('Processing OTP resend request for login.', [
             'auth_method' => $deliveryChannel . '_otp',
             'operation' => 'resend_otp',
             'identifier_type' => $identifierType,
@@ -155,7 +157,7 @@ class OtpService
             'cooldown_seconds' => $cooldownSeconds,
         ];
 
-        Log::info('Processing OTP send request for registration.', [
+        static::logInfo('Processing OTP send request for registration.', [
             'auth_method' => $deliveryChannel . '_otp',
             'operation' => 'send_register_otp',
             'identifier_type' => $identifierType,
@@ -213,7 +215,7 @@ class OtpService
         $user = $this->identifierResolverService->findUserByIdentifier($identifierType, $challengeResult['normalized_identifier']);
 
         if (!$user) {
-            Log::error('OTP verification succeeded but no matching user was found for login.', [
+            static::logError('OTP verification succeeded but no matching user was found for login.', [
                 'auth_method' => $deliveryChannel . '_otp',
                 'operation' => 'verify_otp',
                 'identifier_type' => $identifierType,
@@ -241,7 +243,7 @@ class OtpService
             $user->markEmailAsVerified();
         }
 
-        Log::info('OTP verification succeeded for login.', [
+        static::logInfo('OTP verification succeeded for login.', [
             'auth_method' => $deliveryChannel . '_otp',
             'operation' => 'verify_otp',
             'identifier_type' => $identifierType,
@@ -272,7 +274,7 @@ class OtpService
         $normalizedIdentifier = $this->normalizeIdentifier($identifierType, $identifierValue);
         $maskedIdentifier = $this->identifierResolverService->maskIdentifier($identifierType, $normalizedIdentifier);
 
-        Log::info('Processing OTP verification request.', [
+        static::logInfo('Processing OTP verification request.', [
             'auth_method' => $deliveryChannel . '_otp',
             'operation' => 'verify_otp',
             'identifier_type' => $identifierType,
@@ -302,7 +304,7 @@ class OtpService
         }
 
         if ($requestIp && RateLimiter::tooManyAttempts($this->verificationLimiterKey($deliveryChannel, $requestIp), (int) $config->max_verify_failures_per_window)) {
-            Log::warning('OTP verification blocked by IP rate limit.', [
+            static::logWarning('OTP verification blocked by IP rate limit.', [
                 'auth_method' => $deliveryChannel . '_otp',
                 'operation' => 'verify_otp',
                 'identifier_type' => $identifierType,
@@ -331,7 +333,7 @@ class OtpService
                 ->first();
 
             if (!$otpAttempt) {
-                Log::warning('OTP verification failed because no active attempt was found.', [
+                static::logWarning('OTP verification failed because no active attempt was found.', [
                     'auth_method' => $deliveryChannel . '_otp',
                     'operation' => 'verify_otp',
                     'identifier_type' => $identifierType,
@@ -353,7 +355,7 @@ class OtpService
             if ($otpAttempt->expires_at && $otpAttempt->expires_at->isPast()) {
                 $otpAttempt->forceFill(['status' => 'expired'])->save();
 
-                Log::info('OTP verification rejected because the code expired.', [
+                static::logInfo('OTP verification rejected because the code expired.', [
                     'auth_method' => $deliveryChannel . '_otp',
                     'operation' => 'verify_otp',
                     'identifier_type' => $identifierType,
@@ -374,7 +376,7 @@ class OtpService
             }
 
             if ($otpAttempt->consumed_at !== null) {
-                Log::warning('OTP verification rejected because the code was already consumed.', [
+                static::logWarning('OTP verification rejected because the code was already consumed.', [
                     'auth_method' => $deliveryChannel . '_otp',
                     'operation' => 'verify_otp',
                     'identifier_type' => $identifierType,
@@ -397,7 +399,7 @@ class OtpService
             if ($otpAttempt->attempt_count >= $otpAttempt->max_attempts) {
                 $otpAttempt->forceFill(['status' => 'locked'])->save();
 
-                Log::warning('OTP verification rejected because max attempts were exceeded.', [
+                static::logWarning('OTP verification rejected because max attempts were exceeded.', [
                     'auth_method' => $deliveryChannel . '_otp',
                     'operation' => 'verify_otp',
                     'identifier_type' => $identifierType,
@@ -422,7 +424,7 @@ class OtpService
                 $otpAttempt->forceFill(['attempt_count' => $attemptCount])->save();
                 $this->hitVerificationLimiter($deliveryChannel, $requestIp);
 
-                Log::warning('OTP verification rejected because the provided code did not match.', [
+                static::logWarning('OTP verification rejected because the provided code did not match.', [
                     'auth_method' => $deliveryChannel . '_otp',
                     'operation' => 'verify_otp',
                     'identifier_type' => $identifierType,
@@ -447,7 +449,7 @@ class OtpService
                 'consumed_at' => now(),
             ])->save();
 
-            Log::info('OTP verification challenge succeeded.', [
+            static::logInfo('OTP verification challenge succeeded.', [
                 'auth_method' => $deliveryChannel . '_otp',
                 'operation' => 'verify_otp',
                 'identifier_type' => $identifierType,
@@ -499,7 +501,7 @@ class OtpService
         $cooldownSeconds = (int) ($config->resend_cooldown_seconds ?? 60);
 
         if ($this->isPerIdentifierRateLimited($deliveryChannel, $identifierType, $identifierValue, (int) $config->max_send_per_hour)) {
-            Log::warning('OTP send blocked by per-identifier rate limit.', [
+            static::logWarning('OTP send blocked by per-identifier rate limit.', [
                 'auth_method' => $deliveryChannel . '_otp',
                 'operation' => $authOperation,
                 'identifier_type' => $identifierType,
@@ -512,7 +514,7 @@ class OtpService
         }
 
         if ($requestIp && $this->isPerIpRateLimited($deliveryChannel, $requestIp, (int) $config->max_send_per_hour)) {
-            Log::warning('OTP send blocked by per-IP rate limit.', [
+            static::logWarning('OTP send blocked by per-IP rate limit.', [
                 'auth_method' => $deliveryChannel . '_otp',
                 'operation' => $authOperation,
                 'identifier_type' => $identifierType,
@@ -526,7 +528,7 @@ class OtpService
         }
 
         if ($this->isGlobalRateLimited($deliveryChannel, (int) $config->max_global_sends_per_hour)) {
-            Log::warning('OTP send blocked by global send cap.', [
+            static::logWarning('OTP send blocked by global send cap.', [
                 'auth_method' => $deliveryChannel . '_otp',
                 'operation' => $authOperation,
                 'identifier_type' => $identifierType,
@@ -547,7 +549,7 @@ class OtpService
             ->first();
 
         if ($latestActiveAttempt && $latestActiveAttempt->last_sent_at?->gt(now()->subSeconds($cooldownSeconds))) {
-            Log::info('OTP send suppressed by resend cooldown.', [
+            static::logInfo('OTP send suppressed by resend cooldown.', [
                 'auth_method' => $deliveryChannel . '_otp',
                 'operation' => $authOperation,
                 'identifier_type' => $identifierType,
@@ -592,7 +594,7 @@ class OtpService
         $otpAttempt->setMetaValue('delivery_status', 'queued');
         $otpAttempt->setMetaValue('delivery_status_updated_at', $now->toDateTimeString());
 
-        Log::info('Created OTP attempt.', [
+        static::logInfo('Created OTP attempt.', [
             'auth_method' => $deliveryChannel . '_otp',
             'operation' => $authOperation,
             'identifier_type' => $identifierType,
@@ -617,7 +619,7 @@ class OtpService
 
             $this->hitSendRateLimiters($deliveryChannel, $identifierType, $identifierValue, $requestIp);
 
-            Log::info('OTP delivery dispatched successfully.', [
+            static::logInfo('OTP delivery dispatched successfully.', [
                 'auth_method' => $deliveryChannel . '_otp',
                 'operation' => $authOperation,
                 'identifier_type' => $identifierType,
@@ -633,7 +635,7 @@ class OtpService
             $otpAttempt->setMetaValue('delivery_status', 'failed');
             $otpAttempt->setMetaValue('delivery_status_updated_at', now()->toDateTimeString());
 
-            Log::error('OTP delivery failed.', [
+            static::logError('OTP delivery failed.', [
                 'auth_method' => $deliveryChannel . '_otp',
                 'operation' => $authOperation,
                 'identifier_type' => $identifierType,

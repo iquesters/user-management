@@ -2,11 +2,11 @@
 
 namespace Iquesters\UserManagement\Services;
 
+use Iquesters\Foundation\System\Traits\Loggable;
 use Firebase\JWT\JWK;
 use Firebase\JWT\JWT;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -16,6 +16,8 @@ use Throwable;
  */
 class GoogleIdTokenVerifier
 {
+    use Loggable;
+
     public const CERTS_URL = 'https://www.googleapis.com/oauth2/v3/certs';
 
     private const ISSUERS = ['accounts.google.com', 'https://accounts.google.com'];
@@ -39,7 +41,7 @@ class GoogleIdTokenVerifier
                 JWT::$leeway = $previousLeeway;
             }
         } catch (Throwable $e) {
-            Log::warning('Google ID token rejected: ' . $e->getMessage());
+            static::logWarning('Google ID token rejected: ' . $e->getMessage());
 
             return null;
         }
@@ -51,7 +53,7 @@ class GoogleIdTokenVerifier
             || empty($payload['sub'])
             || empty($payload['email'])
             || ! filter_var($payload['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
-            Log::warning('Google ID token rejected: issuer, audience or email verification check failed.');
+            static::logWarning('Google ID token rejected: issuer, audience or email verification check failed.');
 
             return null;
         }

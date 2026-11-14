@@ -2,13 +2,13 @@
 
 namespace Iquesters\UserManagement\Helpers;
 
+use Iquesters\Foundation\System\Traits\Loggable;
 use Iquesters\Foundation\Support\UserModel;
 use Carbon\Carbon;
 use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Iquesters\UserManagement\Models\UserMeta;
 use Iquesters\UserManagement\Services\IdentifierResolverService;
 use Iquesters\UserManagement\Services\PhoneNumberService;
@@ -16,6 +16,8 @@ use Illuminate\Support\Str;
 
 class RegistrationHelper extends BaseAuthHelper
 {
+    use Loggable;
+
     /**
      * Handle user registration from traditional form or OAuth
      * 
@@ -40,7 +42,7 @@ class RegistrationHelper extends BaseAuthHelper
         $resolvedName = trim((string) $name);
         $resolvedName = $resolvedName !== '' ? $resolvedName : self::default_name_for_identifier($resolvedIdentifier);
 
-        Log::info('Registering new user using primary identifier.', [
+        static::logInfo('Registering new user using primary identifier.', [
             'auth_method' => 'registration',
             'operation' => 'register_user',
             'identifier_type' => $identifierType,
@@ -73,7 +75,7 @@ class RegistrationHelper extends BaseAuthHelper
             // This is the first-ever user
             $roleToAssign = $superAdminRole;
             // Log::info("Preparing to assign 'super-admin' role to first registered user: {$email}");
-            Log::info("Preparing to assign 'super-admin' role to first registered user: {$resolvedIdentifier}");
+            static::logInfo("Preparing to assign 'super-admin' role to first registered user: {$resolvedIdentifier}");
         } else {
             // Use configured default role
             $defaultRole = ConfProvider::from(Module::USER_MGMT)->default_user_role;
@@ -86,7 +88,7 @@ class RegistrationHelper extends BaseAuthHelper
 
             if (!$roleToAssign) {
                 $message = "Default user role '{$defaultRole}' not found in database. Please seed or create it.";
-                Log::error($message);
+                static::logError($message);
                 throw new \RuntimeException($message);
             }
         }
@@ -141,14 +143,14 @@ class RegistrationHelper extends BaseAuthHelper
                     }
                 }
 
-                \Log::info("✅ All modules assigned to 'super-admin' automatically after first user registration.", [
+                static::logInfo("✅ All modules assigned to 'super-admin' automatically after first user registration.", [
                     'user_id' => $user->id,
                     'user_email' => $user->email,
                     'total_modules' => $modules->count(),
                 ]);
 
             } catch (\Throwable $e) {
-                \Log::error("⚠️ Failed to auto-assign modules to super-admin", [
+                static::logError("⚠️ Failed to auto-assign modules to super-admin", [
                     'error' => $e->getMessage(),
                     'line' => $e->getLine(),
                 ]);
@@ -170,7 +172,7 @@ class RegistrationHelper extends BaseAuthHelper
         // Fire Registered event
         event(new Registered($user));
 
-        Log::info('User created successfully.', [
+        static::logInfo('User created successfully.', [
             'auth_method' => 'registration',
             'operation' => 'register_user',
             'user_id' => $user->id,

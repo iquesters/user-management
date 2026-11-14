@@ -2,10 +2,10 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
+use Iquesters\Foundation\System\Traits\Loggable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Iquesters\Foundation\Models\MasterData;
@@ -15,20 +15,23 @@ use Illuminate\Support\Facades\Cache;
 
 class SetupController extends Controller
 {
+    use Loggable;
+
     public function show()
     {
         try {
             $superadminExists = $this->setupCompleted();
 
-            Log::info('[Setup] Superadmin exists? ' . ($superadminExists ? 'Yes' : 'No'));
-
             if ($superadminExists) {
+                static::logInfo('Setup already completed (super-admin exists); redirecting to register');
                 return redirect()->route('register');
             }
 
+            static::logInfo('Setup step 1/4: setup page shown');
+
             return view('usermanagement::auth.setup');
         } catch (\Throwable $e) {
-            Log::error('[Setup] Error checking superadmin: ' . $e->getMessage());
+            static::logError('Could not check setup state: ' . $e->getMessage());
             return redirect()->route('register');
         }
     }
@@ -38,12 +41,14 @@ class SetupController extends Controller
         // Setup is a one-time step: once a super-admin exists, nobody (including
         // guests) may change the app name/logo through this endpoint.
         if ($this->setupCompleted()) {
-            Log::warning('[Setup] Rejected: setup already completed.');
+            static::logWarning('Setup submission rejected: setup already completed (super-admin exists)', ['ip' => $request->ip()]);
 
             return $request->wantsJson()
                 ? response()->json(['success' => false, 'message' => 'Setup has already been completed.'], 403)
                 : redirect()->route('register');
         }
+
+        static::logInfo('Setup step 2/4: setup form submitted', ['app_name' => $request->input('app_name'), 'via' => $request->wantsJson() ? 'schema form' : 'classic form']);
 
         $validated = $request->validate([
             'app_name' => 'required|string|max:255',
@@ -61,21 +66,23 @@ class SetupController extends Controller
             $logoFile->move(public_path('img'), $filename);
             $logoUrl = 'img/' . $filename; // store relative path
 
-            Log::info('[Setup] Logo uploaded', ['path' => $logoUrl]);
+            static::logInfo('Setup step 3/4: logo saved', ['path' => $logoUrl]);
 
             // ✅ Save configuration to master_data
             if (Schema::hasTable('master_data') && Schema::hasTable('master_data_metas')) {
                 $this->saveAppConfigToMasterData($validated['app_name'], $logoUrl, $validated['description'] ?? '');
             } else {
-                Log::warning('[Setup] master_data tables missing — skipping config save.');
+                static::logWarning('master_data tables missing; application settings not saved');
             }
 
             // ✅ Clear all cache like `php artisan cache:clear`
             \Artisan::call('cache:clear');
-            Log::info('[Setup] Cache cleared successfully after setup.');
+            static::logDebug('Cache cleared after setup');
 
             // Login/registration pages unlock from here on (see RequireSetup).
             \Iquesters\UserManagement\Support\SetupState::markConfigured();
+
+            static::logInfo('Setup step 4/4: setup complete; next: create the super-admin account', ['app_name' => $validated['app_name']]);
 
             $message = 'Setup completed successfully! Please create your Superadmin account.';
 
@@ -93,7 +100,7 @@ class SetupController extends Controller
             return redirect()->route('register')->with('success', $message);
 
         } catch (\Throwable $e) {
-            Log::error('[Setup] Failed: ' . $e->getMessage());
+            static::logError('Setup failed: ' . $e->getMessage(), ['exception' => $e]);
 
             return $request->wantsJson()
                 ? response()->json(['success' => false, 'message' => 'Setup failed. Please try again.'], 500)
@@ -153,7 +160,7 @@ class SetupController extends Controller
         $cacheKey = "conf_user_interface_flattened";
         Cache::forget($cacheKey);
 
-        Log::info('[Setup] Master data metas saved', [
+        static::logInfo('Application settings saved (name, logo, description)', [
             'module' => $moduleKey,
             'LOGO' => $logoPath,
             'APP_NAME' => $appName,

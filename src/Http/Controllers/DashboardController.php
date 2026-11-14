@@ -2,17 +2,19 @@
 
 namespace Iquesters\UserManagement\Http\Controllers;
 
+use Iquesters\Foundation\System\Traits\Loggable;
 use Illuminate\Routing\Controller;
 use Iquesters\Foundation\Support\UserModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Iquesters\Organisation\Models\Organisation;
 use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
+    use Loggable;
+
     public function index()
     {
         try {
@@ -29,7 +31,7 @@ class DashboardController extends Controller
                 'hasOrganisation' => $hasOrganisation
             ]);
         } catch (\Exception $e) {
-            Log::error('DashboardController index error: ' . $e->getMessage(), [
+            static::logError('DashboardController index error: ' . $e->getMessage(), [
                 'exception' => $e,
                 'request' => request()->all()
             ]);
@@ -65,7 +67,7 @@ class DashboardController extends Controller
             // Assign the organisation to the user
             $user->assignOrganisation($organisation);
 
-            Log::info('Organisation created and assigned to user', [
+            static::logInfo('Organisation created and assigned to user', [
                 'user_id' => $user->id,
                 'organisation_id' => $organisation->id,
                 'organisation_uid' => $organisation->uid
@@ -75,7 +77,7 @@ class DashboardController extends Controller
                 ->with('success', 'Organisation created successfully!');
 
         } catch (\Exception $e) {
-            Log::error('Failed to create organisation from dashboard', [
+            static::logError('Failed to create organisation from dashboard', [
                 'user_id' => $user->id ?? 'unknown',
                 'error' => $e->getMessage()
             ]);

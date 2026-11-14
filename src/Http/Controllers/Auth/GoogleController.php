@@ -2,6 +2,7 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
+use Iquesters\Foundation\System\Traits\Loggable;
 use Iquesters\UserManagement\Helpers\LoginHelper;
 use Iquesters\UserManagement\Helpers\RegistrationHelper;
 use Iquesters\Foundation\Support\ConfProvider;
@@ -10,7 +11,6 @@ use Iquesters\Foundation\Support\UserModel;
 use Iquesters\UserManagement\Services\GoogleIdTokenVerifier;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Iquesters\UserManagement\Config\UserManagementKeys;
@@ -19,6 +19,8 @@ use Iquesters\UserManagement\Models\UserMeta;
 
 class GoogleController extends Controller
 {
+    use Loggable;
+
     /**
      * Redirect to Google's OAuth page.
      */
@@ -38,7 +40,7 @@ class GoogleController extends Controller
         $googleProvider = $this->getGoogleProvider();
 
         if (!$googleProvider || !$googleProvider->enabled) {
-            Log::error('Google login disabled or not configured');
+            static::logError('Google login disabled or not configured');
             return redirect()->route('login')->with('error', 'Google login is not configured.');
         }
 
@@ -98,7 +100,7 @@ class GoogleController extends Controller
 
             return $this->redirect_after_login();
         } catch (\Exception $e) {
-            Log::error('Google OAuth callback error: ' . $e->getMessage());
+            static::logError('Google OAuth callback error: ' . $e->getMessage());
             if ($isPopup) {
                 return response()->view('usermanagement::auth.google-popup-result', [
                     'success' => false,
@@ -190,7 +192,7 @@ class GoogleController extends Controller
                 ]
             );
         } else {
-            Log::debug('User already exists: ' . $googleUser->email);
+            static::logDebug('User already exists: ' . $googleUser->email);
 
             if (empty($user->name)) {
                 $user->update(['name' => $googleUser->name]);

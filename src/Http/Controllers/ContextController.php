@@ -2,17 +2,19 @@
 
 namespace Iquesters\UserManagement\Http\Controllers;
 
+use Iquesters\Foundation\System\Traits\Loggable;
 use Illuminate\Routing\Controller;
 use App\Models\Event;
 use App\Models\Organization;
 use Iquesters\Foundation\Support\UserModel;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 
 class ContextController extends Controller
 {
+    use Loggable;
+
     public static function get_all_context()
     {
         return (object)array(
@@ -60,8 +62,8 @@ class ContextController extends Controller
     public static function set_org($bizID)
     {
         $organization = Organization::find($bizID);
-        Log::debug("bizID = " . $bizID);
-        Log::debug($organization);
+        static::logDebug("bizID = " . $bizID);
+        static::logDebug('Organization', ['organization' => $organization]);
         Session::put('current_org', $organization);
     }
 
@@ -80,7 +82,7 @@ class ContextController extends Controller
     public static function set_event($eventID)
     {
         $event = Event::find($eventID);
-        Log::debug($event);
+        static::logDebug('Event', ['event' => $event]);
         Session::put('current_event', $event);
     }
 
@@ -104,8 +106,8 @@ class ContextController extends Controller
     public static function set_redirect_url($redirect_url)
     {
         $base_url = URL::to('/') . '/';
-        Log::info('Redirect URL: ' . $redirect_url);
-        Log::info('Base URL: ' . $base_url);
+        static::logInfo('Redirect URL: ' . $redirect_url);
+        static::logInfo('Base URL: ' . $base_url);
         if ($redirect_url != null && $redirect_url != $base_url) {
             Session::put('redirect_url', $redirect_url);
         } else {

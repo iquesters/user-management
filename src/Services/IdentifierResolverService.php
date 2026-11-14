@@ -2,11 +2,13 @@
 
 namespace Iquesters\UserManagement\Services;
 
+use Iquesters\Foundation\System\Traits\Loggable;
 use Iquesters\Foundation\Support\UserModel;
-use Illuminate\Support\Facades\Log;
 
 class IdentifierResolverService
 {
+    use Loggable;
+
     public function __construct(
         protected PhoneNumberService $phoneNumberService
     ) {
@@ -25,7 +27,7 @@ class IdentifierResolverService
         $deliveryChannel = $identifierType === 'email' ? 'email' : 'whatsapp';
         $user = $this->findUserByIdentifier($identifierType, $normalizedIdentifier);
 
-        Log::info('Resolved auth identifier.', [
+        static::logInfo('Resolved auth identifier.', [
             'auth_method' => 'unified_auth',
             'operation' => 'resolve_identifier',
             'identifier_type' => $identifierType,

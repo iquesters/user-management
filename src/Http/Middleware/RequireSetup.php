@@ -4,6 +4,7 @@ namespace Iquesters\UserManagement\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Iquesters\Foundation\System\Traits\Loggable;
 use Iquesters\UserManagement\Support\SetupState;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -13,11 +14,15 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class RequireSetup
 {
+    use Loggable;
+
     public function handle(Request $request, Closure $next): Response
     {
         if (SetupState::isConfigured()) {
             return $next($request);
         }
+
+        static::logInfo('Setup not complete; sending request to /setup', ['path' => $request->path()]);
 
         if ($request->expectsJson()) {
             return response()->json([

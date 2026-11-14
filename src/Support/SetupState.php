@@ -5,6 +5,7 @@ namespace Iquesters\UserManagement\Support;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Iquesters\Foundation\System\Traits\Loggable;
 use Spatie\Permission\Models\Role;
 
 /**
@@ -19,6 +20,8 @@ use Spatie\Permission\Models\Role;
  */
 final class SetupState
 {
+    use Loggable;
+
     private const CACHE_KEY = 'usermanagement.setup_configured';
 
     public static function isConfigured(): bool
@@ -31,6 +34,7 @@ final class SetupState
 
         if ($configured) {
             Cache::forever(self::CACHE_KEY, true);
+            static::logInfo('Application setup detected as complete');
         }
 
         return $configured;
@@ -39,6 +43,7 @@ final class SetupState
     public static function markConfigured(): void
     {
         Cache::forever(self::CACHE_KEY, true);
+        static::logInfo('Application setup marked as complete');
     }
 
     public static function adminCreated(): bool

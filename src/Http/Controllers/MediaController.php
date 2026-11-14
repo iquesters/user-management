@@ -2,6 +2,7 @@
 
 namespace Iquesters\UserManagement\Http\Controllers;
 
+use Iquesters\Foundation\System\Traits\Loggable;
 use Illuminate\Routing\Controller;
 use Iquesters\Foundation\Constants\EntityStatus;
 use Iquesters\UserManagement\Http\Controllers\Utils\MediaUtil;
@@ -11,13 +12,14 @@ use App\Models\Organization;
 use Iquesters\Foundation\Support\UserModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Iquesters\UserManagement\Models\UserMeta;
 
 class MediaController extends Controller
 {
+    use Loggable;
+
     /**
      * Display the resource.
      */
@@ -48,14 +50,14 @@ class MediaController extends Controller
     {
         // generate a unique name for the file
         $fileName = time() . '_' . $file->getClientOriginalName();
-        Log::info('fileName=' . $fileName);
+        static::logInfo('fileName=' . $fileName);
 
         // Store the file in the 'media' directory
         $media_url = basename(MediaUtil::storeFile($file));
-        Log::info('media_url=' . $media_url);
+        static::logInfo('media_url=' . $media_url);
         $filePath = $file->getRealPath();
         $media_type = MediaUtil::getMediaType($filePath);
-        Log::info('media_type=' . $media_type);
+        static::logInfo('media_type=' . $media_type);
 
         $media_ctx = ContextController::get_context_model();
 
@@ -94,7 +96,7 @@ class MediaController extends Controller
     public function upload(Request $request)
     {
         try {
-            Log::info("Uploading media...");
+            static::logInfo("Uploading media...");
             // get the file
             $files = $request->file('media');
 
@@ -126,7 +128,7 @@ class MediaController extends Controller
                             ['ref_parent' => Auth::user()->id,'meta_key'   => 'profile_picture_path'],
                             ['meta_value' => "storage/media/",'status'     => 'active']
                         );
-                Log::info("medias=" . $medias);
+                static::logInfo("medias=" . $medias);
 
                 if (isset($medias)) {
                     return redirect()->back()->with(['success' => count($files) . ' Media(s) uploaded successfully.']);
@@ -136,7 +138,7 @@ class MediaController extends Controller
                 return redirect()->back()->withErrors($validator->errors())->withInput();
             }
         } catch (\Exception $e) {
-            Log::error($e);
+            static::logError($e->getMessage(), ['exception' => $e]);
             // Handle other exceptions
             abort(500);
         }
@@ -173,7 +175,7 @@ class MediaController extends Controller
     public function delete($id, $route = 'media.library')
     {
         $result = MediaResources::where('id', $id)->update(['status' => EntityStatus::ACTIVE]);
-        Log::info('delete status update result=' . $result);
+        static::logInfo('delete status update result=' . $result);
         if ($result) {
             // $route = isset($route) || $route !== '' ? $route : 'media.library';
             // return redirect()->route($route)->with('error', 'Media deleted successfully');
@@ -189,7 +191,7 @@ class MediaController extends Controller
     public function destroy($id, $route = 'media.library')
     {
         $result = MediaResources::destroy($id);
-        Log::info('delete result=' . $result);
+        static::logInfo('delete result=' . $result);
         if ($result) {
             // $route = isset($route) || $route !== '' ? $route : 'media.library';
             return redirect()->route($route)->with('error', 'Media deleted successfully');
@@ -214,7 +216,7 @@ class MediaController extends Controller
             'message' => 'Profile picture removed successfully'
         ]);
         } catch (\Exception $e) {
-            Log::error($e);
+            static::logError($e->getMessage(), ['exception' => $e]);
             // Handle other exceptions
             abort(500);
         }

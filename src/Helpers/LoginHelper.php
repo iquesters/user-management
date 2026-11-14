@@ -2,15 +2,17 @@
 
 namespace Iquesters\UserManagement\Helpers;
 
+use Iquesters\Foundation\System\Traits\Loggable;
 use Illuminate\Contracts\Auth\Authenticatable as User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Iquesters\Foundation\Support\ConfSecret;
 use Iquesters\UserManagement\Models\UserMeta;
 
 class LoginHelper extends BaseAuthHelper
 {
+    use Loggable;
+
     /**
      * Handle user login and update login timestamps with device info
      * 
@@ -19,7 +21,7 @@ class LoginHelper extends BaseAuthHelper
      */
     public static function process_login(User $user): bool
     {
-        Log::debug('Processing login for user: ' . $user->email);
+        static::logDebug('Processing login for user: ' . $user->email);
 
         try {
             // Login the user
@@ -34,11 +36,11 @@ class LoginHelper extends BaseAuthHelper
             // Update login timestamps and device info
             self::update_login_info($user);
 
-            Log::debug('User logged in successfully: ' . $user->email);
+            static::logDebug('User logged in successfully: ' . $user->email);
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Login process failed: ' . $e->getMessage());
+            static::logError('Login process failed: ' . $e->getMessage());
             return false;
         }
     }
@@ -51,7 +53,7 @@ class LoginHelper extends BaseAuthHelper
      */
     private static function ensure_sanctum_token(User $user): string
     {
-        Log::debug('Ensuring Sanctum token for user: ' . $user->email);
+        static::logDebug('Ensuring Sanctum token for user: ' . $user->email);
         
         // Check if we already have a stored plain text token
         $storedToken = UserMeta::where('ref_parent', $user->id)
@@ -60,7 +62,7 @@ class LoginHelper extends BaseAuthHelper
             ->first();
             
         if ($storedToken && !empty($storedToken->meta_value)) {
-            Log::debug('Found stored plain text token for user: ' . $user->email);
+            static::logDebug('Found stored plain text token for user: ' . $user->email);
             
             // Verify the token still exists in database
             $tokenExists = $user->tokens()
@@ -72,7 +74,7 @@ class LoginHelper extends BaseAuthHelper
             if ($tokenExists && $plain !== null) {
                 return $plain;
             } else {
-                Log::debug('Stored token no longer valid, creating new one');
+                static::logDebug('Stored token no longer valid, creating new one');
                 // Token was revoked, delete the stored plain text token
                 $storedToken->delete();
             }
@@ -82,7 +84,7 @@ class LoginHelper extends BaseAuthHelper
         $tokenResult = $user->createToken('web-app', ['*']);
         $plainTextToken = $tokenResult->plainTextToken;
         
-        Log::debug('New Sanctum token created for user: ' . $user->email);
+        static::logDebug('New Sanctum token created for user: ' . $user->email);
         
         // Store token reference in user meta
         self::save_user_meta($user->id, 'sanctum_token_created_at', Carbon::now()->toDateTimeString());
@@ -105,7 +107,7 @@ class LoginHelper extends BaseAuthHelper
             ->first();
             
         if (!$storedToken || empty($storedToken->meta_value)) {
-            Log::debug('No stored plain text token found for user: ' . $user->email);
+            static::logDebug('No stored plain text token found for user: ' . $user->email);
             return null;
         }
 
@@ -115,7 +117,7 @@ class LoginHelper extends BaseAuthHelper
             ->exists();
             
         if (!$tokenExists) {
-            Log::warning('Stored plain text token exists but database token was revoked');
+            static::logWarning('Stored plain text token exists but database token was revoked');
             // Clean up the stored token
             $storedToken->delete();
             return null;
@@ -128,7 +130,7 @@ class LoginHelper extends BaseAuthHelper
             return null;
         }
 
-        Log::debug('Retrieved plain text token for user: ' . $user->email);
+        static::logDebug('Retrieved plain text token for user: ' . $user->email);
         return $plain;
     }
 
@@ -200,7 +202,7 @@ class LoginHelper extends BaseAuthHelper
         self::save_user_meta($user->id, 'login_locale', self::get_locale());
         self::save_user_meta($user->id, 'login_timezone', self::get_timezone());
 
-        Log::debug('Login info updated for user: ' . $user->email);
+        static::logDebug('Login info updated for user: ' . $user->email);
     }
 
     /**
@@ -220,10 +222,10 @@ class LoginHelper extends BaseAuthHelper
                 ->where('meta_key', 'sanctum_plain_token')
                 ->delete();
             
-            Log::debug('All Sanctum tokens revoked for user: ' . $user->email);
+            static::logDebug('All Sanctum tokens revoked for user: ' . $user->email);
             return true;
         } catch (\Exception $e) {
-            Log::error('Logout process failed: ' . $e->getMessage());
+            static::logError('Logout process failed: ' . $e->getMessage());
             return false;
         }
     }
