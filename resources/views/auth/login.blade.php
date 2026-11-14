@@ -1,5 +1,15 @@
 @extends(app('auth.layout'))
 
+@php
+    // auth_form_type conf: classic (default) | schema | both
+    $showClassic = \Iquesters\UserManagement\Support\AuthFormSchema::showsClassic();
+    $showSchema = \Iquesters\UserManagement\Support\AuthFormSchema::showsSchema();
+    $formCol = $showClassic && $showSchema ? 'col-6' : 'col-12';
+@endphp
+@unless ($showClassic && $showSchema)
+    @section('auth-card-class', 'col-md-7 col-lg-4')
+@endunless
+
 @section('content')
 @php
     use Iquesters\Foundation\Enums\Module;
@@ -11,14 +21,13 @@
         return $provider->enabled ?? false;
     });
     $hasSocialLogin = ($socialLoginConfig->enabled ?? false) && $socialProviders->isNotEmpty();
-    // The schema-driven form column has no recaptcha field yet, so submitting
-    // it would always fail validation once recaptcha is turned on. Fall back
-    // to the classic form alone until that's built.
+    // The schema form fetches a v3 token for 'login' (RecaptchaRule in LoginRequest).
     $recaptchaEnabled = $authConfig->recaptcha->enabled ?? false;
 @endphp
 
 <div class="w-100 row">
-    <div class="col-6">
+    @if ($showClassic)
+    <div class="{{ $formCol }}">
         <div id="login-password-section">
             <form method="POST" action="{{ route('login') }}" id="login-form" data-recaptcha-action="login">
                 @csrf
@@ -81,14 +90,21 @@
             @include('usermanagement::components.social-login-section', ['showDivider' => false])
         </div>
     </div>
-    @unless ($recaptchaEnabled)
-    <div class="col-6">
+    @endif
+    @if ($showSchema)
+    <div class="{{ $formCol }}">
         @include('userinterface::components.form',
         [
-            'id' => 'login-with-password'
+            'id' => 'login-with-password',
+            'recaptchaAction' => $recaptchaEnabled ? 'login' : null,
         ])
+
+        {{-- Classic column already shows social login when both are visible --}}
+        @unless ($showClassic)
+            @include('usermanagement::components.social-login-section')
+        @endunless
     </div>
-    @endunless
+    @endif
 
 </div>
 

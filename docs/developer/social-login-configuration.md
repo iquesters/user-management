@@ -8,7 +8,8 @@ Social login config is loaded from:
 
 - `ConfProvider::from(Module::USER_MGMT)->social_login`
 
-So in your setup, values are expected from your DB-backed conf storage (not necessarily from `config/user-management.php`).
+Values come only from the DB-backed conf storage; there is no config file or `.env` fallback.
+See [configuration.md](configuration.md).
 
 ## Structure
 

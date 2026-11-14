@@ -1,9 +1,20 @@
 @extends(app('auth.layout'))
 
+@php
+    // auth_form_type conf: classic (default) | schema | both
+    $showClassic = \Iquesters\UserManagement\Support\AuthFormSchema::showsClassic();
+    $showSchema = \Iquesters\UserManagement\Support\AuthFormSchema::showsSchema();
+    $formCol = $showClassic && $showSchema ? 'col-6' : 'col-12';
+@endphp
+@unless ($showClassic && $showSchema)
+    @section('auth-card-class', 'col-md-7 col-lg-4')
+@endunless
+
 @section('content')
 <div class="w-100 row">
-    <div class="col-6">
-        <form method="POST" 
+    @if ($showClassic)
+    <div class="{{ $formCol }}">
+        <form method="POST"
             action="{{ route('ui.setup.store') }}" 
             enctype="multipart/form-data"
             id="setupClassicForm"
@@ -38,12 +49,16 @@
             </div>
         </form>
     </div>
-    <div class="col-6">
+    @endif
+    @if ($showSchema)
+    <div class="{{ $formCol }}">
         @include('userinterface::components.form', ['id' => 'setup-form'])
     </div>
+    @endif
 </div>
 @endsection
 
+@if ($showClassic)
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -100,3 +115,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
+@endif

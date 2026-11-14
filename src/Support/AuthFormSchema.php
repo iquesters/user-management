@@ -15,6 +15,41 @@ use Illuminate\Support\Facades\Schema;
  */
 class AuthFormSchema
 {
+    public const CLASSIC = 'classic';
+    public const SCHEMA = 'schema';
+    public const BOTH = 'both';
+
+    /**
+     * Which form the auth pages render, from the auth_form_type conf.
+     * Unknown values, or 'schema'/'both' without user-interface installed,
+     * fall back to classic.
+     */
+    public static function formType(): string
+    {
+        $type = \Iquesters\Foundation\Support\ConfProvider::from(\Iquesters\Foundation\Enums\Module::USER_MGMT)
+            ->auth_form_type ?? self::CLASSIC;
+
+        if (! in_array($type, [self::CLASSIC, self::SCHEMA, self::BOTH], true)) {
+            return self::CLASSIC;
+        }
+
+        if ($type !== self::CLASSIC && ! view()->exists('userinterface::components.form')) {
+            return self::CLASSIC;
+        }
+
+        return $type;
+    }
+
+    public static function showsClassic(): bool
+    {
+        return self::formType() !== self::SCHEMA;
+    }
+
+    public static function showsSchema(): bool
+    {
+        return self::formType() !== self::CLASSIC;
+    }
+
     /**
      * Fetch a seeded FormSchema's raw schema array by slug.
      */

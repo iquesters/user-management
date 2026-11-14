@@ -1,4 +1,9 @@
-@extends(config('usermanagement.layout_app'))
+@php
+    $layout = class_exists(\Iquesters\UserInterface\UserInterfaceServiceProvider::class)
+        ? \Iquesters\Foundation\Support\ConfProvider::from(\Iquesters\Foundation\Enums\Module::USER_INFE)->app_layout
+        : \Iquesters\Foundation\Support\ConfProvider::from(\Iquesters\Foundation\Enums\Module::USER_MGMT)->app_layout;
+@endphp
+@extends($layout)
 
 @section('content')
 <div class="row">

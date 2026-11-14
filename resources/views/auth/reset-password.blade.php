@@ -1,17 +1,26 @@
 @extends(app('auth.layout'))
 
+@php
+    // auth_form_type conf: classic (default) | schema | both
+    $showClassic = \Iquesters\UserManagement\Support\AuthFormSchema::showsClassic();
+    $showSchema = \Iquesters\UserManagement\Support\AuthFormSchema::showsSchema();
+    $formCol = $showClassic && $showSchema ? 'col-6' : 'col-12';
+@endphp
+@unless ($showClassic && $showSchema)
+    @section('auth-card-class', 'col-md-7 col-lg-4')
+@endunless
+
 @section('content')
 @php
     use Iquesters\Foundation\Enums\Module;
     use Iquesters\Foundation\Support\ConfProvider;
 
-    // The schema-driven form column has no recaptcha field yet, so submitting
-    // it would always fail validation once recaptcha is turned on. Fall back
-    // to the classic form alone until that's built.
+    // The schema form fetches a v3 token for 'password_reset' (NewPasswordController).
     $recaptchaEnabled = ConfProvider::from(Module::USER_MGMT)->recaptcha->enabled ?? false;
 @endphp
 <div class="w-100 row">
-    <div class="col-6">
+    @if ($showClassic)
+    <div class="{{ $formCol }}">
         <form method="POST" action="{{ route('password.store') }}" id="passwordResetForm" data-recaptcha-action="password_reset">
             @csrf
 
@@ -74,8 +83,9 @@
             </div>
         </form>
     </div>
-    @unless ($recaptchaEnabled)
-    <div class="col-6">
+    @endif
+    @if ($showSchema)
+    <div class="{{ $formCol }}">
         @include('userinterface::components.form',
         [
             'id' => 'password_reset-form',
@@ -83,11 +93,13 @@
                 'token' => $request->route('token'),
                 'email' => $request->email,
             ]),
+            'recaptchaAction' => $recaptchaEnabled ? 'password_reset' : null,
         ])
     </div>
-    @endunless
+    @endif
 </div>
 
+@if ($showClassic)
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const passwordInput = document.getElementById('password');
@@ -118,5 +130,6 @@ document.addEventListener('DOMContentLoaded', function() {
     validateForm();
 });
 </script>
+@endif
 
 @endsection

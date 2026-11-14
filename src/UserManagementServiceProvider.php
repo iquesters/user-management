@@ -89,9 +89,8 @@ class UserManagementServiceProvider extends ServiceProvider
 
         $this->app->instance('auth.layout', $layout);
         
-        // Publish config + layout
+        // Publish layout. Settings live in the DB-backed conf (UserManagementConf), not a config file.
         $this->publishes([
-            __DIR__ . '/../config/user-management.php' => config_path('user-management.php'),
             __DIR__ . '/../resources/views/layouts/package.blade.php' => resource_path('views/vendor/usermanagement/layouts/package.blade.php'),
         ], 'user-management-config');
 
@@ -104,15 +103,6 @@ class UserManagementServiceProvider extends ServiceProvider
         // Auto-publish Spatie, Sanctum migrations AND config
         $this->autoPublishSpatieFiles();
         $this->autoSetupSanctum();
-
-        // Map Google config to Socialite dynamically
-        if (config('usermanagement.google.client_id')) {
-            config([
-                'services.google.client_id'     => config('usermanagement.google.client_id'),
-                'services.google.client_secret' => config('usermanagement.google.client_secret'),
-                'services.google.redirect'      => config('usermanagement.google.redirect'),
-            ]);
-        }
     }
     
     protected function getAuthLayout(): string
