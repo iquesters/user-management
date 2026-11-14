@@ -527,7 +527,9 @@ class UserManagementSeeder extends BaseSeeder
                     'type' => 'submit',
                     'route' => '#',
                     'text' => 'Continue',
-                    'element' => ['type' => 'button', 'color' => 'primary'],
+                    // Same look as the classic setup form: small outline-info, right-aligned.
+                    'element' => ['type' => 'button', 'color' => 'info', 'variant' => 'outline', 'size' => 'sm'],
+                    'align' => 'end',
                     'row' => 0,
                 ],
             ],
