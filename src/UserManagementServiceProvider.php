@@ -2,415 +2,91 @@
 
 namespace Iquesters\UserManagement;
 
-use Iquesters\Foundation\System\Traits\Loggable;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Console\Command;
-use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\ConfProvider;
+use Iquesters\Foundation\System\Providers\BaseServiceProvider;
+use Iquesters\Foundation\System\Traits\Loggable;
 use Iquesters\UserManagement\Contracts\WhatsAppOtpSender;
-use Iquesters\UserManagement\Config\UserManagementConf;
-use Iquesters\UserInterface\Config\UserInterfaceConf;
-use Iquesters\UserInterface\UserInterfaceServiceProvider;
-use Iquesters\UserManagement\Database\Seeders\UserManagementSeeder;
-use Iquesters\UserManagement\Services\EmailOtpSender;
+use Iquesters\UserManagement\Install\InstallSteps;
 use Iquesters\UserManagement\Services\MetaWhatsAppOtpSender;
+use Iquesters\UserManagement\Support\Assets;
 
-class UserManagementServiceProvider extends ServiceProvider
+/**
+ * Migrations, views (usermanagement::), routes/web.php, the
+ * user-management:seed command, middleware aliases and the conf are loaded by
+ * BaseServiceProvider via Package\UserManagementPackageInfo. This class only
+ * adds what is specific to the module.
+ */
+class UserManagementServiceProvider extends BaseServiceProvider
 {
     use Loggable;
 
     public function register(): void
     {
-        // Register User Management configuration
-        ConfProvider::register(Module::USER_MGMT, UserManagementConf::class);
-        $this->app->singleton(EmailOtpSender::class, function ($app) {
-            static::logInfo('Resolving email OTP sender implementation.', [
-                'auth_method' => 'email_otp',
-                'operation' => 'resolve_sender',
-                'provider' => 'laravel_mailer',
-            ]);
+        parent::register();
 
-            return new EmailOtpSender();
-        });
+        // Meta is the only supported WhatsApp OTP delivery provider. Fail loudly on
+        // anything else (blank/misconfigured included) instead of silently faking sends.
         $this->app->bind(WhatsAppOtpSender::class, function ($app) {
-            $config = ConfProvider::from(Module::USER_MGMT)->whatsapp_login;
-            $provider = strtolower(trim((string) ($config->delivery_provider ?? '')));
+            $provider = strtolower(trim((string) (ConfProvider::from(Module::USER_MGMT)->whatsapp_login->delivery_provider ?? '')));
 
-            static::logInfo('Resolving WhatsApp OTP sender implementation.', [
-                'auth_method' => 'whatsapp_otp',
-                'operation' => 'resolve_sender',
-                'provider' => $provider,
-            ]);
-
-            // Meta is the only supported delivery provider — fail loudly on
-            // anything else (blank/misconfigured value included) instead of
-            // silently faking OTP sends that never actually reach a user.
             if ($provider !== 'meta') {
                 throw new \RuntimeException("Unsupported WhatsApp delivery_provider: '{$provider}'. Only 'meta' is supported.");
             }
 
             return $app->make(MetaWhatsAppOtpSender::class);
         });
-
-        // Register seeder command
-        $this->registerSeedCommand();
-
-        // ✅ Conditionally register UserInterface package if available
-        if (class_exists(UserInterfaceServiceProvider::class)) {
-            ConfProvider::register(Module::USER_INFE, UserInterfaceConf::class);
-        }
     }
 
     public function boot(): void
     {
-        // Load routes
-        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
-        $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
+        parent::boot();
 
-        // Load your package migrations
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        Assets::registerRoutes();
 
-        // Load views
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'usermanagement');
+        // Layout the auth views extend: user-interface's when installed, else ours.
+        $this->app->instance('auth.layout', $this->resolveAuthLayout());
 
-        // Register asset route to serve package files without publishing
-        $this->registerAssetRoute();
-        
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                'command.user-management.seed'
-            ]);
-        }
-        
-        $layout = $this->getAuthLayout();
-
-        $this->app->instance('auth.layout', $layout);
-        
-        // Publish layout. Settings live in the DB-backed conf (UserManagementConf), not a config file.
         $this->publishes([
             __DIR__ . '/../resources/views/layouts/package.blade.php' => resource_path('views/vendor/usermanagement/layouts/package.blade.php'),
         ], 'user-management-config');
 
-        // Publish assets (logo, etc.) - Optional for customization
-        // 'laravel-assets' is re-published after every `composer update` (see PackageAsset::url).
+        // 'laravel-assets' is re-published by the app after every `composer update`.
         $this->publishes([
             __DIR__ . '/../public' => public_path('vendor/usermanagement'),
         ], ['laravel-assets', 'user-management-assets']);
 
-        // Auto-publish Spatie, Sanctum migrations AND config
-        $this->autoPublishSpatieFiles();
-        $this->autoSetupSanctum();
+        // composer install/update: publish Spatie/Sanctum files, patch the user model.
+        $this->onPackageDiscover(fn () => InstallSteps::run());
     }
-    
-    protected function getAuthLayout(): string
+
+    private function resolveAuthLayout(): string
     {
-        // Try to get UserInterface config first if available
-        if (class_exists(UserInterfaceConf::class)) {
+        if (class_exists(\Iquesters\UserInterface\Config\UserInterfaceConf::class)) {
             try {
-                $uiConf = ConfProvider::from(Module::USER_INFE);
-                if (method_exists($uiConf, 'ensureLoaded')) {
-                    $uiConf->ensureLoaded();
-                }
-                // Use UserInterface layout (userinterface::layouts.auth)
-                return $uiConf->auth_layout;
-            } catch (\Exception $e) {
-                // If UserInterface config fails, fall back to UserManagement
-                static::logWarning('Failed to load UserInterface config: ' . $e->getMessage());
+                return ConfProvider::from(Module::USER_INFE)->auth_layout;
+            } catch (\Throwable $e) {
+                static::logWarning('Falling back to the user-management auth layout: ' . $e->getMessage());
             }
         }
 
-        // Fall back to UserManagement config (always available in this package)
-        $mgmtConf = ConfProvider::from(Module::USER_MGMT);
-        if (method_exists($mgmtConf, 'ensureLoaded')) {
-            $mgmtConf->ensureLoaded();
-        }
-        // Returns: usermanagement::layouts.package
-        return $mgmtConf->auth_layout;
+        return ConfProvider::from(Module::USER_MGMT)->auth_layout;
     }
 
-    protected function registerSeedCommand(): void
-    {
-        $this->app->singleton('command.user-management.seed', function ($app) {
-            return new class extends Command {
-                protected $signature = 'user-management:seed';
-                protected $description = 'Seed User Management module data';
+    /* Asset URLs, kept here because views call them on the provider. */
 
-                public function handle()
-                {
-                    $this->info('Running User Management Seeder...');
-                    $seeder = new UserManagementSeeder();
-                    $seeder->setCommand($this);
-                    $seeder->run();
-                    $this->info('User Management seeding completed!');
-                    return 0;
-                }
-            };
-        });
-    }
-
-    /**
-     * Auto-publish Spatie Permission migrations AND config
-     */
-    protected function autoPublishSpatieFiles(): void
-    {
-        // Only run in console environment during package discovery
-        if (!$this->app->runningInConsole() || !$this->isDuringPackageDiscovery()) {
-            return;
-        }
-
-        // Use deferred execution to ensure Spatie package is registered
-        $this->app->booted(function () {
-            $this->publishSpatieFilesNow();
-        });
-    }
-
-    /**
-     * Check if we're during package discovery
-     */
-    protected function isDuringPackageDiscovery(): bool
-    {
-        return isset($_SERVER['argv'][1]) && $_SERVER['argv'][1] === 'package:discover';
-    }
-
-    /**
-     * Actually publish the Spatie migrations AND config using proper Laravel publishing
-     */
-    protected function publishSpatieFilesNow(): void
-    {
-        // Check if Spatie's service provider is available
-        if (!class_exists(\Spatie\Permission\PermissionServiceProvider::class)) {
-            echo "⚠️  Spatie Permission package is not installed." . PHP_EOL;
-            echo "📝 Please install it via: composer require spatie/laravel-permission" . PHP_EOL . PHP_EOL;
-            return;
-        }
-
-        $migrationPath = database_path('migrations');
-        $configPath = config_path('permission.php');
-
-        // Check if Spatie migrations are already published
-        $spatieFiles = glob($migrationPath . '/*_create_permission_tables.php');
-        $configExists = file_exists($configPath);
-
-        // Check if tables already exist in database
-        $tablesExist = false;
-        try {
-            $tablesExist = $this->checkIfTablesExist();
-        } catch (\Exception $e) {
-            // Database connection might not be available, continue with publishing
-        }
-
-        if ($tablesExist) {
-            echo "✅ Spatie Permission tables already exist in database." . PHP_EOL;
-            return;
-        }
-
-        if (!empty($spatieFiles) && $configExists) {
-            echo "✅ Spatie Permission migrations and config already published." . PHP_EOL;
-            echo "📋 You can now run 'php artisan migrate' to create the permission tables." . PHP_EOL . PHP_EOL;
-            return;
-        }
-
-        // Use Artisan command to publish Spatie migrations AND config
-        try {
-            // Publish only what is missing: re-publishing the migration creates a
-            // second timestamped copy and `migrate` then fails.
-            $output = '';
-            foreach (array_filter([
-                empty($spatieFiles) ? 'permission-migrations' : null,
-                $configExists ? null : 'permission-config',
-            ]) as $tag) {
-                Artisan::call('vendor:publish', ['--tag' => $tag]);
-                $output .= Artisan::output();
-            }
-
-            if (str_contains($output, 'Publishing complete')) {
-                echo "✅ Spatie Permission files published successfully!" . PHP_EOL;
-
-                // Check what was actually published
-                $newSpatieFiles = glob($migrationPath . '/*_create_permission_tables.php');
-                $newConfigExists = file_exists($configPath);
-
-                if (!empty($newSpatieFiles) && $newConfigExists) {
-                    echo "✅ Migrations and config both published." . PHP_EOL;
-                } elseif (!empty($newSpatieFiles)) {
-                    echo "✅ Migrations published, but config may already exist." . PHP_EOL;
-                } elseif ($newConfigExists) {
-                    echo "✅ Config published, but migrations may already exist." . PHP_EOL;
-                }
-
-                echo "📋 You can now run 'php artisan migrate' to create the permission tables." . PHP_EOL . PHP_EOL;
-            } else {
-                // If the general command didn't work, try specific tags
-                $this->publishWithSpecificTags();
-            }
-        } catch (\Exception $e) {
-            echo "⚠️  Could not automatically publish Spatie files: " . $e->getMessage() . PHP_EOL;
-            $this->showManualInstructions();
-        }
-    }
-
-    /**
-     * Try publishing with specific tags as fallback
-     */
-    protected function publishWithSpecificTags(): void
-    {
-        try {
-            $migrationPath = database_path('migrations');
-            $configPath = config_path('permission.php');
-
-            $spatieFiles = glob($migrationPath . '/*_create_permission_tables.php');
-            $configExists = file_exists($configPath);
-
-            // Publish migrations if needed
-            if (empty($spatieFiles)) {
-                Artisan::call('vendor:publish', [
-                    '--provider' => 'Spatie\Permission\PermissionServiceProvider',
-                    '--tag' => 'permission-migrations',
-                    '--force' => true
-                ]);
-                echo "✅ Spatie Permission migrations published!" . PHP_EOL;
-            }
-
-            // Publish config if needed
-            if (!$configExists) {
-                Artisan::call('vendor:publish', [
-                    '--provider' => 'Spatie\Permission\PermissionServiceProvider',
-                    '--tag' => 'permission-config',
-                    '--force' => true
-                ]);
-                echo "✅ Spatie Permission config published!" . PHP_EOL;
-            }
-
-            echo "📋 You can now run 'php artisan migrate' to create the permission tables." . PHP_EOL . PHP_EOL;
-        } catch (\Exception $e) {
-            echo "⚠️  Could not publish with specific tags: " . $e->getMessage() . PHP_EOL;
-            $this->showManualInstructions();
-        }
-    }
-
-    /**
-     * Show manual instructions
-     */
-    protected function showManualInstructions(): void
-    {
-        echo "📝 Please run manually:" . PHP_EOL;
-        echo "   php artisan vendor:publish --provider=\"Spatie\Permission\PermissionServiceProvider\"" . PHP_EOL;
-        echo "   php artisan migrate" . PHP_EOL . PHP_EOL;
-    }
-
-    /**
-     * Check if permission tables already exist in the database
-     */
-    protected function checkIfTablesExist(): bool
-    {
-        try {
-            // Check if we can connect to the database and if tables exist
-            if (Schema::hasTable('permissions') && Schema::hasTable('roles')) {
-                return true;
-            }
-        } catch (\Exception $e) {
-            // Database might not be available or configured yet
-            // This is normal during initial package installation
-        }
-
-        return false;
-    }
-    
-    /**
-     * Auto-setup Laravel Sanctum if installed
-     */
-    protected function autoSetupSanctum(): void
-    {
-        // Only during `package:discover` (like the Spatie auto-publish). Running
-        // on every boot cost a DB query per request and re-published the
-        // migration whenever the table was missing, creating duplicates.
-        if (!$this->app->runningInConsole() || !$this->isDuringPackageDiscovery()) {
-            return;
-        }
-
-        if (!class_exists(\Laravel\Sanctum\SanctumServiceProvider::class)) {
-            static::logInfo("Sanctum not installed — API token features disabled.");
-            return;
-        }
-
-        // Publish Sanctum config if missing
-        if (!file_exists(config_path('sanctum.php'))) {
-            Artisan::call('vendor:publish', ['--tag' => 'sanctum-config']);
-        }
-
-        // Publish the migration only if neither a copy nor the table exists.
-        $published = glob(database_path('migrations') . '/*_create_personal_access_tokens_table.php');
-        $tableExists = false;
-        try {
-            $tableExists = Schema::hasTable('personal_access_tokens');
-        } catch (\Throwable) {
-            // Database not reachable during discovery; rely on the file check.
-        }
-
-        if (empty($published) && !$tableExists) {
-            Artisan::call('vendor:publish', ['--tag' => 'sanctum-migrations']);
-        }
-    }
-
-    /**
-     * Register route to serve package assets without publishing
-     */
-    protected function registerAssetRoute(): void
-    {
-        // Serve only files inside this module's public/ dir (no path traversal, static types only).
-        // The fallback lives under /module-assets/ so it never collides with the published
-        // copy in public/vendor/usermanagement (which the web server serves directly).
-        $serve = fn ($path) => \Iquesters\Foundation\Support\PackageAsset::response(__DIR__ . '/../public', $path);
-
-        Route::get('/module-assets/usermanagement/{path}', $serve)->where('path', '.*')->name('usermanagement.asset');
-
-        // Legacy URL, kept for hard-coded links (when assets are not published).
-        Route::get('/vendor/usermanagement/{path}', $serve)->where('path', '.*')->name('usermanagement.asset.legacy');
-    }
-
-    /**
-     * Get the logo URL - works with both package assets and custom paths
-     */
     public static function getLogoUrl(): string
     {
-        $customLogo = ConfProvider::from(Module::USER_MGMT)->logo;
-
-        // If it's a full URL, return as is
-        if (filter_var($customLogo, FILTER_VALIDATE_URL)) {
-            return $customLogo;
-        }
-
-        // If it's an absolute path (starts with /), return as is
-        if (str_starts_with($customLogo, '/')) {
-            return $customLogo;
-        }
-
-        // If it contains "::" format, convert to path
-        if (str_contains($customLogo, '::')) {
-            $path = str_replace('::', '/', $customLogo);
-            return \Iquesters\Foundation\Support\PackageAsset::url(__DIR__ . '/../public', 'vendor/usermanagement', $path, 'usermanagement.asset');
-        }
-
-        // For regular relative paths, use the asset route
-        return \Iquesters\Foundation\Support\PackageAsset::url(__DIR__ . '/../public', 'vendor/usermanagement', ltrim($customLogo, '/'), 'usermanagement.asset');
+        return Assets::logoUrl();
     }
 
-    /**
-     * Get the CSS URL for the package
-     */
     public static function getCssUrl(string $file = 'css/app.css'): string
     {
-        return \Iquesters\Foundation\Support\PackageAsset::url(__DIR__ . '/../public', 'vendor/usermanagement', $file, 'usermanagement.asset');
+        return Assets::url($file);
     }
 
-    /**
-     * Get the JS URL for the package
-     */
     public static function getJsUrl(string $file = 'js/app.js'): string
     {
-        return \Iquesters\Foundation\Support\PackageAsset::url(__DIR__ . '/../public', 'vendor/usermanagement', $file, 'usermanagement.asset');
+        return Assets::url($file);
     }
 }

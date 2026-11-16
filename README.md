@@ -40,6 +40,26 @@ php artisan migrate
 php artisan user-management:seed
 ```
 
+4. `App\Models\User` is updated automatically on `composer install/update` (`package:discover`): the
+   `HasUserManagement` trait is added and `uid`, `phone`, `status` are made fillable. If your model has an
+   unusual shape the installer prints what it couldn't do; the model then needs:
+
+```php
+use Iquesters\UserManagement\Traits\HasUserManagement; // roles (spatie) + Sanctum tokens
+
+#[Fillable(['uid', 'name', 'email', 'password', 'phone', 'status'])]
+class User extends Authenticatable
+{
+    use HasFactory, Notifiable, HasUserManagement;
+    // with iquesters/organisation also: use \Iquesters\Organisation\Traits\HasOrganisations;
+}
+```
+
+   Without this, registration fails with `Field 'uid' doesn't have a default value`.
+
+5. Don't create users in `DatabaseSeeder`: any existing user makes first-run setup count as done.
+   The first account registered after `/setup` becomes the super-admin.
+
 ---
 
 ## 🔧 Configuration

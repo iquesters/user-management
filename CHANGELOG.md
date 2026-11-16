@@ -24,6 +24,26 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 - Assets served statically when published.
 - Logging uses foundation's `Loggable`.
 
+### Changed
+- `Support\Assets` extends foundation's `ModuleAssets` (shared asset route/URL logic).
+- `UserManagementServiceProvider` (440 → ~90 lines) extends foundation's `BaseServiceProvider`, configured by
+  `Package\UserManagementPackageInfo`. Asset route/URLs moved to `Support\Assets`, install steps to `Install\InstallSteps`.
+  `getLogoUrl()` / `getCssUrl()` / `getJsUrl()` are kept on the provider.
+- On `composer install/update` the app's `User` model gets `HasUserManagement` and fillable `uid`, `phone`, `status`
+  automatically (previously a manual step; registration failed without it).
+- Registration errors show a clear message (cause appended only with `APP_DEBUG`); form errors appear as toasts.
+
+### Removed
+- Unused `api_conf` setting (module APIs are declared in composer.json now; this module has no JSON API).
+- Empty `routes/api.php`, the fallback Spatie publish path that never ran, a duplicate user-interface conf
+  registration, and the logging-only `EmailOtpSender` singleton binding.
+
+### Security
+- Registration no longer returns the raw exception (SQL incl. password hash) or the submitted password in its JSON.
+
+### Docs
+- README install steps now cover the required `App\Models\User` changes (`uid` fillable, `HasUserManagement`).
+
 ### Fixed
 - Fresh installs skipped first-run setup: `user-interface:seed` stores the default `APP_NAME` ("Iquesters"), which
   `SetupState` took as "setup submitted". The seeded default no longer counts.

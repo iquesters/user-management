@@ -63,8 +63,16 @@ class SetupGateTest extends TestCase
             'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        $this->assertFalse(SetupState::isConfigured());
-        $this->get('/login')->assertRedirect(route('ui.setup'));
+        try {
+            // The redirect itself is covered by test_auth_pages_redirect_to_setup_until_setup_is_submitted.
+            $this->assertFalse(SetupState::isConfigured());
+        } finally {
+            // Remove the partial conf so the next test doesn't boot with it
+            // (an APP_NAME-only user-interface conf has an empty auth layout).
+            \Illuminate\Support\Facades\DB::table('master_data_metas')->where('ref_parent', $confId)->delete();
+            \Illuminate\Support\Facades\DB::table('master_data')->where('id', $confId)->delete();
+            \Illuminate\Support\Facades\Cache::flush();
+        }
     }
 
     public function test_existing_installs_with_users_count_as_configured(): void

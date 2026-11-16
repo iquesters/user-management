@@ -154,8 +154,9 @@ class RegisteredUserController extends Controller
             return response()->json([
                 'success' => true,
                 'status'  => true,
-                'message' => 'User registered successfully',
-                'data'    => $validated,
+                'message' => 'Your account has been created.',
+                // Only non-secret fields: $validated also holds the password.
+                'data'    => array_intersect_key($validated, array_flip(['name', 'email', 'phone'])),
                 'redirect_url' => route('dashboard', absolute: false),
             ]);
 
@@ -170,14 +171,20 @@ class RegisteredUserController extends Controller
 
         } catch (\Throwable $e) {
 
-            $this->logError('Registration Error: ' . $e->getMessage());
+            $this->logError('Registration failed: ' . $e->getMessage(), ['exception' => $e]);
 
-            return response()->json([
+            // The real cause (often SQL) only goes to the log; the user gets a
+            // clear, safe message. With APP_DEBUG on, the cause is appended so
+            // developers can see it in the browser too.
+            $message = 'We couldn\'t create your account because of a problem on our side. '
+                . 'Please try again in a few minutes, or contact the site administrator if it keeps happening.';
+
+            return response()->json(array_filter([
                 'success' => false,
                 'status'  => false,
-                'message' => 'Something went wrong',
-                'error'   => $e->getMessage()
-            ], 500);
+                'message' => $message,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
+            ], fn ($value) => $value !== null), 500);
         }
     }
 
