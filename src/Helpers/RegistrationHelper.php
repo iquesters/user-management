@@ -54,7 +54,6 @@ class RegistrationHelper extends BaseAuthHelper
         // Check if user already exists
         // $existingUser = UserModel::query()->where('email', $email)->first();
         if ($existingUser) {
-            // Log::debug('User already exists: ' . $email);
             if (empty($existingUser->uid)) {
                 $existingUser->update(['uid' => self::generate_uid()]);
             }
@@ -74,7 +73,6 @@ class RegistrationHelper extends BaseAuthHelper
         if ($existingUserCount === 0) {
             // This is the first-ever user
             $roleToAssign = $superAdminRole;
-            // Log::info("Preparing to assign 'super-admin' role to first registered user: {$email}");
             static::logInfo("Preparing to assign 'super-admin' role to first registered user: {$resolvedIdentifier}");
         } else {
             // Use configured default role
@@ -94,16 +92,8 @@ class RegistrationHelper extends BaseAuthHelper
         }
 
         // ✅ Only now, create the user (safe to persist)
-        // $user = UserModel::query()->create([
-        //     'uid' => self::generate_uid(),
-        //     'name' => $name,
-        //     'email' => $email,
-        //     'status' => 'active',
-        //     'password' => $password ? Hash::make($password) : bcrypt(Str::random(16)),
-        // ]);
 
-
-        // ----------------------------
+// ----------------------------
         // CREATE USER
         // ----------------------------
         $userData = [
@@ -119,10 +109,7 @@ class RegistrationHelper extends BaseAuthHelper
 
         $user = UserModel::query()->create($userData);
 
-
-
-
-        if ($email_verified) {
+if ($email_verified) {
             $user->markEmailAsVerified();
         }
 
@@ -143,14 +130,14 @@ class RegistrationHelper extends BaseAuthHelper
                     }
                 }
 
-                static::logInfo("✅ All modules assigned to 'super-admin' automatically after first user registration.", [
+                static::logInfo("All modules assigned to 'super-admin' automatically after first user registration.", [
                     'user_id' => $user->id,
                     'user_email' => $user->email,
                     'total_modules' => $modules->count(),
                 ]);
 
             } catch (\Throwable $e) {
-                static::logError("⚠️ Failed to auto-assign modules to super-admin", [
+                static::logError("Failed to auto-assign modules to super-admin", [
                     'error' => $e->getMessage(),
                     'line' => $e->getLine(),
                 ]);

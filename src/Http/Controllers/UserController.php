@@ -62,7 +62,6 @@ class UserController extends Controller
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
                 'password' => ['required', 'string', 'min:8', 'confirmed'],
                 'roles' => ['required', 'array'],
-                // 'organisation_uid' => ['nullable', 'string'], // Add this line
                 'country_code' => ['required','regex:/^\+\d{1,4}$/'],
                 'mobile' => ['required','digits_between:7,15'],
             ]);
@@ -92,22 +91,7 @@ class UserController extends Controller
             //     $organisation = Organisation::where('uid', $request->organisation_uid)->first();
                 //@todo: check if creator user and organisation are in the same organisation
 
-                // if ($organisation) {
-                //     OrganisationUsers::create([
-                //         'ref_organisation' => $organisation->id,
-                //         'ref_user' => $user->id,
-                //         'status' => 'active',
-                //         'created_by' => Auth::id(),
-                //         'updated_by' => Auth::id(),
-                //     ]);
-
-
-                //     return redirect()->route('organisations.users.index', $organisation->uid)
-                //         ->with('success', 'User created and added to organisation successfully.');
-                // }
-            // }
-            
-            if ($request->filled('organisation_uid')) {
+if ($request->filled('organisation_uid')) {
                 $organisation = Organisation::where('uid', $request->organisation_uid)->first();
 
                 if ($organisation) {

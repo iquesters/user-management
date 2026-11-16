@@ -19,7 +19,6 @@ class MediaUtil
     public static function storeFile($file, $location = null, $fileOptions = [])
     {
         $options = [...MediaUtil::DEFAULT_FILE_UPLOAD_OPTIONS, ...$fileOptions];
-        // return Storage::putFile('media' . $location, $file, $options);
         return Storage::disk('public')->putFile('media' . $location, $file, $options);
 
     }

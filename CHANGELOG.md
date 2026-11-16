@@ -5,6 +5,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 
 ## [Unreleased] – 2.0.0
 
+### Housekeeping
+- Removed commented-out code (incl. a dead `download()` method) and emoji from log messages; added Pint/Larastan, test CI, `.gitattributes`, `SECURITY.md`, `CONTRIBUTING.md`, `UPGRADE.md` and composer metadata.
+
 ### Breaking
 - Requires PHP 8.3, Laravel 12/13 and spatie/laravel-permission 8; google/apiclient replaced.
 - `config/user-management.php` and its `.env` keys removed; all settings come from the DB conf (`UserManagementConf`).

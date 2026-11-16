@@ -117,8 +117,6 @@ class MediaController extends Controller
             $validator = Validator::make($request->all(), $validation_expression, $errMsgs);
             if (!$validator->fails()) {
                 $media_resources = $this->prepare_media_resources($files);
-                // dd($media_resources);
-                // $medias = MediaResources::insert($media_resources);
                 $medias = UserMeta::updateOrCreate(
                             ['ref_parent' => Auth::user()->id, 'meta_key' => 'profile_picture'],
                             ['meta_value' => $media_resources[0]['media_url'], 'status' => 'active']
@@ -147,14 +145,6 @@ class MediaController extends Controller
     /**
      * Get a newly created resource in storage
      */
-    // public function download(Request $request)
-    // {
-    //     try {
-    //         if ($request->has('media_url')) {
-    //             $media_url = $request->input('media_url');
-    //         }
-    //         Log::info("media_url: " . $media_url);
-    //         $contents = MediaUtil::getFile(basename($media_url));
 
     //         if (isset($contents)) {
     //             // You can do something with the file contents here, like returning it as a response
@@ -177,8 +167,6 @@ class MediaController extends Controller
         $result = MediaResources::where('id', $id)->update(['status' => EntityStatus::ACTIVE]);
         static::logInfo('delete status update result=' . $result);
         if ($result) {
-            // $route = isset($route) || $route !== '' ? $route : 'media.library';
-            // return redirect()->route($route)->with('error', 'Media deleted successfully');
             return redirect()->back()->with('error', 'Media deleted successfully');
         } else {
             return redirect()->back()->with('warning', 'Media delete failed.');
@@ -193,15 +181,13 @@ class MediaController extends Controller
         $result = MediaResources::destroy($id);
         static::logInfo('delete result=' . $result);
         if ($result) {
-            // $route = isset($route) || $route !== '' ? $route : 'media.library';
             return redirect()->route($route)->with('error', 'Media deleted successfully');
         } else {
             return redirect()->back()->with('warning', 'Media delete failed.');
         }
     }
 
-
-    /**
+/**
      * Remove Profile picture.
      */
     public function removeProfilePicture()

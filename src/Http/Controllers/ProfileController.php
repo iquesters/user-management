@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Log;
 use Iquesters\UserManagement\Models\UserMeta;
 use Iquesters\Foundation\Models\MasterData;
 
-
 class ProfileController extends Controller
 {
     /**
@@ -70,7 +69,6 @@ class ProfileController extends Controller
      */
     public function update(Request $request): RedirectResponse
     {
-        // dd($request->all());
         $user = Auth::user();
 
         if (!$user) {
@@ -198,8 +196,7 @@ class ProfileController extends Controller
         return 'https://placehold.co/400x400/faf3e0/d72638/png?text=' . ($user->name[0] ?? '?');
     }
 
-
-    public function settings(){
+public function settings(){
         try{
             $user = Auth::user();
             $userMetas = UserMeta::where('ref_parent', $user->id)->pluck('meta_value', 'meta_key');
