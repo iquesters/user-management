@@ -3,6 +3,7 @@
 namespace Iquesters\UserManagement\Traits;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 use Iquesters\UserManagement\Models\UserMeta;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
@@ -10,6 +11,19 @@ use Spatie\Permission\Traits\HasRoles;
 trait HasUserManagement
 {
     use HasApiTokens, HasRoles;
+
+    /**
+     * users.uid is required: give users created outside this package
+     * (factories, seeders, tinker, other packages) a ULID. Set on construction,
+     * not in a `creating` listener, because seeders often run WithoutModelEvents.
+     * Models loaded from the database replace it with their stored uid.
+     */
+    public function initializeHasUserManagement(): void
+    {
+        if (! array_key_exists('uid', $this->attributes)) {
+            $this->attributes['uid'] = (string) Str::ulid();
+        }
+    }
 
     /**
      * User meta rows (user_metas). A User model that already defines
