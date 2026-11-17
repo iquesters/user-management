@@ -11,9 +11,10 @@ use Spatie\Permission\Models\Role;
 /**
  * First-run setup state.
  *
- * - configured: the setup form was submitted (an APP_NAME other than the
- *   seeded default saved), or the app already has users (existing installs
- *   that never ran /setup).
+ * - configured: the setup form was submitted (an app name is stored in the
+ *   user-interface settings; only changed values are stored, never the
+ *   default), or the app already has users (existing installs that never
+ *   ran /setup).
  * - adminCreated: a super-admin exists, so onboarding is complete.
  *
  * "configured" never goes back to false, so once true it is cached forever
@@ -24,13 +25,6 @@ final class SetupState
     use Loggable;
 
     private const CACHE_KEY = 'usermanagement.setup_configured';
-
-    /**
-     * APP_NAME written by `user-interface:seed` (UserInterfaceConf default).
-     * The seeder stores every default, so this value alone doesn't mean the
-     * setup form was submitted.
-     */
-    private const SEEDED_DEFAULT_APP_NAME = 'Iquesters';
 
     public static function isConfigured(): bool
     {
@@ -67,19 +61,9 @@ final class SetupState
     private static function appNameSaved(): bool
     {
         try {
-            if (! Schema::hasTable('master_data') || ! Schema::hasTable('master_data_metas')) {
-                return false;
-            }
+            $stored = \Iquesters\Foundation\Support\Settings\SettingsStore::get(\Iquesters\Foundation\Enums\Module::USER_INFE);
 
-            $confId = DB::table('master_data')->where('key', 'user-interface-conf')->value('id');
-
-            return $confId !== null && DB::table('master_data_metas')
-                ->where('ref_parent', $confId)
-                ->where('meta_key', 'APP_NAME')
-                ->whereNotNull('meta_value')
-                ->where('meta_value', '<>', '')
-                ->where('meta_value', '<>', self::SEEDED_DEFAULT_APP_NAME)
-                ->exists();
+            return trim((string) ($stored['app_name'] ?? '')) !== '';
         } catch (\Throwable) {
             return false;
         }

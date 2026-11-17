@@ -16,7 +16,7 @@ class UserManagementConf extends BaseConf
     protected string $logo;
     protected string $default_user_role;
     protected string $default_auth_route;
-    protected string $organisation_needed;
+    protected bool $organisation_needed;
     protected string $signin_identifier;
     protected string $signin_flow;
     // Which form the auth pages render: classic | schema | both
@@ -52,5 +52,16 @@ class UserManagementConf extends BaseConf
         $default_values->registration_fields->prepareDefault($default_values->registration_fields);
     }
 
-
+    protected function rules(): array
+    {
+        return [
+            'auth_layout' => 'required|string',
+            'app_layout' => 'required|string',
+            'default_user_role' => 'required|string',
+            'default_auth_route' => 'required|string',
+            'signin_identifier' => 'in:email,phone',
+            'signin_flow' => 'in:classic,unified',
+            'auth_form_type' => 'in:classic,schema,both',
+        ];
+    }
 }

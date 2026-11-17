@@ -40,4 +40,18 @@ class WhatsAppLoginConf extends BaseConf
         $default_values->max_verify_failures_per_window = 10;
         $default_values->max_global_sends_per_hour = 250;
     }
+
+    protected function rules(): array
+    {
+        return [
+            'delivery_provider' => 'in:meta',
+            'otp_length' => 'integer|between:4,10',
+            'otp_ttl_minutes' => 'integer|between:1,60',
+            'max_attempts' => 'integer|min:1',
+            'resend_cooldown_seconds' => 'integer|min:0',
+            'max_send_per_hour' => 'integer|min:1',
+            'max_verify_failures_per_window' => 'integer|min:1',
+            'max_global_sends_per_hour' => 'integer|min:1',
+        ];
+    }
 }

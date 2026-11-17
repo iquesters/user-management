@@ -18,8 +18,9 @@ class SocialLoginConf extends BaseConf
         $google = new GoogleConf();
         $google->prepareDefault($google);
         
+        // Keyed by provider name: stored settings, views and the admin screen address providers by key.
         $default_values->o_auth_providers = [
-            $google
+            'google' => $google,
         ];
     }
 

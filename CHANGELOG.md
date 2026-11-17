@@ -5,6 +5,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 
 ## [Unreleased] – 2.0.0
 
+### Settings engine
+- Validation rules for auth settings (`auth_form_type`, `signin_flow`, `signin_identifier`) and WhatsApp OTP limits; `organisation_needed` is a boolean.
+- Setup saves name/logo/description through the validated settings; the setup check reads the stored app name (no more seeded-default workaround).
+
 ### Housekeeping
 - Removed commented-out code (incl. a dead `download()` method) and emoji from log messages; added Pint/Larastan, test CI, `.gitattributes`, `SECURITY.md`, `CONTRIBUTING.md`, `UPGRADE.md` and composer metadata.
 

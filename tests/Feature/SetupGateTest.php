@@ -51,28 +51,13 @@ class SetupGateTest extends TestCase
         $this->get('/register')->assertOk();
     }
 
-    public function test_seeded_default_app_name_does_not_count_as_setup(): void
+    public function test_other_ui_settings_do_not_count_as_setup(): void
     {
-        // user-interface:seed stores every conf default, APP_NAME included.
-        $confId = \Illuminate\Support\Facades\DB::table('master_data')->insertGetId([
-            'key' => 'user-interface-conf', 'value' => 'user-interface-conf', 'status' => 'active',
-            'created_at' => now(), 'updated_at' => now(),
-        ]);
-        \Illuminate\Support\Facades\DB::table('master_data_metas')->insert([
-            'ref_parent' => $confId, 'meta_key' => 'APP_NAME', 'meta_value' => 'Iquesters',
-            'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
-        ]);
+        // Only a saved app name means the setup form was submitted; defaults are never stored.
+        \Iquesters\Foundation\Support\ConfProvider::from(\Iquesters\Foundation\Enums\Module::USER_INFE)
+            ->update(['large_screen_nav_style' => 'header']);
 
-        try {
-            // The redirect itself is covered by test_auth_pages_redirect_to_setup_until_setup_is_submitted.
-            $this->assertFalse(SetupState::isConfigured());
-        } finally {
-            // Remove the partial conf so the next test doesn't boot with it
-            // (an APP_NAME-only user-interface conf has an empty auth layout).
-            \Illuminate\Support\Facades\DB::table('master_data_metas')->where('ref_parent', $confId)->delete();
-            \Illuminate\Support\Facades\DB::table('master_data')->where('id', $confId)->delete();
-            \Illuminate\Support\Facades\Cache::flush();
-        }
+        $this->assertFalse(SetupState::isConfigured());
     }
 
     public function test_existing_installs_with_users_count_as_configured(): void

@@ -31,8 +31,12 @@ class SetupTest extends TestCase
             ->assertJsonPath('redirect_url', '/register');
 
         $this->assertFileExists(public_path('img/logo_acme.png'));
-        $confId = DB::table('master_data')->where('key', 'user-interface-conf')->value('id');
-        $this->assertSame('Acme', DB::table('master_data_metas')->where('ref_parent', $confId)->where('meta_key', 'APP_NAME')->value('meta_value'));
+
+        // Saved through the typed user-interface settings (module_settings).
+        $stored = \Iquesters\Foundation\Support\Settings\SettingsStore::get(\Iquesters\Foundation\Enums\Module::USER_INFE);
+        $this->assertSame('Acme', $stored['app_name']);
+        $this->assertSame('img/logo_acme.png', $stored['logo']);
+        $this->assertSame('Alumni portal', $stored['app_description']);
     }
 
     public function test_logo_extension_comes_from_content_not_the_client_name(): void
