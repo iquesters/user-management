@@ -48,8 +48,14 @@ abstract class TestCase extends Orchestra
 
     protected function defineDatabaseMigrations(): void
     {
-        // Sanctum's migration is already registered by the package providers.
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
+
+        // Sanctum ships its migration unregistered. A fresh install (CI) has no published
+        // copy; a local one may (the install step publishes it), so load it only when missing.
+        if (! glob(database_path('migrations/*_create_personal_access_tokens_table.php'))) {
+            $sanctum = dirname((new \ReflectionClass(SanctumServiceProvider::class))->getFileName(), 2);
+            $this->loadMigrationsFrom($sanctum.'/database/migrations');
+        }
     }
 
     protected function makeUser(?string $role = null, array $attributes = []): User
