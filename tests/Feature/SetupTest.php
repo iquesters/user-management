@@ -5,6 +5,9 @@ namespace Iquesters\UserManagement\Tests\Feature;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\Settings\SettingsStore;
+use Iquesters\UserManagement\Database\Seeders\UserManagementSeeder;
 use Iquesters\UserManagement\Tests\TestCase;
 
 class SetupTest extends TestCase
@@ -33,7 +36,7 @@ class SetupTest extends TestCase
         $this->assertFileExists(public_path('img/logo_acme.png'));
 
         // Saved through the typed user-interface settings (module_settings).
-        $stored = \Iquesters\Foundation\Support\Settings\SettingsStore::get(\Iquesters\Foundation\Enums\Module::USER_INFE);
+        $stored = SettingsStore::get(Module::USER_INFE);
         $this->assertSame('Acme', $stored['app_name']);
         $this->assertSame('img/logo_acme.png', $stored['logo']);
         $this->assertSame('Alumni portal', $stored['app_description']);
@@ -91,7 +94,7 @@ class SetupTest extends TestCase
 
     public function test_seeder_provides_the_setup_form_schema(): void
     {
-        $this->seed(\Iquesters\UserManagement\Database\Seeders\UserManagementSeeder::class);
+        $this->seed(UserManagementSeeder::class);
 
         $schema = json_decode(DB::table('form_schemas')->where('slug', 'setup-form')->value('schema'), true);
 

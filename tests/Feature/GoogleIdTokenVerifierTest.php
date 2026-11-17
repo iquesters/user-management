@@ -19,7 +19,7 @@ class GoogleIdTokenVerifierTest extends TestCase
         parent::setUp();
 
         // Test-only keys (tests/Fixtures); openssl_pkey_new() needs openssl.cnf, which Windows PHP often lacks.
-        $this->privateKey = file_get_contents(__DIR__ . '/../Fixtures/google-test-key.pem');
+        $this->privateKey = file_get_contents(__DIR__.'/../Fixtures/google-test-key.pem');
         $details = openssl_pkey_get_details(openssl_pkey_get_private($this->privateKey));
 
         $b64 = fn (string $bin) => rtrim(strtr(base64_encode($bin), '+/', '-_'), '=');
@@ -67,7 +67,7 @@ class GoogleIdTokenVerifierTest extends TestCase
         $this->assertNull($verifier->verify('not-a-jwt', self::CLIENT_ID), 'garbage');
         $this->assertNull($verifier->verify(null, self::CLIENT_ID), 'missing');
 
-        $otherPem = file_get_contents(__DIR__ . '/../Fixtures/other-test-key.pem');
+        $otherPem = file_get_contents(__DIR__.'/../Fixtures/other-test-key.pem');
         $this->assertNull($verifier->verify($this->token([], $otherPem), self::CLIENT_ID), 'bad signature');
     }
 

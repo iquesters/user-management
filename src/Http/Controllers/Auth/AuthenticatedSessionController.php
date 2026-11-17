@@ -2,16 +2,16 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
-use Illuminate\Routing\Controller;
-use Iquesters\UserManagement\Helpers\LoginHelper;
-use Iquesters\UserManagement\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Iquesters\Foundation\Enums\Module;
 use Iquesters\Foundation\Support\ConfProvider;
+use Iquesters\UserManagement\Helpers\LoginHelper;
+use Iquesters\UserManagement\Http\Requests\Auth\LoginRequest;
 
 class AuthenticatedSessionController extends Controller
 {

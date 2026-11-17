@@ -19,6 +19,6 @@ final class Assets extends ModuleAssets
     /** Logo from the user-management conf. */
     public static function logoUrl(): string
     {
-        return static::resolveUrl((string) ConfProvider::from(Module::USER_MGMT)->logo, allowAppPublic: false);
+        return self::resolveUrl((string) ConfProvider::from(Module::USER_MGMT)->logo, allowAppPublic: false);
     }
 }

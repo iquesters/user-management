@@ -5,6 +5,8 @@ namespace Iquesters\UserManagement\Install;
 use Iquesters\Foundation\Support\InstallPublisher;
 use Iquesters\Foundation\Support\UserModelPatcher;
 use Iquesters\UserManagement\Traits\HasUserManagement;
+use Laravel\Sanctum\SanctumServiceProvider;
+use Spatie\Permission\PermissionServiceProvider;
 
 /**
  * One-time setup run on `package:discover` (composer install/update).
@@ -17,7 +19,7 @@ final class InstallSteps
         $messages = [];
 
         // Roles & permissions (spatie/laravel-permission)
-        if (class_exists(\Spatie\Permission\PermissionServiceProvider::class)) {
+        if (class_exists(PermissionServiceProvider::class)) {
             $messages[] = InstallPublisher::migration('permission-migrations', '_create_permission_tables.php', 'permissions');
             $messages[] = InstallPublisher::config('permission-config', 'permission.php');
         } else {
@@ -25,7 +27,7 @@ final class InstallSteps
         }
 
         // API tokens (laravel/sanctum)
-        if (class_exists(\Laravel\Sanctum\SanctumServiceProvider::class)) {
+        if (class_exists(SanctumServiceProvider::class)) {
             $messages[] = InstallPublisher::migration('sanctum-migrations', '_create_personal_access_tokens_table.php', 'personal_access_tokens');
             $messages[] = InstallPublisher::config('sanctum-config', 'sanctum.php');
         }
@@ -36,7 +38,7 @@ final class InstallSteps
         }
 
         foreach (array_filter($messages) as $message) {
-            echo "👤 user-management: {$message}" . PHP_EOL;
+            echo "👤 user-management: {$message}".PHP_EOL;
         }
     }
 }

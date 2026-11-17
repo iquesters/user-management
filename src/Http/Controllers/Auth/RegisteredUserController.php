@@ -2,20 +2,21 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
-use Iquesters\Foundation\Enums\Module;
-use Iquesters\Foundation\Support\ConfProvider;
-use Iquesters\UserManagement\Helpers\RegistrationHelper;
-use Iquesters\UserManagement\Helpers\LoginHelper;
-use Iquesters\UserManagement\Rules\RecaptchaRule;
-use Iquesters\UserManagement\Support\AuthFormSchema;
-use Illuminate\Routing\Controller;
-use Iquesters\Foundation\Support\UserModel;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use Illuminate\Http\JsonResponse;
+use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\ConfProvider;
+use Iquesters\Foundation\Support\UserModel;
 use Iquesters\Foundation\System\Traits\Loggable;
+use Iquesters\UserManagement\Helpers\LoginHelper;
+use Iquesters\UserManagement\Helpers\RegistrationHelper;
+use Iquesters\UserManagement\Rules\RecaptchaRule;
+use Iquesters\UserManagement\Support\AuthFormSchema;
 
 class RegisteredUserController extends Controller
 {
@@ -36,7 +37,7 @@ class RegisteredUserController extends Controller
     /**
      * Handle an incoming registration request.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function store_old(Request $request): RedirectResponse
     {
@@ -47,7 +48,7 @@ class RegisteredUserController extends Controller
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . UserModel::name()],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.UserModel::name()],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ];
 
@@ -60,7 +61,7 @@ class RegisteredUserController extends Controller
 
         $validated = $request->validate($rules);
 
-        $this->logDebug("Registration validation passed | email={$validated['email']} | has_recaptcha_token=" . (isset($validated['recaptcha_token']) ? 'true' : 'false'));
+        $this->logDebug("Registration validation passed | email={$validated['email']} | has_recaptcha_token=".(isset($validated['recaptcha_token']) ? 'true' : 'false'));
 
         // Use registration helper
         $user = RegistrationHelper::register_user(
@@ -77,31 +78,29 @@ class RegisteredUserController extends Controller
         return redirect(route('dashboard', absolute: false));
     }
 
-
-
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         try {
             $this->logInfo('Registration API hit');
 
             // ------------------------------------------------
-            //Fetch config values
+            // Fetch config values
             // ------------------------------------------------
             $signinIdentifier = ConfProvider::from(Module::USER_MGMT)->signin_identifier;
-            $recaptchaConf    = ConfProvider::from(Module::USER_MGMT)->recaptcha;
+            $recaptchaConf = ConfProvider::from(Module::USER_MGMT)->recaptcha;
             $recaptchaEnabled = $recaptchaConf ? $recaptchaConf->enabled : false;
 
             $identifierValue = $request->input($signinIdentifier);
 
             // ------------------------------------------------
-            //Base validation rules (common)
+            // Base validation rules (common)
             // ------------------------------------------------
             $rules = [];
 
             if ($signinIdentifier === 'email') {
                 $rules = AuthFormSchema::rules('register') ?? [
-                    'name'     => ['required', 'string', 'max:255'],
-                    'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . UserModel::name()],
+                    'name' => ['required', 'string', 'max:255'],
+                    'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.UserModel::name()],
                     'password' => ['required', 'confirmed', Rules\Password::defaults()],
                 ];
             }
@@ -110,7 +109,7 @@ class RegisteredUserController extends Controller
                 $rules = [
                     'phone' => ['required', 'digits:10', 'unique:users,phone'],
                     // optional name if you want
-                    'name'  => ['nullable', 'string', 'max:255'],
+                    'name' => ['nullable', 'string', 'max:255'],
                 ];
             }
 
@@ -153,40 +152,38 @@ class RegisteredUserController extends Controller
             // ------------------------------------------------
             return response()->json([
                 'success' => true,
-                'status'  => true,
+                'status' => true,
                 'message' => 'Your account has been created.',
                 // Only non-secret fields: $validated also holds the password.
-                'data'    => array_intersect_key($validated, array_flip(['name', 'email', 'phone'])),
+                'data' => array_intersect_key($validated, array_flip(['name', 'email', 'phone'])),
                 'redirect_url' => route('dashboard', absolute: false),
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
 
             return response()->json([
                 'success' => false,
-                'status'  => false,
+                'status' => false,
                 'message' => 'Validation failed',
-                'errors'  => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
 
         } catch (\Throwable $e) {
 
-            $this->logError('Registration failed: ' . $e->getMessage(), ['exception' => $e]);
+            $this->logError('Registration failed: '.$e->getMessage(), ['exception' => $e]);
 
             // The real cause (often SQL) only goes to the log; the user gets a
             // clear, safe message. With APP_DEBUG on, the cause is appended so
             // developers can see it in the browser too.
             $message = 'We couldn\'t create your account because of a problem on our side. '
-                . 'Please try again in a few minutes, or contact the site administrator if it keeps happening.';
+                .'Please try again in a few minutes, or contact the site administrator if it keeps happening.';
 
             return response()->json(array_filter([
                 'success' => false,
-                'status'  => false,
+                'status' => false,
                 'message' => $message,
-                'error'   => config('app.debug') ? $e->getMessage() : null,
+                'error' => config('app.debug') ? $e->getMessage() : null,
             ], fn ($value) => $value !== null), 500);
         }
     }
-
-
 }

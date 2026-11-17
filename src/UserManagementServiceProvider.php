@@ -6,6 +6,7 @@ use Iquesters\Foundation\Enums\Module;
 use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\System\Providers\BaseServiceProvider;
 use Iquesters\Foundation\System\Traits\Loggable;
+use Iquesters\UserInterface\Config\UserInterfaceConf;
 use Iquesters\UserManagement\Contracts\WhatsAppOtpSender;
 use Iquesters\UserManagement\Install\InstallSteps;
 use Iquesters\UserManagement\Services\MetaWhatsAppOtpSender;
@@ -48,12 +49,12 @@ class UserManagementServiceProvider extends BaseServiceProvider
         $this->app->instance('auth.layout', $this->resolveAuthLayout());
 
         $this->publishes([
-            __DIR__ . '/../resources/views/layouts/package.blade.php' => resource_path('views/vendor/usermanagement/layouts/package.blade.php'),
+            __DIR__.'/../resources/views/layouts/package.blade.php' => resource_path('views/vendor/usermanagement/layouts/package.blade.php'),
         ], 'user-management-config');
 
         // 'laravel-assets' is re-published by the app after every `composer update`.
         $this->publishes([
-            __DIR__ . '/../public' => public_path('vendor/usermanagement'),
+            __DIR__.'/../public' => public_path('vendor/usermanagement'),
         ], ['laravel-assets', 'user-management-assets']);
 
         // composer install/update: publish Spatie/Sanctum files, patch the user model.
@@ -62,11 +63,11 @@ class UserManagementServiceProvider extends BaseServiceProvider
 
     private function resolveAuthLayout(): string
     {
-        if (class_exists(\Iquesters\UserInterface\Config\UserInterfaceConf::class)) {
+        if (class_exists(UserInterfaceConf::class)) {
             try {
                 return ConfProvider::from(Module::USER_INFE)->auth_layout;
             } catch (\Throwable $e) {
-                static::logWarning('Falling back to the user-management auth layout: ' . $e->getMessage());
+                static::logWarning('Falling back to the user-management auth layout: '.$e->getMessage());
             }
         }
 

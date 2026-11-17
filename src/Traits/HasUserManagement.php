@@ -9,7 +9,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 trait HasUserManagement
 {
-    use HasRoles, HasApiTokens;
+    use HasApiTokens, HasRoles;
 
     /**
      * User meta rows (user_metas). A User model that already defines

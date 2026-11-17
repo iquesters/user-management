@@ -25,7 +25,7 @@ class EmailOtpSender implements OtpSender
 
         try {
             Mail::raw(
-                'Your verification code is ' . $otp . '. It will expire soon. If you did not request this code, you can ignore this email.',
+                'Your verification code is '.$otp.'. It will expire soon. If you did not request this code, you can ignore this email.',
                 function ($message) use ($identifier) {
                     $message->to($identifier)->subject('Your verification code');
                 }

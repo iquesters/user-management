@@ -2,12 +2,10 @@
 
 namespace Iquesters\UserManagement\Database\Seeders;
 
-use Iquesters\Foundation\Database\Seeders\BaseSeeder;
-use Iquesters\Foundation\Support\UserModel;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Iquesters\Foundation\Database\Seeders\BaseSeeder;
 
 /**
  * Seeder for the User Management module
@@ -23,6 +21,7 @@ class UserManagementSeeder extends BaseSeeder
      * Module basic information
      */
     protected string $moduleName = 'user-management';
+
     protected string $description = 'User Management Module';
 
     /**
@@ -37,50 +36,50 @@ class UserManagementSeeder extends BaseSeeder
             |-------------------------------------------------
             */
             [
-                "icon" => "fas fa-users",
-                "label" => "Users",
-                "route" => "ui.list",
-                "table_schema" => [
-                    "slug" => "user-table",
-                    "name" => "Users",
-                    "description" => "Datatable schema for users",
-                    "schema" => [
-                        "entity" => "users",
-                        "dt-options" => [
-                            "columns" => [
-                                ["data" => "id", "title" => "ID", "visible" => true],
+                'icon' => 'fas fa-users',
+                'label' => 'Users',
+                'route' => 'ui.list',
+                'table_schema' => [
+                    'slug' => 'user-table',
+                    'name' => 'Users',
+                    'description' => 'Datatable schema for users',
+                    'schema' => [
+                        'entity' => 'users',
+                        'dt-options' => [
+                            'columns' => [
+                                ['data' => 'id', 'title' => 'ID', 'visible' => true],
                                 [
-                                    "data" => "name",
-                                    "title" => "User Name",
-                                    "visible" => true,
-                                    "link" => true,
-                                    "form-schema-uid" => "user-details"
+                                    'data' => 'name',
+                                    'title' => 'User Name',
+                                    'visible' => true,
+                                    'link' => true,
+                                    'form-schema-uid' => 'user-details',
                                 ],
                                 [
-                                    "data" => "email",
-                                    "title" => "Email",
-                                    "visible" => true
+                                    'data' => 'email',
+                                    'title' => 'Email',
+                                    'visible' => true,
                                 ],
                                 [
-                                    "data" => "meta.registered_at",
-                                    "title" => "Registered At",
-                                    "visible" => true
+                                    'data' => 'meta.registered_at',
+                                    'title' => 'Registered At',
+                                    'visible' => true,
                                 ],
                                 [
-                                    "data" => "meta.login_ip_address",
-                                    "title" => "Login IP",
-                                    "visible" => true
+                                    'data' => 'meta.login_ip_address',
+                                    'title' => 'Login IP',
+                                    'visible' => true,
                                 ],
                             ],
-                            "options" => [
-                                "pageLength" => 10,
-                                "order" => [[0, "desc"]],
-                                "responsive" => true
-                            ]
+                            'options' => [
+                                'pageLength' => 10,
+                                'order' => [[0, 'desc']],
+                                'responsive' => true,
+                            ],
                         ],
-                        "default_view_mode" => "inbox"
-                    ]
-                ]
+                        'default_view_mode' => 'inbox',
+                    ],
+                ],
             ],
             /*
             |-------------------------------------------------
@@ -88,35 +87,35 @@ class UserManagementSeeder extends BaseSeeder
             |-------------------------------------------------
             */
             [
-                "icon" => "fas fa-user-shield",
-                "label" => "Roles",
-                "route" => "ui.list",
-                "table_schema" => [
-                    "slug" => "role-table",
-                    "name" => "Roles",
-                    "description" => "Datatable schema for roles",
-                    "schema" => [
-                        "entity" => "roles",
-                        "dt-options" => [
-                            "columns" => [
-                                ["data" => "id", "title" => "ID", "visible" => true],
+                'icon' => 'fas fa-user-shield',
+                'label' => 'Roles',
+                'route' => 'ui.list',
+                'table_schema' => [
+                    'slug' => 'role-table',
+                    'name' => 'Roles',
+                    'description' => 'Datatable schema for roles',
+                    'schema' => [
+                        'entity' => 'roles',
+                        'dt-options' => [
+                            'columns' => [
+                                ['data' => 'id', 'title' => 'ID', 'visible' => true],
                                 [
-                                    "data" => "name",
-                                    "title" => "Role Name",
-                                    "visible" => true,
-                                    "link" => true,
-                                    "form-schema-uid" => "role-details"
-                                ]
+                                    'data' => 'name',
+                                    'title' => 'Role Name',
+                                    'visible' => true,
+                                    'link' => true,
+                                    'form-schema-uid' => 'role-details',
+                                ],
                             ],
-                            "options" => [
-                                "pageLength" => 10,
-                                "order" => [[0, "desc"]],
-                                "responsive" => true
-                            ]
+                            'options' => [
+                                'pageLength' => 10,
+                                'order' => [[0, 'desc']],
+                                'responsive' => true,
+                            ],
                         ],
-                        "default_view_mode" => "inbox"
-                    ]
-                ]
+                        'default_view_mode' => 'inbox',
+                    ],
+                ],
             ],
             /*
             |-------------------------------------------------
@@ -124,37 +123,37 @@ class UserManagementSeeder extends BaseSeeder
             |-------------------------------------------------
             */
             [
-                "icon" => "fas fa-shield-alt",
-                "label" => "Permissions",
-                "route" => "ui.list",
-                "table_schema" => [
-                    "slug" => "permission-table",
-                    "name" => "Permissions",
-                    "description" => "Datatable schema for permissions",
-                    "schema" => [
-                        "entity" => "permissions",
-                        "dt-options" => [
-                            "columns" => [
-                                ["data" => "id", "title" => "ID", "visible" => true],
+                'icon' => 'fas fa-shield-alt',
+                'label' => 'Permissions',
+                'route' => 'ui.list',
+                'table_schema' => [
+                    'slug' => 'permission-table',
+                    'name' => 'Permissions',
+                    'description' => 'Datatable schema for permissions',
+                    'schema' => [
+                        'entity' => 'permissions',
+                        'dt-options' => [
+                            'columns' => [
+                                ['data' => 'id', 'title' => 'ID', 'visible' => true],
                                 [
-                                    "data" => "name",
-                                    "title" => "Permission Name",
-                                    "visible" => true,
-                                    "link" => true,
-                                    "form-schema-uid" => "permission-details"
-                                ]
+                                    'data' => 'name',
+                                    'title' => 'Permission Name',
+                                    'visible' => true,
+                                    'link' => true,
+                                    'form-schema-uid' => 'permission-details',
+                                ],
                             ],
-                            "options" => [
-                                "pageLength" => 10,
-                                "order" => [[0, "desc"]],
-                                "responsive" => true
-                            ]
+                            'options' => [
+                                'pageLength' => 10,
+                                'order' => [[0, 'desc']],
+                                'responsive' => true,
+                            ],
                         ],
-                        "default_view_mode" => "inbox"
-                    ]
-                ]
-            ]
-        ]
+                        'default_view_mode' => 'inbox',
+                    ],
+                ],
+            ],
+        ],
     ];
 
     /**
@@ -315,7 +314,7 @@ class UserManagementSeeder extends BaseSeeder
         ],
     ];
 
-     /**
+    /**
      * Implement abstract method from BaseSeeder
      */
     protected function seedCustom(): void

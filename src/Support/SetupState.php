@@ -5,6 +5,8 @@ namespace Iquesters\UserManagement\Support;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\Settings\SettingsStore;
 use Iquesters\Foundation\System\Traits\Loggable;
 use Spatie\Permission\Models\Role;
 
@@ -36,7 +38,7 @@ final class SetupState
 
         if ($configured) {
             Cache::forever(self::CACHE_KEY, true);
-            static::logInfo('Application setup detected as complete');
+            self::logInfo('Application setup detected as complete');
         }
 
         return $configured;
@@ -45,7 +47,7 @@ final class SetupState
     public static function markConfigured(): void
     {
         Cache::forever(self::CACHE_KEY, true);
-        static::logInfo('Application setup marked as complete');
+        self::logInfo('Application setup marked as complete');
     }
 
     public static function adminCreated(): bool
@@ -61,7 +63,7 @@ final class SetupState
     private static function appNameSaved(): bool
     {
         try {
-            $stored = \Iquesters\Foundation\Support\Settings\SettingsStore::get(\Iquesters\Foundation\Enums\Module::USER_INFE);
+            $stored = SettingsStore::get(Module::USER_INFE);
 
             return trim((string) ($stored['app_name'] ?? '')) !== '';
         } catch (\Throwable) {

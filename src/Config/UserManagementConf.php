@@ -2,29 +2,40 @@
 
 namespace Iquesters\UserManagement\Config;
 
-use Iquesters\Foundation\Support\BaseConf;
 use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\BaseConf;
 
 class UserManagementConf extends BaseConf
 {
     // Inherited property of BaseConf, must initialize
     protected ?string $identifier = Module::USER_MGMT;
-    
+
     // properties of this class
     protected string $auth_layout;
+
     protected string $app_layout;
+
     protected string $logo;
+
     protected string $default_user_role;
+
     protected string $default_auth_route;
+
     protected bool $organisation_needed;
+
     protected string $signin_identifier;
+
     protected string $signin_flow;
+
     // Which form the auth pages render: classic | schema | both
     protected string $auth_form_type;
 
     protected RecaptchaConf $recaptcha;
+
     protected SocialLoginConf $social_login;
+
     protected WhatsAppLoginConf $whatsapp_login;
+
     protected RegistrationFieldsConf $registration_fields;
 
     protected function prepareDefault(BaseConf $default_values)
@@ -39,16 +50,16 @@ class UserManagementConf extends BaseConf
         $default_values->signin_flow = 'classic';
         $default_values->auth_form_type = 'classic';
 
-        $default_values->recaptcha = new RecaptchaConf();
+        $default_values->recaptcha = new RecaptchaConf;
         $default_values->recaptcha->prepareDefault($default_values->recaptcha);
 
-        $default_values->social_login = new SocialLoginConf();
+        $default_values->social_login = new SocialLoginConf;
         $default_values->social_login->prepareDefault($default_values->social_login);
 
-        $default_values->whatsapp_login = new WhatsAppLoginConf();
+        $default_values->whatsapp_login = new WhatsAppLoginConf;
         $default_values->whatsapp_login->prepareDefault($default_values->whatsapp_login);
 
-        $default_values->registration_fields = new RegistrationFieldsConf();
+        $default_values->registration_fields = new RegistrationFieldsConf;
         $default_values->registration_fields->prepareDefault($default_values->registration_fields);
     }
 

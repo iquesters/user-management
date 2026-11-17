@@ -2,17 +2,17 @@
 
 namespace Iquesters\UserManagement\Http\Controllers;
 
-use Iquesters\Foundation\System\Traits\Loggable;
-use Illuminate\Routing\Controller;
-use Iquesters\Foundation\Support\UserModel;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
-use Spatie\Permission\Models\Role;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
-use Iquesters\Organisation\Models\Organisation;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Iquesters\Foundation\Support\UserModel;
+use Iquesters\Foundation\System\Traits\Loggable;
+use Iquesters\Organisation\Models\Organisation;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -28,9 +28,11 @@ class UserController extends Controller
             $users = UserModel::query()->with('roles')->get();
             $roles = Role::all();
             static::logDebug('Users fetched successfully', ['count' => $users->count()]);
+
             return view('usermanagement::users.index', compact('users', 'roles'));
         } catch (Exception $e) {
             static::logError('Error fetching users', ['error' => $e->getMessage()]);
+
             return redirect()->back()->with('error', 'An error occurred while fetching users.');
         }
     }
@@ -43,9 +45,11 @@ class UserController extends Controller
         try {
             static::logInfo('Displaying the user creation form');
             $roles = Role::all();
+
             return view('usermanagement::users.create', compact('roles'));
         } catch (Exception $e) {
             static::logError('Error displaying user creation form', ['error' => $e->getMessage()]);
+
             return redirect()->back()->with('error', 'An error occurred while displaying the form.');
         }
     }
@@ -62,16 +66,16 @@ class UserController extends Controller
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
                 'password' => ['required', 'string', 'min:8', 'confirmed'],
                 'roles' => ['required', 'array'],
-                'country_code' => ['required','regex:/^\+\d{1,4}$/'],
-                'mobile' => ['required','digits_between:7,15'],
+                'country_code' => ['required', 'regex:/^\+\d{1,4}$/'],
+                'mobile' => ['required', 'digits_between:7,15'],
             ]);
 
             static::logDebug('Validation passed', ['name' => $validated['name'], 'email' => $validated['email']]);
-            
+
             // Clean and combine phone
             $mobile = preg_replace('/\D/', '', $request->mobile);
-            $phone = $request->country_code . $mobile;
-        
+            $phone = $request->country_code.$mobile;
+
             $user = UserModel::query()->create([
                 'uid' => Str::ulid(),
                 'name' => $validated['name'],
@@ -89,9 +93,9 @@ class UserController extends Controller
             // @todo: get orgUid from route
             // if ($request->has('organisation_uid')) {
             //     $organisation = Organisation::where('uid', $request->organisation_uid)->first();
-                //@todo: check if creator user and organisation are in the same organisation
+            // @todo: check if creator user and organisation are in the same organisation
 
-if ($request->filled('organisation_uid')) {
+            if ($request->filled('organisation_uid')) {
                 $organisation = Organisation::where('uid', $request->organisation_uid)->first();
 
                 if ($organisation) {
@@ -108,6 +112,7 @@ if ($request->filled('organisation_uid')) {
                 ->with('success', 'User created successfully.');
         } catch (Exception $e) {
             static::logError('Error creating user', ['error' => $e->getMessage()]);
+
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'An error occurred while creating the user.');
@@ -124,9 +129,11 @@ if ($request->filled('organisation_uid')) {
             static::logInfo('Displaying the user edit form', ['id' => $user->id]);
             $roles = Role::all();
             $userRoles = $user->roles->pluck('id')->toArray();
+
             return view('usermanagement::users.edit', compact('user', 'roles', 'userRoles'));
         } catch (Exception $e) {
             static::logError('Error displaying user edit form', ['error' => $e->getMessage()]);
+
             return redirect()->back()->with('error', 'An error occurred while displaying the edit form.');
         }
     }
@@ -171,6 +178,7 @@ if ($request->filled('organisation_uid')) {
                 ->with('success', 'User updated successfully.');
         } catch (Exception $e) {
             static::logError('Error updating user', ['error' => $e->getMessage()]);
+
             return redirect()->back()->with('error', 'An error occurred while updating the user.');
         }
     }
@@ -187,6 +195,7 @@ if ($request->filled('organisation_uid')) {
             // Prevent deleting yourself
             if ($user->id === Auth::user()->id) {
                 static::logWarning('User attempted to delete themselves', ['id' => $user->id]);
+
                 return redirect()->route('users.index')
                     ->with('error', 'You cannot delete yourself.');
             }
@@ -198,6 +207,7 @@ if ($request->filled('organisation_uid')) {
                 ->with('success', 'User deleted successfully.');
         } catch (Exception $e) {
             static::logError('Error deleting user', ['error' => $e->getMessage()]);
+
             return redirect()->back()->with('error', 'An error occurred while deleting the user.');
         }
     }

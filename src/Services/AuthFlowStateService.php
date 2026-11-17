@@ -11,7 +11,7 @@ class AuthFlowStateService
     protected const SESSION_ROOT = 'user_management.auth_flows';
 
     /**
-     * @param array<string, mixed> $state
+     * @param  array<string, mixed>  $state
      */
     public function createFlow(Request $request, string $scope, array $state): string
     {
@@ -22,14 +22,14 @@ class AuthFlowStateService
             'auth_method' => 'auth_flow_state',
             'operation' => 'create_flow',
             'scope' => $scope,
-            'flow_token' => substr($flowToken, 0, 12) . '...',
+            'flow_token' => substr($flowToken, 0, 12).'...',
         ]);
 
         return $flowToken;
     }
 
     /**
-     * @param array<string, mixed> $state
+     * @param  array<string, mixed>  $state
      */
     public function putFlowState(Request $request, string $scope, string $flowToken, array $state): void
     {
@@ -57,6 +57,6 @@ class AuthFlowStateService
 
     protected function sessionKey(string $scope): string
     {
-        return self::SESSION_ROOT . '.' . $scope;
+        return self::SESSION_ROOT.'.'.$scope;
     }
 }

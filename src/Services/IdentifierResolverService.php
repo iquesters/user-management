@@ -2,8 +2,9 @@
 
 namespace Iquesters\UserManagement\Services;
 
-use Iquesters\Foundation\System\Traits\Loggable;
+use Illuminate\Database\Eloquent\Model;
 use Iquesters\Foundation\Support\UserModel;
+use Iquesters\Foundation\System\Traits\Loggable;
 
 class IdentifierResolverService
 {
@@ -11,11 +12,10 @@ class IdentifierResolverService
 
     public function __construct(
         protected PhoneNumberService $phoneNumberService
-    ) {
-    }
+    ) {}
 
     /**
-     * @return array{identifier_type:string,normalized_identifier:string,masked_identifier:string,delivery_channel:string,user:?\Illuminate\Database\Eloquent\Model}
+     * @return array{identifier_type:string,normalized_identifier:string,masked_identifier:string,delivery_channel:string,user:?Model}
      */
     public function resolve(string $identifier, ?string $countryDialCode = null): array
     {
@@ -66,7 +66,7 @@ class IdentifierResolverService
         $normalizedDialCode = $this->phoneNumberService->normalize((string) $countryDialCode);
 
         if ($normalizedDialCode !== '') {
-            return '+' . ltrim($normalizedDialCode, '+') . ltrim($normalizedPhone, '+');
+            return '+'.ltrim($normalizedDialCode, '+').ltrim($normalizedPhone, '+');
         }
 
         return $normalizedPhone;
@@ -77,20 +77,20 @@ class IdentifierResolverService
         if ($identifierType === 'email') {
             $normalizedEmail = $this->normalizeEmail($identifier);
 
-            if (!str_contains($normalizedEmail, '@')) {
+            if (! str_contains($normalizedEmail, '@')) {
                 return '***';
             }
 
             [$localPart, $domain] = explode('@', $normalizedEmail, 2);
             $visible = substr($localPart, 0, 2);
 
-            return $visible . str_repeat('*', max(strlen($localPart) - 2, 1)) . '@' . $domain;
+            return $visible.str_repeat('*', max(strlen($localPart) - 2, 1)).'@'.$domain;
         }
 
         return $this->phoneNumberService->mask($identifier);
     }
 
-    public function findUserByIdentifier(string $identifierType, string $identifierValue): ?\Illuminate\Database\Eloquent\Model
+    public function findUserByIdentifier(string $identifierType, string $identifierValue): ?Model
     {
         if ($identifierValue === '') {
             return null;

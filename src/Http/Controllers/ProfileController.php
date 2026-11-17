@@ -2,35 +2,30 @@
 
 namespace Iquesters\UserManagement\Http\Controllers;
 
-use Illuminate\Routing\Controller;
-use App\Http\Requests\ProfileUpdateRequest;
+use App\Logging\Logger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Iquesters\Foundation\Constants\EntityStatus;
-use App\Logging\Logger;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
-use Illuminate\Support\Facades\Log; 
-use Iquesters\UserManagement\Models\UserMeta;
+use Iquesters\Foundation\Constants\EntityStatus;
 use Iquesters\Foundation\Models\MasterData;
+use Iquesters\UserManagement\Models\UserMeta;
 
 class ProfileController extends Controller
 {
     /**
      * Save user meta data
-     * 
-     * @param int $userId
-     * @param string $metaKey
-     * @param string|null $metaValue
-     * @return void
      */
     public function save_user_meta(int $userId, string $metaKey, ?string $metaValue): void
     {
         try {
             if (empty($metaValue)) {
                 Log::warning("Meta value is empty for key '{$metaKey}' and user ID {$userId}.");
+
                 return;
             }
 
@@ -46,7 +41,7 @@ class ProfileController extends Controller
             );
 
         } catch (\Exception $e) {
-            Log::error("Failed to save user meta", [
+            Log::error('Failed to save user meta', [
                 'user_id' => $userId,
                 'meta_key' => $metaKey,
                 'error' => $e->getMessage(),
@@ -71,7 +66,7 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             return Redirect::route('login')->withErrors('User not authenticated.');
         }
         // Update only the user's name
@@ -108,6 +103,7 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
     /**
      * Update the user's profile picture.
      */
@@ -128,7 +124,7 @@ class ProfileController extends Controller
 
                 // Upload new profile picture with unique filename
                 $file = $request->file('profile_picture');
-                $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+                $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
                 $path = $file->storeAs('profile-pictures', $filename, 'public');
 
                 // Create new meta record
@@ -142,14 +138,17 @@ class ProfileController extends Controller
                 ]);
 
                 Logger::info('Profile picture updated successfully');
+
                 return redirect()->back()->with('success', 'Profile picture updated successfully.');
             }
 
             Logger::warning('No profile picture file uploaded');
+
             return redirect()->back()->with('error', 'No file uploaded.');
         } catch (\Exception $e) {
             Logger::error('Failed to update profile picture', ['error' => $e->getMessage()]);
-            return redirect()->back()->with('error', 'Failed to upload profile picture: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Failed to upload profile picture: '.$e->getMessage());
         }
     }
 
@@ -163,7 +162,7 @@ class ProfileController extends Controller
             ->where('status', EntityStatus::ACTIVE)
             ->update([
                 'status' => EntityStatus::INACTIVE,
-                'updated_by' => $user->id
+                'updated_by' => $user->id,
             ]);
     }
 
@@ -193,11 +192,12 @@ class ProfileController extends Controller
         }
 
         // Return default placeholder if no picture exists
-        return 'https://placehold.co/400x400/faf3e0/d72638/png?text=' . ($user->name[0] ?? '?');
+        return 'https://placehold.co/400x400/faf3e0/d72638/png?text='.($user->name[0] ?? '?');
     }
 
-public function settings(){
-        try{
+    public function settings()
+    {
+        try {
             $user = Auth::user();
             $userMetas = UserMeta::where('ref_parent', $user->id)->pluck('meta_value', 'meta_key');
 
@@ -210,33 +210,36 @@ public function settings(){
                 ->where('key', '!=', 'current_theme')
                 ->get(['id', 'key', 'value']);
 
-            return view('usermanagement::profile.profile-setting',compact('user','userMetas','themes'));
-        }catch(\Exception $e){
+            return view('usermanagement::profile.profile-setting', compact('user', 'userMetas', 'themes'));
+        } catch (\Exception $e) {
             Log::error('Failed to load profile settings', ['error' => $e->getMessage()]);
-            return redirect()->back()->with('error', 'Failed to load profile settings: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Failed to load profile settings: '.$e->getMessage());
         }
-        
+
     }
 
-    public function myprofile(){
-        try{
+    public function myprofile()
+    {
+        try {
             $user = Auth::user();
             $userMetas = UserMeta::where('ref_parent', $user->id)->pluck('meta_value', 'meta_key');
             $sessions = \DB::table('sessions')
-            ->where('user_id', $user->id)
-            ->orderBy('last_activity', 'desc')
-            ->get();
+                ->where('user_id', $user->id)
+                ->orderBy('last_activity', 'desc')
+                ->get();
 
             $profilePic = UserMeta::where('ref_parent', $user->id)
                 ->where('meta_key', 'profile_picture')
                 ->where('status', EntityStatus::ACTIVE)
                 ->first();
 
-            return view('usermanagement::profile.my-profile',compact('user','userMetas','sessions','profilePic'));
-        }catch(\Exception $e){
+            return view('usermanagement::profile.my-profile', compact('user', 'userMetas', 'sessions', 'profilePic'));
+        } catch (\Exception $e) {
             Log::error('Failed to load my profile', ['error' => $e->getMessage()]);
-            return redirect()->back()->with('error', 'Failed to load my profile: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Failed to load my profile: '.$e->getMessage());
         }
-        
+
     }
 }

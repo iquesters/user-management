@@ -2,12 +2,12 @@
 
 namespace Iquesters\UserManagement\Http\Controllers;
 
-use Illuminate\Support\Facades\Log;
-use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
@@ -17,6 +17,7 @@ class RoleController extends Controller
     public function index()
     {
         $roles = Role::with('permissions')->get();
+
         return view('usermanagement::roles.index', compact('roles'));
     }
 
@@ -26,6 +27,7 @@ class RoleController extends Controller
     public function create()
     {
         $permissions = Permission::all();
+
         return view('roles.create', compact('permissions'));
     }
 
@@ -65,6 +67,7 @@ class RoleController extends Controller
                 'user_id' => auth()?->id(),
                 'ip' => request()->ip(),
             ]);
+
             return redirect()->back()->with('error', 'Failed to create role');
         }
     }
@@ -125,6 +128,7 @@ class RoleController extends Controller
                 'user_id' => auth()?->id(),
                 'ip' => request()->ip(),
             ]);
+
             return redirect()->back()->with('error', 'Failed to update role');
         }
     }
@@ -152,6 +156,7 @@ class RoleController extends Controller
                 'user_id' => auth()?->id(),
                 'ip' => request()->ip(),
             ]);
+
             return redirect()->back()->with('error', 'Failed to delete role');
         }
     }

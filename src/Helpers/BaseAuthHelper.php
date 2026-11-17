@@ -4,15 +4,13 @@ namespace Iquesters\UserManagement\Helpers;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Request;
-use Iquesters\UserManagement\Models\UserMeta;
 use Illuminate\Support\Str;
+use Iquesters\UserManagement\Models\UserMeta;
 
 abstract class BaseAuthHelper
 {
     /**
      * Generate a unique ULID for user
-     * 
-     * @return string
      */
     protected static function generate_uid(): string
     {
@@ -21,11 +19,6 @@ abstract class BaseAuthHelper
 
     /**
      * Save user meta data
-     * 
-     * @param int $userId
-     * @param string $metaKey
-     * @param string|null $metaValue
-     * @return void
      */
     protected static function save_user_meta(int $userId, string $metaKey, ?string $metaValue): void
     {
@@ -47,8 +40,6 @@ abstract class BaseAuthHelper
 
     /**
      * Get client IP address
-     * 
-     * @return string
      */
     protected static function get_client_ip(): string
     {
@@ -57,8 +48,6 @@ abstract class BaseAuthHelper
 
     /**
      * Get user agent string
-     * 
-     * @return string
      */
     protected static function get_user_agent(): string
     {
@@ -67,14 +56,12 @@ abstract class BaseAuthHelper
 
     /**
      * Get country from IP using free API
-     * 
-     * @return string
      */
     protected static function get_country(): string
     {
         try {
             $ip = self::get_client_ip();
-            
+
             // Skip localhost
             if ($ip === '127.0.0.1' || $ip === '::1' || $ip === '0.0.0.0') {
                 return 'LOCAL';
@@ -82,11 +69,11 @@ abstract class BaseAuthHelper
 
             // Try to get country from ip-api.com (free, no API key needed)
             $timeout = stream_context_create([
-                'http' => ['timeout' => 3]
+                'http' => ['timeout' => 3],
             ]);
-            
+
             $response = @file_get_contents("http://ip-api.com/json/{$ip}", false, $timeout);
-            
+
             if ($response) {
                 $data = json_decode($response, true);
                 if ($data && isset($data['countryCode'])) {
@@ -96,7 +83,8 @@ abstract class BaseAuthHelper
 
             return 'UNKNOWN';
         } catch (\Exception $e) {
-            Log::warning('Could not determine country: ' . $e->getMessage());
+            Log::warning('Could not determine country: '.$e->getMessage());
+
             return 'UNKNOWN';
         }
     }
@@ -108,8 +96,6 @@ abstract class BaseAuthHelper
 
     /**
      * Get locale/language
-     * 
-     * @return string
      */
     protected static function get_locale(): string
     {
@@ -118,8 +104,6 @@ abstract class BaseAuthHelper
 
     /**
      * Get timezone
-     * 
-     * @return string
      */
     protected static function get_timezone(): string
     {

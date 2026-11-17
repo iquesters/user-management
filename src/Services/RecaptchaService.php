@@ -2,28 +2,29 @@
 
 namespace Iquesters\UserManagement\Services;
 
-use Iquesters\Foundation\Support\ConfProvider;
-use Iquesters\Foundation\Enums\Module;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\ConfProvider;
 
 class RecaptchaService
 {
     protected $secretKey;
+
     protected $siteKey;
 
     public function __construct()
     {
         $recaptcha = ConfProvider::from(Module::USER_MGMT)->recaptcha;
-    
+
         $this->secretKey = $recaptcha ? $recaptcha->secret_key : null;
         $this->siteKey = $recaptcha ? $recaptcha->site_key : null;
 
         // Debug logging
         Log::debug('RecaptchaService initialized', [
-            'has_secret_key' => !empty($this->secretKey),
-            'has_site_key' => !empty($this->siteKey),
-            'recaptcha_config' => $recaptcha
+            'has_secret_key' => ! empty($this->secretKey),
+            'has_site_key' => ! empty($this->siteKey),
+            'recaptcha_config' => $recaptcha,
         ]);
     }
 
@@ -33,15 +34,16 @@ class RecaptchaService
             'action' => $action,
             'min_score' => $minScore,
             'ip' => request()->ip(),
-            'has_secret_key' => !empty($this->secretKey)
+            'has_secret_key' => ! empty($this->secretKey),
         ]);
 
         // Check if reCAPTCHA is configured
         if (empty($this->secretKey)) {
             Log::warning('reCAPTCHA secret key not configured');
+
             return [
                 'success' => false,
-                'error' => 'reCAPTCHA not configured properly'
+                'error' => 'reCAPTCHA not configured properly',
             ];
         }
 
@@ -55,12 +57,13 @@ class RecaptchaService
 
         Log::info('reCAPTCHA API response', $result);
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             Log::warning('reCAPTCHA verification failed', $result);
+
             return [
                 'success' => false,
                 'error' => 'reCAPTCHA verification failed',
-                'details' => $result['error-codes'] ?? []
+                'details' => $result['error-codes'] ?? [],
             ];
         }
 
@@ -70,7 +73,7 @@ class RecaptchaService
                 'success' => false,
                 'error' => 'Action mismatch',
                 'expected' => $action,
-                'actual' => $result['action']
+                'actual' => $result['action'],
             ];
         }
 
@@ -81,14 +84,14 @@ class RecaptchaService
                 'success' => false,
                 'error' => 'Score too low',
                 'score' => $score,
-                'threshold' => $minScore
+                'threshold' => $minScore,
             ];
         }
 
         return [
             'success' => true,
             'score' => $score,
-            'action' => $result['action'] ?? null
+            'action' => $result['action'] ?? null,
         ];
     }
 
@@ -103,18 +106,18 @@ class RecaptchaService
     public function isEnabled(): bool
     {
         $recaptcha = ConfProvider::from(Module::USER_MGMT)->recaptcha;
-        
+
         $enabled = $recaptcha ? $recaptcha->enabled : false;
-        $hasSecretKey = !empty($this->secretKey);
-        $hasSiteKey = !empty($this->siteKey);
-        
+        $hasSecretKey = ! empty($this->secretKey);
+        $hasSiteKey = ! empty($this->siteKey);
+
         Log::debug('reCAPTCHA enabled check', [
             'enabled' => $enabled,
             'has_secret_key' => $hasSecretKey,
             'has_site_key' => $hasSiteKey,
-            'is_enabled' => $enabled && $hasSecretKey && $hasSiteKey
+            'is_enabled' => $enabled && $hasSecretKey && $hasSiteKey,
         ]);
-        
+
         return $enabled && $hasSecretKey && $hasSiteKey;
     }
 }

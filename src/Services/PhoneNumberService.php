@@ -19,7 +19,7 @@ class PhoneNumberService
             return '';
         }
 
-        return $hasLeadingPlus ? '+' . $digitsOnly : $digitsOnly;
+        return $hasLeadingPlus ? '+'.$digitsOnly : $digitsOnly;
     }
 
     /**
@@ -38,7 +38,7 @@ class PhoneNumberService
         return array_values(array_unique(array_filter([
             $normalizedPhone,
             $digitsOnly,
-            '+' . $digitsOnly,
+            '+'.$digitsOnly,
         ])));
     }
 
@@ -48,8 +48,8 @@ class PhoneNumberService
         $digitsOnly = ltrim($normalizedPhone, '+');
         $lastFourDigits = substr($digitsOnly, -4);
         $maskedLength = max(strlen($digitsOnly) - 4, 0);
-        $maskedDigits = str_repeat('*', $maskedLength) . $lastFourDigits;
+        $maskedDigits = str_repeat('*', $maskedLength).$lastFourDigits;
 
-        return str_starts_with($normalizedPhone, '+') ? '+' . $maskedDigits : $maskedDigits;
+        return str_starts_with($normalizedPhone, '+') ? '+'.$maskedDigits : $maskedDigits;
     }
 }

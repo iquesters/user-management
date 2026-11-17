@@ -47,7 +47,7 @@ class SanctumTokenStorageTest extends TestCase
     {
         $user = $this->makeUser('user');
         $user->createToken('web-app');
-        $user->setMeta('sanctum_plain_token', ConfSecret::PREFIX . 'garbage');
+        $user->setMeta('sanctum_plain_token', ConfSecret::PREFIX.'garbage');
         UserMeta::where('ref_parent', $user->id)->update(['status' => 'active']);
 
         $this->assertNull(LoginHelper::get_sanctum_token($user));

@@ -2,20 +2,21 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
-use Iquesters\Foundation\System\Traits\Loggable;
-use Iquesters\UserManagement\Helpers\LoginHelper;
-use Iquesters\UserManagement\Helpers\RegistrationHelper;
-use Iquesters\Foundation\Support\ConfProvider;
-use Iquesters\Foundation\Enums\Module;
-use Iquesters\Foundation\Support\UserModel;
-use Iquesters\UserManagement\Services\GoogleIdTokenVerifier;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
-use Iquesters\UserManagement\Config\UserManagementKeys;
-use Laravel\Socialite\Facades\Socialite;
+use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\ConfProvider;
+use Iquesters\Foundation\Support\UserModel;
+use Iquesters\Foundation\System\Traits\Loggable;
+use Iquesters\UserManagement\Helpers\LoginHelper;
+use Iquesters\UserManagement\Helpers\RegistrationHelper;
 use Iquesters\UserManagement\Models\UserMeta;
+use Iquesters\UserManagement\Services\GoogleIdTokenVerifier;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\GoogleProvider;
 
 class GoogleController extends Controller
 {
@@ -30,7 +31,7 @@ class GoogleController extends Controller
         if ($redirect_url) {
             Session::put('redirect_url', $redirect_url);
         }
-        
+
         if ($request->boolean('popup')) {
             Session::put('google_popup_login', true);
         } else {
@@ -39,17 +40,18 @@ class GoogleController extends Controller
 
         $googleProvider = $this->getGoogleProvider();
 
-        if (!$googleProvider || !$googleProvider->enabled) {
+        if (! $googleProvider || ! $googleProvider->enabled) {
             static::logError('Google login disabled or not configured');
+
             return redirect()->route('login')->with('error', 'Google login is not configured.');
         }
 
         $provider = Socialite::buildProvider(
-            \Laravel\Socialite\Two\GoogleProvider::class,
+            GoogleProvider::class,
             [
-                'client_id'     => $googleProvider->client_id,
+                'client_id' => $googleProvider->client_id,
                 'client_secret' => $googleProvider->client_secret,
-                'redirect'      => $googleProvider->redirect_url,
+                'redirect' => $googleProvider->redirect_url,
             ]
         );
 
@@ -64,22 +66,23 @@ class GoogleController extends Controller
         $googleProvider = $this->getGoogleProvider();
         $isPopup = Session::pull('google_popup_login', false) || $request->boolean('popup');
 
-        if (!$googleProvider || !$googleProvider->enabled) {
+        if (! $googleProvider || ! $googleProvider->enabled) {
             if ($isPopup) {
                 return response()->view('usermanagement::auth.google-popup-result', [
                     'success' => false,
                     'redirectUrl' => route('login'),
                 ]);
             }
+
             return redirect()->route('login')->with('error', 'Google login is not configured.');
         }
 
         $provider = Socialite::buildProvider(
-            \Laravel\Socialite\Two\GoogleProvider::class,
+            GoogleProvider::class,
             [
-                'client_id'     => $googleProvider->client_id,
+                'client_id' => $googleProvider->client_id,
                 'client_secret' => $googleProvider->client_secret,
-                'redirect'      => $googleProvider->redirect_url,
+                'redirect' => $googleProvider->redirect_url,
             ]
         );
 
@@ -90,7 +93,7 @@ class GoogleController extends Controller
 
             $user = $this->sync_google_user($googleUser);
             LoginHelper::process_login($user);
-            
+
             if ($isPopup) {
                 return response()->view('usermanagement::auth.google-popup-result', [
                     'success' => true,
@@ -100,13 +103,14 @@ class GoogleController extends Controller
 
             return $this->redirect_after_login();
         } catch (\Exception $e) {
-            static::logError('Google OAuth callback error: ' . $e->getMessage());
+            static::logError('Google OAuth callback error: '.$e->getMessage());
             if ($isPopup) {
                 return response()->view('usermanagement::auth.google-popup-result', [
                     'success' => false,
                     'redirectUrl' => route('login'),
                 ]);
             }
+
             return redirect()->route('login')->with('error', 'Google login failed.');
         }
     }
@@ -119,23 +123,23 @@ class GoogleController extends Controller
         $googleProvider = $this->getGoogleProvider();
         $oneTapEnabled = (bool) ($googleProvider->one_tap_enabled ?? false);
 
-        if (!$googleProvider || !$googleProvider->enabled || !$oneTapEnabled) {
+        if (! $googleProvider || ! $googleProvider->enabled || ! $oneTapEnabled) {
             return redirect()->back()->with('error', 'Google login not configured.');
         }
-        
+
         $payload = app(GoogleIdTokenVerifier::class)->verify(
             $request->input('credential'),
             (string) ($googleProvider->client_id ?? '')
         );
 
-        if (!$payload) {
+        if (! $payload) {
             return redirect()->back()->with('error', 'Invalid Google token.');
         }
 
-        $googleUser = (object)[
-            'name'   => $payload['name'] ?? $payload['email'],
-            'email'  => $payload['email'],
-            'id'     => $payload['sub'],
+        $googleUser = (object) [
+            'name' => $payload['name'] ?? $payload['email'],
+            'email' => $payload['email'],
+            'id' => $payload['sub'],
             'avatar' => $payload['picture'] ?? null,
         ];
 
@@ -153,7 +157,7 @@ class GoogleController extends Controller
         $config = ConfProvider::from(Module::USER_MGMT); // ✅ Correct provider
 
         $socialLogin = $config->social_login ?? null;
-        if (!$socialLogin || !$socialLogin->enabled) {
+        if (! $socialLogin || ! $socialLogin->enabled) {
             return null;
         }
 
@@ -175,11 +179,11 @@ class GoogleController extends Controller
     /**
      * Sync or create user from Google payload.
      */
-    protected function sync_google_user($googleUser): \Illuminate\Database\Eloquent\Model
+    protected function sync_google_user($googleUser): Model
     {
         $user = UserModel::query()->firstOrNew(['email' => $googleUser->email]);
 
-        if (!$user->exists) {
+        if (! $user->exists) {
             $user = RegistrationHelper::register_user(
                 name: $googleUser->name,
                 identifierType: 'email',
@@ -188,11 +192,11 @@ class GoogleController extends Controller
                 email_verified: true,
                 meta: [
                     'google_id' => $googleUser->id,
-                    'logo'      => $googleUser->avatar,
+                    'logo' => $googleUser->avatar,
                 ]
             );
         } else {
-            static::logDebug('User already exists: ' . $googleUser->email);
+            static::logDebug('User already exists: '.$googleUser->email);
 
             if (empty($user->name)) {
                 $user->update(['name' => $googleUser->name]);
@@ -203,7 +207,7 @@ class GoogleController extends Controller
                 ['meta_value' => $googleUser->id, 'status' => 'active']
             );
 
-            if (!empty($googleUser->avatar)) {
+            if (! empty($googleUser->avatar)) {
                 UserMeta::updateOrCreate(
                     ['ref_parent' => $user->id, 'meta_key' => 'logo'],
                     ['meta_value' => $googleUser->avatar, 'status' => 'active']
@@ -229,8 +233,8 @@ class GoogleController extends Controller
     {
         $config = ConfProvider::from(Module::USER_MGMT);
         $defaultRoute = $config->default_auth_route ?? 'dashboard';
-        
-        $base_url = URL::to('/') . '/';
+
+        $base_url = URL::to('/').'/';
 
         if ($redirect_url && $redirect_url !== $base_url) {
             return $redirect_url;

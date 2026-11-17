@@ -9,18 +9,31 @@ class WhatsAppLoginConf extends BaseConf
     protected ?string $identifier = 'whatsapp_login';
 
     protected bool $enabled;
+
     protected string $delivery_provider;
+
     protected string $graph_version;
+
     protected ?string $phone_number_id;
+
     protected ?string $access_token;
+
     protected ?string $verify_template_name;
+
     protected string $template_language_code;
+
     protected int $otp_length;
+
     protected int $otp_ttl_minutes;
+
     protected int $max_attempts;
+
     protected int $resend_cooldown_seconds;
+
     protected int $max_send_per_hour;
+
     protected int $max_verify_failures_per_window;
+
     protected int $max_global_sends_per_hour;
 
     protected function prepareDefault(BaseConf $default_values)

@@ -2,13 +2,15 @@
 
 namespace Iquesters\UserManagement\Rules;
 
-use Iquesters\UserManagement\Services\RecaptchaService;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Translation\PotentiallyTranslatedString;
+use Iquesters\UserManagement\Services\RecaptchaService;
 
 class RecaptchaRule implements ValidationRule
 {
     protected $action;
+
     protected $minScore;
 
     public function __construct($action = null, $minScore = 0.5)
@@ -20,14 +22,14 @@ class RecaptchaRule implements ValidationRule
     /**
      * Run the validation rule.
      *
-     * @param  \Closure(string, ?string=): \Illuminate\Translation\PotentiallyTranslatedString  $fail
+     * @param  Closure(string, ?string=): PotentiallyTranslatedString  $fail
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $recaptcha = new RecaptchaService();
+        $recaptcha = new RecaptchaService;
         $result = $recaptcha->verify($value, $this->action, $this->minScore);
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             $errorMessage = match ($result['error']) {
                 'Score too low' => "Security verification failed. Score: {$result['score']}, required: {$result['threshold']}",
                 'Action mismatch' => 'Security verification failed. Invalid action.',

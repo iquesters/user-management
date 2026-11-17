@@ -2,14 +2,14 @@
 
 namespace Iquesters\UserManagement\Http\Controllers;
 
-use Iquesters\Foundation\System\Traits\Loggable;
-use Illuminate\Routing\Controller;
-use Iquesters\Foundation\Support\UserModel;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
-use Iquesters\Organisation\Models\Organisation;
 use Illuminate\Support\Str;
+use Iquesters\Foundation\Support\UserModel;
+use Iquesters\Foundation\System\Traits\Loggable;
+use Iquesters\Organisation\Models\Organisation;
 
 class DashboardController extends Controller
 {
@@ -28,18 +28,18 @@ class DashboardController extends Controller
 
             return view('usermanagement::dashboard.show', [
                 'user' => $user,
-                'hasOrganisation' => $hasOrganisation
+                'hasOrganisation' => $hasOrganisation,
             ]);
         } catch (\Exception $e) {
-            static::logError('DashboardController index error: ' . $e->getMessage(), [
+            static::logError('DashboardController index error: '.$e->getMessage(), [
                 'exception' => $e,
-                'request' => request()->all()
+                'request' => request()->all(),
             ]);
 
             return back()->with('error', 'Failed to load dashboard. Please try again later.');
         }
     }
-    
+
     public function createOrganisation(Request $request)
     {
         try {
@@ -58,7 +58,7 @@ class DashboardController extends Controller
             $organisation = Organisation::create([
                 'uid' => Str::ulid(),
                 'name' => $request->name,
-                'description' => $request->description ?? 'Organisation created by ' . $user->name,
+                'description' => $request->description ?? 'Organisation created by '.$user->name,
                 'status' => 'active',
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
@@ -70,7 +70,7 @@ class DashboardController extends Controller
             static::logInfo('Organisation created and assigned to user', [
                 'user_id' => $user->id,
                 'organisation_id' => $organisation->id,
-                'organisation_uid' => $organisation->uid
+                'organisation_uid' => $organisation->uid,
             ]);
 
             return redirect()->route('dashboard')
@@ -79,24 +79,24 @@ class DashboardController extends Controller
         } catch (\Exception $e) {
             static::logError('Failed to create organisation from dashboard', [
                 'user_id' => $user->id ?? 'unknown',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return back()->with('error', 'Failed to create organisation. Please try again.');
         }
     }
-    
+
     public function profileImage()
     {
         $logoUrl = Auth::user()->getMeta('logo');
-        
-        if (!$logoUrl) {
+
+        if (! $logoUrl) {
             abort(404);
         }
-        
+
         try {
             $response = Http::get($logoUrl);
-            
+
             return response($response->body())
                 ->header('Content-Type', $response->header('Content-Type'))
                 ->header('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
@@ -104,7 +104,7 @@ class DashboardController extends Controller
             abort(404);
         }
     }
-    
+
     /**
      * ✅ Super Admin Dashboard
      */
@@ -116,7 +116,7 @@ class DashboardController extends Controller
         $roles = ['super-admin'];
 
         // 🔒 If user's role is not in the allowed list, show 404
-        if (!$user->hasAnyRole($roles)) {
+        if (! $user->hasAnyRole($roles)) {
             abort(404);
         }
 
@@ -125,5 +125,4 @@ class DashboardController extends Controller
             'user' => $user,
         ]);
     }
-
 }

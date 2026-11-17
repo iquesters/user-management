@@ -4,7 +4,8 @@ namespace Iquesters\UserManagement\Tests\Feature;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Route;
+use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\UserManagement\Support\SetupState;
 use Iquesters\UserManagement\Tests\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -54,7 +55,7 @@ class SetupGateTest extends TestCase
     public function test_other_ui_settings_do_not_count_as_setup(): void
     {
         // Only a saved app name means the setup form was submitted; defaults are never stored.
-        \Iquesters\Foundation\Support\ConfProvider::from(\Iquesters\Foundation\Enums\Module::USER_INFE)
+        ConfProvider::from(Module::USER_INFE)
             ->update(['large_screen_nav_style' => 'header']);
 
         $this->assertFalse(SetupState::isConfigured());
@@ -73,8 +74,8 @@ class SetupGateTest extends TestCase
         $html = view('userinterface::components.setup-link')->render();
 
         $this->assertStringContainsString(route('ui.setup'), $html);
-        $this->assertStringContainsString('a[href="' . route('login') . '"]', $html);
-        $this->assertStringContainsString('a[href="' . route('register') . '"]', $html);
+        $this->assertStringContainsString('a[href="'.route('login').'"]', $html);
+        $this->assertStringContainsString('a[href="'.route('register').'"]', $html);
     }
 
     public function test_home_banner_offers_admin_signup_after_setup(): void
@@ -84,8 +85,8 @@ class SetupGateTest extends TestCase
         $html = view('userinterface::components.setup-link')->render();
 
         $this->assertStringContainsString('Create admin account', $html);
-        $this->assertStringContainsString('a[href="' . route('login') . '"]', $html);
-        $this->assertStringNotContainsString('a[href="' . route('register') . '"]', $html);
+        $this->assertStringContainsString('a[href="'.route('login').'"]', $html);
+        $this->assertStringNotContainsString('a[href="'.route('register').'"]', $html);
     }
 
     public function test_home_banner_disappears_once_a_super_admin_exists(): void

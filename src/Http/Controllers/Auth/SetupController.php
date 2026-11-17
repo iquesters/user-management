@@ -2,15 +2,16 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
-use Iquesters\Foundation\System\Traits\Loggable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Auth;
 use Iquesters\Foundation\Enums\Module;
 use Iquesters\Foundation\Support\ConfProvider;
+use Iquesters\Foundation\System\Traits\Loggable;
+use Iquesters\UserManagement\Support\SetupState;
+use Spatie\Permission\Models\Role;
 
 class SetupController extends Controller
 {
@@ -23,6 +24,7 @@ class SetupController extends Controller
 
             if ($superadminExists) {
                 static::logInfo('Setup already completed (super-admin exists); redirecting to register');
+
                 return redirect()->route('register');
             }
 
@@ -30,7 +32,8 @@ class SetupController extends Controller
 
             return view('usermanagement::auth.setup');
         } catch (\Throwable $e) {
-            static::logError('Could not check setup state: ' . $e->getMessage());
+            static::logError('Could not check setup state: '.$e->getMessage());
+
             return redirect()->route('register');
         }
     }
@@ -61,9 +64,9 @@ class SetupController extends Controller
             // so a "logo.php" can't be written into public/.
             $logoFile = $request->file('logo');
             $extension = $logoFile->guessExtension() ?: 'png';
-            $filename = 'logo_' . Str::slug($validated['app_name']) . '.' . $extension;
+            $filename = 'logo_'.Str::slug($validated['app_name']).'.'.$extension;
             $logoFile->move(public_path('img'), $filename);
-            $logoUrl = 'img/' . $filename; // store relative path
+            $logoUrl = 'img/'.$filename; // store relative path
 
             static::logInfo('Setup step 3/4: logo saved', ['path' => $logoUrl]);
 
@@ -84,7 +87,7 @@ class SetupController extends Controller
             static::logDebug('Cache cleared after setup');
 
             // Login/registration pages unlock from here on (see RequireSetup).
-            \Iquesters\UserManagement\Support\SetupState::markConfigured();
+            SetupState::markConfigured();
 
             static::logInfo('Setup step 4/4: setup complete; next: create the super-admin account', ['app_name' => $validated['app_name']]);
 
@@ -104,7 +107,7 @@ class SetupController extends Controller
             return redirect()->route('register')->with('success', $message);
 
         } catch (\Throwable $e) {
-            static::logError('Setup failed: ' . $e->getMessage(), ['exception' => $e]);
+            static::logError('Setup failed: '.$e->getMessage(), ['exception' => $e]);
 
             return $request->wantsJson()
                 ? response()->json(['success' => false, 'message' => 'Setup failed. Please try again.'], 500)
@@ -120,5 +123,4 @@ class SetupController extends Controller
 
         return Role::where('name', 'super-admin')->whereHas('users')->exists();
     }
-
 }

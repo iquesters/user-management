@@ -2,6 +2,7 @@
 
 namespace Iquesters\UserManagement\Tests;
 
+use Diglactic\Breadcrumbs\Breadcrumbs;
 use Diglactic\Breadcrumbs\ServiceProvider as BreadcrumbsServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -36,7 +37,7 @@ abstract class TestCase extends Orchestra
 
     protected function getPackageAliases($app): array
     {
-        return ['Breadcrumbs' => \Diglactic\Breadcrumbs\Breadcrumbs::class];
+        return ['Breadcrumbs' => Breadcrumbs::class];
     }
 
     protected function defineEnvironment($app): void
@@ -48,15 +49,15 @@ abstract class TestCase extends Orchestra
     protected function defineDatabaseMigrations(): void
     {
         // Sanctum's migration is already registered by the package providers.
-        $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/database/migrations');
     }
 
     protected function makeUser(?string $role = null, array $attributes = []): User
     {
         $user = User::create($attributes + [
             'uid' => (string) Str::ulid(),
-            'name' => 'Test ' . Str::random(6),
-            'email' => Str::random(10) . '@example.test',
+            'name' => 'Test '.Str::random(6),
+            'email' => Str::random(10).'@example.test',
             'password' => bcrypt(Str::random(20)),
             'status' => 'active',
             'email_verified_at' => now(),

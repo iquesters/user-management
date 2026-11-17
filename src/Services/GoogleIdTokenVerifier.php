@@ -2,11 +2,11 @@
 
 namespace Iquesters\UserManagement\Services;
 
-use Iquesters\Foundation\System\Traits\Loggable;
 use Firebase\JWT\JWK;
 use Firebase\JWT\JWT;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Iquesters\Foundation\System\Traits\Loggable;
 use Throwable;
 
 /**
@@ -41,7 +41,7 @@ class GoogleIdTokenVerifier
                 JWT::$leeway = $previousLeeway;
             }
         } catch (Throwable $e) {
-            static::logWarning('Google ID token rejected: ' . $e->getMessage());
+            static::logWarning('Google ID token rejected: '.$e->getMessage());
 
             return null;
         }
