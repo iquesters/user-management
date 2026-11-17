@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Iquesters\Foundation\Support\UserModel;
 use Iquesters\Foundation\System\Traits\Loggable;
+use Iquesters\UserManagement\Support\SafeRedirect;
 
 class ContextController extends Controller
 {
@@ -111,6 +112,7 @@ class ContextController extends Controller
      */
     public static function set_redirect_url($redirect_url)
     {
+        $redirect_url = SafeRedirect::url($redirect_url); // same-site only (open-redirect guard)
         $base_url = URL::to('/').'/';
         static::logInfo('Redirect URL: '.$redirect_url);
         static::logInfo('Base URL: '.$base_url);

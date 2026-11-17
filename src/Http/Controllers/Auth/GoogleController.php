@@ -15,6 +15,7 @@ use Iquesters\UserManagement\Helpers\LoginHelper;
 use Iquesters\UserManagement\Helpers\RegistrationHelper;
 use Iquesters\UserManagement\Models\UserMeta;
 use Iquesters\UserManagement\Services\GoogleIdTokenVerifier;
+use Iquesters\UserManagement\Support\SafeRedirect;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\GoogleProvider;
 
@@ -27,9 +28,12 @@ class GoogleController extends Controller
      */
     public function google_redirect(Request $request)
     {
-        $redirect_url = $request->query('redirect_url');
+        // Only same-site URLs are kept (open-redirect guard).
+        $redirect_url = SafeRedirect::url($request->query('redirect_url'));
         if ($redirect_url) {
             Session::put('redirect_url', $redirect_url);
+        } else {
+            Session::forget('redirect_url');
         }
 
         if ($request->boolean('popup')) {
@@ -190,10 +194,11 @@ class GoogleController extends Controller
                 identifierValue: $googleUser->email,
                 password: null,
                 email_verified: true,
-                meta: [
+                // Accounts without a profile picture have no avatar; meta_value is NOT NULL.
+                meta: array_filter([
                     'google_id' => $googleUser->id,
                     'logo' => $googleUser->avatar,
-                ]
+                ], fn ($value) => $value !== null && $value !== '')
             );
         } else {
             static::logDebug('User already exists: '.$googleUser->email);
@@ -236,12 +241,17 @@ class GoogleController extends Controller
 
         $base_url = URL::to('/').'/';
 
+        // The request value and the session value both came from the browser: check both.
+        $redirect_url = SafeRedirect::url($redirect_url);
         if ($redirect_url && $redirect_url !== $base_url) {
+            Session::forget('redirect_url');
+
             return $redirect_url;
         }
 
-        if (Session::has('redirect_url')) {
-            return Session::pull('redirect_url');
+        $stored = SafeRedirect::url(Session::pull('redirect_url'));
+        if ($stored && $stored !== $base_url) {
+            return $stored;
         }
 
         return route($defaultRoute);

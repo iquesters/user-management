@@ -3,6 +3,14 @@
 All notable changes to this package are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/).
 
+## [2.0.2] – 2026-11-17
+
+### Security
+- **Open redirect after login:** `redirect_url` from the query string, the One Tap form and the session was used without checks, so a crafted link could send a freshly signed-in user to another site. `Support\SafeRedirect` now allows only same-site paths and URLs; it is applied in Google login (redirect, popup, One Tap) and `ContextController::set_redirect_url()`.
+
+### Fixed
+- Google sign-up failed (500) for accounts without a profile picture: an empty avatar was saved as a NULL `logo` meta.
+
 ## [2.0.1] – 2026-11-17
 
 ### Fixed
