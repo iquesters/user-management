@@ -3,7 +3,13 @@
 All notable changes to this package are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/).
 
-## [Unreleased] – 2.0.0
+## [2.0.1] – 2026-11-17
+
+### Fixed
+- `make_email_nullable_on_users_table` used MySQL-only `ALTER TABLE … MODIFY`; it now uses the schema builder, so fresh installs migrate on SQLite (the Laravel default) and PostgreSQL.
+- `users.uid` is filled with a ULID for users created outside the package (Laravel's stock seeder/factory, tinker, other packages), including seeders that run without model events.
+
+## [2.0.0] – 2026-11-17
 
 ### Settings engine
 - Validation rules for auth settings (`auth_form_type`, `signin_flow`, `signin_identifier`) and WhatsApp OTP limits; `organisation_needed` is a boolean.

@@ -1,9 +1,10 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+// Phone-only sign-up has no email. Schema builder (not raw SQL) so it runs on MySQL, PostgreSQL and SQLite.
 return new class extends Migration
 {
     public function up(): void
@@ -12,7 +13,9 @@ return new class extends Migration
             return;
         }
 
-        DB::statement('ALTER TABLE `users` MODIFY `email` VARCHAR(255) NULL');
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('email')->nullable()->change();
+        });
     }
 
     public function down(): void
@@ -21,6 +24,8 @@ return new class extends Migration
             return;
         }
 
-        DB::statement('ALTER TABLE `users` MODIFY `email` VARCHAR(255) NOT NULL');
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('email')->nullable(false)->change();
+        });
     }
 };
