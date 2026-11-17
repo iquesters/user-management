@@ -2,16 +2,17 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
-use Iquesters\UserManagement\Rules\RecaptchaRule;
-use Iquesters\UserManagement\Support\AuthFormSchema;
-use Illuminate\Routing\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\ConfProvider;
+use Iquesters\UserManagement\Rules\RecaptchaRule;
+use Iquesters\UserManagement\Support\AuthFormSchema;
 
 class PasswordResetLinkController extends Controller
 {
@@ -26,7 +27,7 @@ class PasswordResetLinkController extends Controller
     /**
      * Handle an incoming password reset link request.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function store(Request $request): RedirectResponse|JsonResponse
     {

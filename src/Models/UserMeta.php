@@ -2,9 +2,8 @@
 
 namespace Iquesters\UserManagement\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
+use Illuminate\Database\Eloquent\Model;
 
 class UserMeta extends Model
 {
@@ -49,7 +48,7 @@ class UserMeta extends Model
      */
     protected $attributes = [
         'status' => 'unknown',
-        'created_by' => 0,
-        'updated_by' => 0,
+        'created_by' => null,
+        'updated_by' => null,
     ];
 }

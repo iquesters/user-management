@@ -2,9 +2,9 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\View\View;
 
 class EmailVerificationPromptController extends Controller
@@ -16,6 +16,6 @@ class EmailVerificationPromptController extends Controller
     {
         return $request->user()->hasVerifiedEmail()
             ? redirect()->intended(route('dashboard', absolute: false))
-            : view('auth.verify-email');
+            : view('usermanagement::auth.verify-email');
     }
 }

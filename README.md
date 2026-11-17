@@ -40,76 +40,33 @@ php artisan migrate
 php artisan user-management:seed
 ```
 
+4. `App\Models\User` is updated automatically on `composer install/update` (`package:discover`): the
+   `HasUserManagement` trait is added and `uid`, `phone`, `status` are made fillable. If your model has an
+   unusual shape the installer prints what it couldn't do; the model then needs:
+
+```php
+use Iquesters\UserManagement\Traits\HasUserManagement; // roles (spatie) + Sanctum tokens
+
+#[Fillable(['uid', 'name', 'email', 'password', 'phone', 'status'])]
+class User extends Authenticatable
+{
+    use HasFactory, Notifiable, HasUserManagement;
+    // with iquesters/organisation also: use \Iquesters\Organisation\Traits\HasOrganisations;
+}
+```
+
+   Without this, registration fails with `Field 'uid' doesn't have a default value`.
+
+5. Don't create users in `DatabaseSeeder`: any existing user makes first-run setup count as done.
+   The first account registered after `/setup` becomes the super-admin.
+
 ---
 
 ## 🔧 Configuration
 
-The configuration file is published at `config/user-management.php`. You can override settings via this file or using `.env` variables.
+Settings are stored in the database (not a config file or `.env`). `php artisan user-management:seed` writes the defaults.
 
-### Layouts
-
-Control which Blade templates are used for auth pages and the main app:
-
-```env
-USER_MANAGEMENT_AUTH_LAYOUT=usermanagement::layouts.package
-USER_MANAGEMENT_APP_LAYOUT=usermanagement::layouts.app
-```
-
-* `layout_auth` → Layout used for login/register pages
-* `layout_app` → Layout used for the main application
-
----
-
-### Logo
-
-Set your application logo for auth pages:
-
-```env
-USER_MANAGEMENT_LOGO=/images/logo.png
-```
-
-You can use:
-
-* Full URL: `https://example.com/logo.png`
-* Absolute path: `/images/logo.png`
-* Package asset: `img/logo.png`
-* Package namespace: `usermanagement::img.logo.png`
-
----
-
-### reCAPTCHA
-
-Protect your forms using Google reCAPTCHA:
-
-```env
-USER_MANAGEMENT_RECAPTCHA_SITE_KEY=your-site-key
-USER_MANAGEMENT_RECAPTCHA_SECRET_KEY=your-secret-key
-```
-
----
-
-### Google OAuth
-
-Enable Google login or One Tap authentication:
-
-```env
-USER_MANAGEMENT_GOOGLE_CLIENT_ID=your-client-id
-USER_MANAGEMENT_GOOGLE_CLIENT_SECRET=your-client-secret
-USER_MANAGEMENT_GOOGLE_REDIRECT_URI=https://your-app.com/auth/google/callback
-```
-
----
-
-### Default Auth Behavior
-
-Set default redirect routes and new user roles:
-
-```env
-USER_MANAGEMENT_DEFAULT_AUTH_ROUTE=dashboard
-USER_MANAGEMENT_DEFAULT_USER_ROLE=user
-```
-
-* `default_auth_route` → The route where users are redirected after login
-* `default_user_role` → Default role for new users registering via Google OAuth
+See [docs/developer/configuration.md](docs/developer/configuration.md) for every key, including `auth_form_type`
+(classic / schema / both auth forms), and [docs/developer/social-login-configuration.md](docs/developer/social-login-configuration.md).
 
 ---

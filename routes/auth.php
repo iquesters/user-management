@@ -3,32 +3,36 @@
 use Illuminate\Support\Facades\Route;
 use Iquesters\UserManagement\Http\Controllers\Auth\AuthenticatedSessionController;
 use Iquesters\UserManagement\Http\Controllers\Auth\ConfirmablePasswordController;
-use Iquesters\UserManagement\Http\Controllers\DashboardController;
 use Iquesters\UserManagement\Http\Controllers\Auth\EmailVerificationNotificationController;
 use Iquesters\UserManagement\Http\Controllers\Auth\EmailVerificationPromptController;
+use Iquesters\UserManagement\Http\Controllers\Auth\GoogleController;
 use Iquesters\UserManagement\Http\Controllers\Auth\NewPasswordController;
 use Iquesters\UserManagement\Http\Controllers\Auth\PasswordController;
 use Iquesters\UserManagement\Http\Controllers\Auth\PasswordResetLinkController;
 use Iquesters\UserManagement\Http\Controllers\Auth\RegisteredUserController;
-use Iquesters\UserManagement\Http\Controllers\Auth\VerifyEmailController;
-use Iquesters\UserManagement\Http\Controllers\Auth\GoogleController;
 use Iquesters\UserManagement\Http\Controllers\Auth\SetupController;
 use Iquesters\UserManagement\Http\Controllers\Auth\UnifiedAuthController;
-
-use Iquesters\UserManagement\Http\Controllers\ProfileController;
+use Iquesters\UserManagement\Http\Controllers\Auth\VerifyEmailController;
+use Iquesters\UserManagement\Http\Controllers\DashboardController;
 use Iquesters\UserManagement\Http\Controllers\MediaController;
+use Iquesters\UserManagement\Http\Controllers\ProfileController;
+use Iquesters\UserManagement\Http\Middleware\RequireSetup;
 
 Route::middleware('web')->group(function () {
-    
+
     Route::middleware('guest')->group(function () {
 
         Route::get('/setup', [SetupController::class, 'show'])->name('ui.setup');
         Route::post('/setup', [SetupController::class, 'store'])->name('ui.setup.store');
-        
+    });
+
+    // Everything below is unreachable until the first-run setup is submitted.
+    Route::middleware(['guest', RequireSetup::class])->group(function () {
+
         // Register & Login
         Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
         Route::post('register', [RegisteredUserController::class, 'store']);
-        
+
         Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
         Route::post('login', [AuthenticatedSessionController::class, 'store']);
         Route::get('auth/unified', [UnifiedAuthController::class, 'show'])->name('auth.unified');
@@ -66,7 +70,7 @@ Route::middleware('web')->group(function () {
         Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
         Route::put('password', [PasswordController::class, 'update'])->name('password.update');
         Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
-            
+
         // Dashboard
         Route::prefix('dashboard')->group(function () {
             Route::get('/', [DashboardController::class, 'index'])->name('dashboard');

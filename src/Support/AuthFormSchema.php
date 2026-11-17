@@ -4,6 +4,10 @@ namespace Iquesters\UserManagement\Support;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rules\Password;
+use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\ConfProvider;
+use Iquesters\UserInterface\Support\DynamicFormSchema;
 
 /**
  * Bridges this package's auth forms to iquesters/user-interface's FormSchema
@@ -15,6 +19,43 @@ use Illuminate\Support\Facades\Schema;
  */
 class AuthFormSchema
 {
+    public const CLASSIC = 'classic';
+
+    public const SCHEMA = 'schema';
+
+    public const BOTH = 'both';
+
+    /**
+     * Which form the auth pages render, from the auth_form_type conf.
+     * Unknown values, or 'schema'/'both' without user-interface installed,
+     * fall back to classic.
+     */
+    public static function formType(): string
+    {
+        $type = ConfProvider::from(Module::USER_MGMT)
+            ->auth_form_type ?? self::CLASSIC;
+
+        if (! in_array($type, [self::CLASSIC, self::SCHEMA, self::BOTH], true)) {
+            return self::CLASSIC;
+        }
+
+        if ($type !== self::CLASSIC && ! view()->exists('userinterface::components.form')) {
+            return self::CLASSIC;
+        }
+
+        return $type;
+    }
+
+    public static function showsClassic(): bool
+    {
+        return self::formType() !== self::SCHEMA;
+    }
+
+    public static function showsSchema(): bool
+    {
+        return self::formType() !== self::CLASSIC;
+    }
+
     /**
      * Fetch a seeded FormSchema's raw schema array by slug.
      */
@@ -54,9 +95,9 @@ class AuthFormSchema
      *   - 'password_numbers' => true        require at least one digit
      *   - 'password_symbols' => true        require at least one symbol
      */
-    protected static function buildPasswordRule(array $field): \Illuminate\Validation\Rules\Password
+    protected static function buildPasswordRule(array $field): Password
     {
-        $rule = \Illuminate\Validation\Rules\Password::min($field['minLength'] ?? 8);
+        $rule = Password::min($field['minLength'] ?? 8);
 
         if (! empty($field['password_mixed_case'])) {
             $rule->mixedCase();
@@ -88,11 +129,11 @@ class AuthFormSchema
      *     password_symbols flags (see buildPasswordRule()) — a schema omits
      *     this for a field where complexity rules don't apply.
      *
-     * @param array<string, mixed> $context values available to unique_except_id
+     * @param  array<string, mixed>  $context  values available to unique_except_id
      */
     public static function rules(string $slug, array $context = []): ?array
     {
-        if (! class_exists(\Iquesters\UserInterface\Support\DynamicFormSchema::class)) {
+        if (! class_exists(DynamicFormSchema::class)) {
             return null;
         }
 
@@ -102,7 +143,7 @@ class AuthFormSchema
             return null;
         }
 
-        $rules = \Iquesters\UserInterface\Support\DynamicFormSchema::toRules($schema);
+        $rules = DynamicFormSchema::toRules($schema);
 
         foreach ($schema['fields'] ?? [] as $field) {
             $fieldId = $field['id'] ?? null;
@@ -120,7 +161,7 @@ class AuthFormSchema
                 $uniqueRule = "unique:{$field['unique_table']},{$column}";
 
                 if (! empty($field['unique_except_id']) && ! empty($context['id'])) {
-                    $uniqueRule .= ',' . $context['id'];
+                    $uniqueRule .= ','.$context['id'];
                 }
 
                 $rules[$fieldId][] = $uniqueRule;
@@ -139,7 +180,7 @@ class AuthFormSchema
      */
     public static function messages(string $slug): array
     {
-        if (! class_exists(\Iquesters\UserInterface\Support\DynamicFormSchema::class)) {
+        if (! class_exists(DynamicFormSchema::class)) {
             return [];
         }
 
@@ -147,6 +188,6 @@ class AuthFormSchema
 
         return $schema === null
             ? []
-            : \Iquesters\UserInterface\Support\DynamicFormSchema::toMessages($schema);
+            : DynamicFormSchema::toMessages($schema);
     }
 }

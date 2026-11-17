@@ -7,10 +7,15 @@ use Iquesters\Foundation\Support\BaseConf;
 class RegistrationFieldConf extends BaseConf
 {
     protected ?string $identifier = null;
+
     protected bool $enabled;
+
     protected bool $required;
+
     protected string $field_type;
+
     protected ?string $label;
+
     protected ?string $default_value;
 
     protected function prepareDefault(BaseConf $default_values)

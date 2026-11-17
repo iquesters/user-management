@@ -9,18 +9,31 @@ class WhatsAppLoginConf extends BaseConf
     protected ?string $identifier = 'whatsapp_login';
 
     protected bool $enabled;
+
     protected string $delivery_provider;
+
     protected string $graph_version;
+
     protected ?string $phone_number_id;
+
     protected ?string $access_token;
+
     protected ?string $verify_template_name;
+
     protected string $template_language_code;
+
     protected int $otp_length;
+
     protected int $otp_ttl_minutes;
+
     protected int $max_attempts;
+
     protected int $resend_cooldown_seconds;
+
     protected int $max_send_per_hour;
+
     protected int $max_verify_failures_per_window;
+
     protected int $max_global_sends_per_hour;
 
     protected function prepareDefault(BaseConf $default_values)
@@ -39,5 +52,19 @@ class WhatsAppLoginConf extends BaseConf
         $default_values->max_send_per_hour = 5;
         $default_values->max_verify_failures_per_window = 10;
         $default_values->max_global_sends_per_hour = 250;
+    }
+
+    protected function rules(): array
+    {
+        return [
+            'delivery_provider' => 'in:meta',
+            'otp_length' => 'integer|between:4,10',
+            'otp_ttl_minutes' => 'integer|between:1,60',
+            'max_attempts' => 'integer|min:1',
+            'resend_cooldown_seconds' => 'integer|min:0',
+            'max_send_per_hour' => 'integer|min:1',
+            'max_verify_failures_per_window' => 'integer|min:1',
+            'max_global_sends_per_hour' => 'integer|min:1',
+        ];
     }
 }

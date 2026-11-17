@@ -2,15 +2,18 @@
 
 namespace Iquesters\UserManagement\Http\Requests\Auth;
 
-use Iquesters\UserManagement\Rules\RecaptchaRule;
 use Illuminate\Auth\Events\Lockout;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\ConfProvider;
+use Iquesters\UserInterface\Models\FormSchema;
+use Iquesters\UserInterface\Support\DynamicFormSchema;
+use Iquesters\UserManagement\Rules\RecaptchaRule;
 
 class LoginRequest extends FormRequest
 {
@@ -25,7 +28,7 @@ class LoginRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -36,7 +39,7 @@ class LoginRequest extends FormRequest
 
         $recaptcha = ConfProvider::from(Module::USER_MGMT)->recaptcha;
         $recaptchaEnabled = $recaptcha->enabled;
-        
+
         if ($recaptchaEnabled) {
             $rules['recaptcha_token'] = ['required', new RecaptchaRule('login', 0.5)];
         }
@@ -52,24 +55,24 @@ class LoginRequest extends FormRequest
      */
     protected function baseRulesFromSchema(): ?array
     {
-        if (! class_exists(\Iquesters\UserInterface\Models\FormSchema::class)
-            || ! class_exists(\Iquesters\UserInterface\Support\DynamicFormSchema::class)) {
+        if (! class_exists(FormSchema::class)
+            || ! class_exists(DynamicFormSchema::class)) {
             return null;
         }
 
-        $formSchema = \Iquesters\UserInterface\Models\FormSchema::where('slug', 'login-with-password')->first();
+        $formSchema = FormSchema::where('slug', 'login-with-password')->first();
 
         if (! $formSchema || empty($formSchema->schema['fields'])) {
             return null;
         }
 
-        return \Iquesters\UserInterface\Support\DynamicFormSchema::toRules($formSchema->schema);
+        return DynamicFormSchema::toRules($formSchema->schema);
     }
 
     /**
      * Attempt to authenticate the request's credentials.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function authenticate(): void
     {
@@ -89,7 +92,7 @@ class LoginRequest extends FormRequest
     /**
      * Ensure the login request is not rate limited.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function ensureIsNotRateLimited(): void
     {

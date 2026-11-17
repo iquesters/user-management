@@ -2,34 +2,38 @@
 
 namespace Iquesters\UserManagement\Http\Controllers;
 
-use Illuminate\Routing\Controller;
 use App\Models\Event;
 use App\Models\Organization;
-use App\Models\User;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
+use Iquesters\Foundation\Support\UserModel;
+use Iquesters\Foundation\System\Traits\Loggable;
 
 class ContextController extends Controller
 {
+    use Loggable;
+
     public static function get_all_context()
     {
-        return (object)array(
+        return (object) [
             'user' => self::get_user(),
             'org' => self::get_org(),
             'event' => self::get_event(),
-        );
+        ];
     }
 
     public static function get_user()
     {
         return Session::get('current_user');
     }
+
     public static function get_org()
     {
         return Session::get('current_org');
     }
+
     public static function get_event()
     {
         return Session::get('current_event');
@@ -37,7 +41,7 @@ class ContextController extends Controller
 
     public static function get_context_model()
     {
-        $model = User::class;
+        $model = UserModel::name();
         $model_id = Auth::user()->id;
         $event_ctx = self::get_event();
         if (isset($event_ctx)) {
@@ -50,26 +54,28 @@ class ContextController extends Controller
                 $model_id = $org_ctx->id;
             }
         }
-        return (object)([
+
+        return (object) ([
             'model' => $model,
-            'model_id' => $model_id
+            'model_id' => $model_id,
         ]);
     }
-
 
     public static function set_org($bizID)
     {
         $organization = Organization::find($bizID);
-        Log::debug("bizID = " . $bizID);
-        Log::debug($organization);
+        static::logDebug('bizID = '.$bizID);
+        static::logDebug('Organization', ['organization' => $organization]);
         Session::put('current_org', $organization);
     }
 
     public function set_org_in_ctx($bizID)
     {
         ContextController::set_org($bizID);
+
         return redirect()->back();
     }
+
     public function remove_org()
     {
         Session::remove('current_org');
@@ -80,32 +86,34 @@ class ContextController extends Controller
     public static function set_event($eventID)
     {
         $event = Event::find($eventID);
-        Log::debug($event);
+        static::logDebug('Event', ['event' => $event]);
         Session::put('current_event', $event);
     }
 
     public function set_event_in_ctx($eventID)
     {
         ContextController::set_event($eventID);
+
         return redirect()->back();
     }
 
     public function remove_event()
     {
         Session::remove('current_event');
+
         return redirect()->back();
     }
 
     /**
      * This function sets the redirect url in the session. If the redirect url is the same as the base url, then the redirect url is removed from the session.
-     * @param $redirect_url
+     *
      * @return void
      */
     public static function set_redirect_url($redirect_url)
     {
-        $base_url = URL::to('/') . '/';
-        Log::info('Redirect URL: ' . $redirect_url);
-        Log::info('Base URL: ' . $base_url);
+        $base_url = URL::to('/').'/';
+        static::logInfo('Redirect URL: '.$redirect_url);
+        static::logInfo('Base URL: '.$base_url);
         if ($redirect_url != null && $redirect_url != $base_url) {
             Session::put('redirect_url', $redirect_url);
         } else {

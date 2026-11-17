@@ -14,7 +14,7 @@ trait ValidatesNormalizedPhoneNumber
             $normalizedPhone = app(PhoneNumberService::class)->normalize($rawPhone);
             $digitsOnly = ltrim($normalizedPhone, '+');
 
-            if ($normalizedPhone === '' || !preg_match('/^\d{7,15}$/', $digitsOnly)) {
+            if ($normalizedPhone === '' || ! preg_match('/^\d{7,15}$/', $digitsOnly)) {
                 $validator->errors()->add($field, 'Please provide a valid phone number including country code when needed.');
             }
         });

@@ -29,8 +29,8 @@ class OtpAttemptMeta extends Model
 
     protected $attributes = [
         'status' => 'active',
-        'created_by' => 0,
-        'updated_by' => 0,
+        'created_by' => null,
+        'updated_by' => null,
     ];
 
     public function otpAttempt(): BelongsTo

@@ -2,28 +2,30 @@
 
 namespace Iquesters\UserManagement\Helpers;
 
-use App\Models\User;
 use Carbon\Carbon;
-use Iquesters\Foundation\Support\ConfProvider;
-use Iquesters\Foundation\Enums\Module;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\ConfProvider;
+use Iquesters\Foundation\Support\UserModel;
+use Iquesters\Foundation\System\Traits\Loggable;
 use Iquesters\UserManagement\Models\UserMeta;
 use Iquesters\UserManagement\Services\IdentifierResolverService;
 use Iquesters\UserManagement\Services\PhoneNumberService;
-use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class RegistrationHelper extends BaseAuthHelper
 {
+    use Loggable;
+
     /**
      * Handle user registration from traditional form or OAuth
-     * 
-     * @param string $name
-     * @param string $email
-     * @param string $password (optional - for traditional registration)
-     * @param bool $email_verified
-     * @param array $meta (optional - for OAuth data like google_id, avatar, etc)
+     *
+     * @param  string  $email
+     * @param  string  $password  (optional - for traditional registration)
+     * @param  array  $meta  (optional - for OAuth data like google_id, avatar, etc)
      * @return User
      */
     public static function register_user(
@@ -35,12 +37,12 @@ class RegistrationHelper extends BaseAuthHelper
         bool $email_verified = false,
         array $meta = [],
         array $extraAttributes = []
-    ): User {
+    ): Model {
         $resolvedIdentifier = self::normalizeIdentifier($identifierType, $identifierValue);
         $resolvedName = trim((string) $name);
         $resolvedName = $resolvedName !== '' ? $resolvedName : self::default_name_for_identifier($resolvedIdentifier);
 
-        Log::info('Registering new user using primary identifier.', [
+        static::logInfo('Registering new user using primary identifier.', [
             'auth_method' => 'registration',
             'operation' => 'register_user',
             'identifier_type' => $identifierType,
@@ -50,21 +52,21 @@ class RegistrationHelper extends BaseAuthHelper
         $existingUser = app(IdentifierResolverService::class)->findUserByIdentifier($identifierType, $resolvedIdentifier);
 
         // Check if user already exists
-        // $existingUser = User::where('email', $email)->first();
+        // $existingUser = UserModel::query()->where('email', $email)->first();
         if ($existingUser) {
-            // Log::debug('User already exists: ' . $email);
             if (empty($existingUser->uid)) {
                 $existingUser->update(['uid' => self::generate_uid()]);
             }
+
             return $existingUser;
         }
 
         // ✅ Determine role BEFORE user creation
-        $existingUserCount = User::count();
+        $existingUserCount = UserModel::query()->count();
         $roleToAssign = null;
 
         // ✅ Ensure super-admin role exists
-        $superAdminRole = \Spatie\Permission\Models\Role::firstOrCreate(
+        $superAdminRole = Role::firstOrCreate(
             ['name' => 'super-admin'],
             ['guard_name' => 'web']
         );
@@ -72,42 +74,33 @@ class RegistrationHelper extends BaseAuthHelper
         if ($existingUserCount === 0) {
             // This is the first-ever user
             $roleToAssign = $superAdminRole;
-            // Log::info("Preparing to assign 'super-admin' role to first registered user: {$email}");
-            Log::info("Preparing to assign 'super-admin' role to first registered user: {$resolvedIdentifier}");
+            static::logInfo("Preparing to assign 'super-admin' role to first registered user: {$resolvedIdentifier}");
         } else {
             // Use configured default role
             $defaultRole = ConfProvider::from(Module::USER_MGMT)->default_user_role;
 
-            if (!$defaultRole) {
-                throw new \RuntimeException("Default user role is not configured.");
+            if (! $defaultRole) {
+                throw new \RuntimeException('Default user role is not configured.');
             }
 
-            $roleToAssign = \Spatie\Permission\Models\Role::where('name', $defaultRole)->first();
+            $roleToAssign = Role::where('name', $defaultRole)->first();
 
-            if (!$roleToAssign) {
+            if (! $roleToAssign) {
                 $message = "Default user role '{$defaultRole}' not found in database. Please seed or create it.";
-                Log::error($message);
+                static::logError($message);
                 throw new \RuntimeException($message);
             }
         }
 
         // ✅ Only now, create the user (safe to persist)
-        // $user = User::create([
-        //     'uid' => self::generate_uid(),
-        //     'name' => $name,
-        //     'email' => $email,
-        //     'status' => 'active',
-        //     'password' => $password ? Hash::make($password) : bcrypt(Str::random(16)),
-        // ]);
-
 
         // ----------------------------
         // CREATE USER
         // ----------------------------
         $userData = [
-            'uid'      => self::generate_uid(),
-            'name'     => $resolvedName,
-            'status'   => 'active',
+            'uid' => self::generate_uid(),
+            'name' => $resolvedName,
+            'status' => 'active',
             'password' => $password ? Hash::make($password) : bcrypt(Str::random(16)),
         ];
 
@@ -115,10 +108,7 @@ class RegistrationHelper extends BaseAuthHelper
         $userData[$identifierType] = $resolvedIdentifier;
         $userData = array_merge($userData, $extraAttributes);
 
-        $user = User::create($userData);
-
-
-
+        $user = UserModel::query()->create($userData);
 
         if ($email_verified) {
             $user->markEmailAsVerified();
@@ -126,7 +116,7 @@ class RegistrationHelper extends BaseAuthHelper
 
         // ✅ Assign validated role
         $user->assignRole($roleToAssign);
-        
+
         // 🆕 If super admin, assign all modules automatically
         if ($roleToAssign->name === 'super-admin') {
             try {
@@ -135,20 +125,20 @@ class RegistrationHelper extends BaseAuthHelper
                 foreach ($modules as $module) {
                     $assignedRoles = $module->getAssignedRoleIds() ?? [];
 
-                    if (!in_array($roleToAssign->id, $assignedRoles)) {
+                    if (! in_array($roleToAssign->id, $assignedRoles)) {
                         $assignedRoles[] = $roleToAssign->id;
                         $module->assignRoles($assignedRoles);
                     }
                 }
 
-                \Log::info("✅ All modules assigned to 'super-admin' automatically after first user registration.", [
+                static::logInfo("All modules assigned to 'super-admin' automatically after first user registration.", [
                     'user_id' => $user->id,
                     'user_email' => $user->email,
                     'total_modules' => $modules->count(),
                 ]);
 
             } catch (\Throwable $e) {
-                \Log::error("⚠️ Failed to auto-assign modules to super-admin", [
+                static::logError('Failed to auto-assign modules to super-admin', [
                     'error' => $e->getMessage(),
                     'line' => $e->getLine(),
                 ]);
@@ -170,7 +160,7 @@ class RegistrationHelper extends BaseAuthHelper
         // Fire Registered event
         event(new Registered($user));
 
-        Log::info('User created successfully.', [
+        static::logInfo('User created successfully.', [
             'auth_method' => 'registration',
             'operation' => 'register_user',
             'user_id' => $user->id,
@@ -195,14 +185,11 @@ class RegistrationHelper extends BaseAuthHelper
 
         $digitsOnly = ltrim(app(PhoneNumberService::class)->normalize($trimmedIdentifier), '+');
 
-        return 'User ' . substr($digitsOnly, -4);
+        return 'User '.substr($digitsOnly, -4);
     }
 
     /**
      * Save registration device and browser information
-     * 
-     * @param int $userId
-     * @return void
      */
     protected static function save_registration_info(int $userId): void
     {

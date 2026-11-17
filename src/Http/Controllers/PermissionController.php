@@ -4,8 +4,8 @@ namespace Iquesters\UserManagement\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Spatie\Permission\Models\Permission;
 use Illuminate\Validation\Rule;
+use Spatie\Permission\Models\Permission;
 
 class PermissionController extends Controller
 {
@@ -15,6 +15,7 @@ class PermissionController extends Controller
     public function index()
     {
         $permissions = Permission::all();
+
         return view('usermanagement::permissions.index', compact('permissions'));
     }
 
@@ -56,9 +57,9 @@ class PermissionController extends Controller
     {
         $request->validate([
             'name' => [
-                'required', 
-                'string', 
-                'max:255', 
+                'required',
+                'string',
+                'max:255',
                 Rule::unique('permissions', 'name')->ignore($permission->id),
             ],
         ]);

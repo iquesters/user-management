@@ -13,8 +13,7 @@ class MetaWhatsAppOtpSender implements WhatsAppOtpSender
 {
     public function __construct(
         protected PhoneNumberService $phoneNumberService
-    ) {
-    }
+    ) {}
 
     public function sendOtp(string $phone, string $otp, array $context = []): array
     {
@@ -103,13 +102,13 @@ class MetaWhatsAppOtpSender implements WhatsAppOtpSender
                 'response_body' => $this->sanitizeResponseForLogs($response->json()),
             ]);
 
-            throw new \RuntimeException('Meta WhatsApp OTP request failed with status ' . $response->status() . '.');
+            throw new \RuntimeException('Meta WhatsApp OTP request failed with status '.$response->status().'.');
         }
 
         $responseData = $response->json();
         $providerMessageId = data_get($responseData, 'messages.0.id')
             ?? data_get($responseData, 'message_id')
-            ?? ('meta-wa-' . Str::uuid()->toString());
+            ?? ('meta-wa-'.Str::uuid()->toString());
 
         Log::info('Meta WhatsApp OTP send succeeded.', [
             'auth_method' => 'whatsapp_otp',
@@ -127,7 +126,7 @@ class MetaWhatsAppOtpSender implements WhatsAppOtpSender
 
     protected function sanitizeResponseForLogs($responseBody): array
     {
-        if (!is_array($responseBody)) {
+        if (! is_array($responseBody)) {
             return [
                 'raw' => is_scalar($responseBody) ? (string) $responseBody : 'non_array_response',
             ];

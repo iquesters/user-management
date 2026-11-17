@@ -39,8 +39,8 @@ class OtpAttempt extends Model
 
     protected $attributes = [
         'status' => 'active',
-        'created_by' => 0,
-        'updated_by' => 0,
+        'created_by' => null,
+        'updated_by' => null,
     ];
 
     public function metas(): HasMany
@@ -63,8 +63,8 @@ class OtpAttempt extends Model
             [
                 'meta_value' => (string) $value,
                 'status' => 'active',
-                'created_by' => $this->created_by ?? 0,
-                'updated_by' => $this->updated_by ?? 0,
+                'created_by' => $this->created_by ?? null,
+                'updated_by' => $this->updated_by ?? null,
             ]
         );
     }

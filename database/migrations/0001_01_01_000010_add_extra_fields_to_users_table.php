@@ -10,21 +10,21 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             // Add ULID (unique public identifier)
-            if (!Schema::hasColumn('users', 'uid')) {
+            if (! Schema::hasColumn('users', 'uid')) {
                 $table->ulid('uid')->unique()->after('id');
             }
 
             // Add optional phone fields
-            if (!Schema::hasColumn('users', 'phone')) {
+            if (! Schema::hasColumn('users', 'phone')) {
                 $table->string('phone')->nullable()->after('email_verified_at');
             }
 
-            if (!Schema::hasColumn('users', 'phone_verified_at')) {
+            if (! Schema::hasColumn('users', 'phone_verified_at')) {
                 $table->timestamp('phone_verified_at')->nullable()->after('phone');
             }
 
             // Add user status field
-            if (!Schema::hasColumn('users', 'status')) {
+            if (! Schema::hasColumn('users', 'status')) {
                 $table->string('status')->default('unknown')->after('password');
             }
         });
@@ -32,8 +32,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['uid', 'phone', 'phone_verified_at', 'status']);
-        });
+        // Intentionally empty: this file was renamed from an unprefixed migration.
+        // On existing installs it ran as a no-op, so rolling it back must not drop
+        // live data. Use migrate:fresh to rebuild from scratch.
     }
 };

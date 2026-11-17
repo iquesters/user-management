@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Renamed from an unprefixed file; existing installs already have this table.
+        if (Schema::hasTable('user_metas')) {
+            return;
+        }
+
         Schema::create('user_metas', function (Blueprint $table) {
             $table->id();
             $table->bigInteger('ref_parent')->unsigned()->nullable();
@@ -29,6 +34,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_metas');
+        // Intentionally empty: this file was renamed from an unprefixed migration.
+        // On existing installs it ran as a no-op, so rolling it back must not drop
+        // live data. Use migrate:fresh to rebuild from scratch.
     }
 };

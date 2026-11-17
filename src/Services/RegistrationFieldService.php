@@ -23,7 +23,7 @@ class RegistrationFieldService
             $enabled = $field->enabled ?? false;
             $identifier = $field->identifier;
 
-            return $enabled && !empty($identifier);
+            return $enabled && ! empty($identifier);
         }));
     }
 
@@ -56,14 +56,14 @@ class RegistrationFieldService
                     break;
             }
 
-            $rules['fields.' . $field->identifier] = $ruleSet;
+            $rules['fields.'.$field->identifier] = $ruleSet;
         }
 
         return $rules;
     }
 
     /**
-     * @param array<string, mixed> $submittedFields
+     * @param  array<string, mixed>  $submittedFields
      * @return array<string, string>
      */
     public function metaPayload(array $submittedFields): array

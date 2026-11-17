@@ -32,12 +32,11 @@ class UnifiedAuthController extends Controller
         protected IdentifierResolverService $identifierResolverService,
         protected OtpService $otpService,
         protected RegistrationFieldService $registrationFieldService
-    ) {
-    }
+    ) {}
 
     public function show(): View|RedirectResponse
     {
-        if (!$this->isUnifiedFlowEnabled()) {
+        if (! $this->isUnifiedFlowEnabled()) {
             return redirect()->route('login');
         }
 
@@ -48,7 +47,7 @@ class UnifiedAuthController extends Controller
 
     public function country(): JsonResponse
     {
-        if (!$this->isUnifiedFlowEnabled()) {
+        if (! $this->isUnifiedFlowEnabled()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unified sign-in is not enabled.',
@@ -74,7 +73,7 @@ class UnifiedAuthController extends Controller
 
     public function identify(IdentifyAuthIdentifierRequest $request): JsonResponse
     {
-        if (!$this->isUnifiedFlowEnabled()) {
+        if (! $this->isUnifiedFlowEnabled()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unified sign-in is not enabled.',
@@ -114,7 +113,7 @@ class UnifiedAuthController extends Controller
             'masked_identifier' => $sessionState['masked_identifier'],
             'status' => $sessionState['status'],
             'user_id' => $sessionState['user_id'],
-            'flow_token' => substr($flowToken, 0, 12) . '...',
+            'flow_token' => substr($flowToken, 0, 12).'...',
         ]);
 
         return response()->json([
@@ -132,7 +131,7 @@ class UnifiedAuthController extends Controller
 
     public function sendOtp(SendIdentifierOtpRequest $request): JsonResponse
     {
-        if (!$this->isUnifiedFlowEnabled()) {
+        if (! $this->isUnifiedFlowEnabled()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unified sign-in is not enabled.',
@@ -160,7 +159,7 @@ class UnifiedAuthController extends Controller
 
     public function resendOtp(SendIdentifierOtpRequest $request): JsonResponse
     {
-        if (!$this->isUnifiedFlowEnabled()) {
+        if (! $this->isUnifiedFlowEnabled()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unified sign-in is not enabled.',
@@ -188,7 +187,7 @@ class UnifiedAuthController extends Controller
 
     public function verifyOtp(VerifyIdentifierOtpRequest $request): JsonResponse
     {
-        if (!$this->isUnifiedFlowEnabled()) {
+        if (! $this->isUnifiedFlowEnabled()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unified sign-in is not enabled.',
@@ -216,13 +215,13 @@ class UnifiedAuthController extends Controller
                 $request->ip()
             );
 
-            if (!$verificationResult['success']) {
+            if (! $verificationResult['success']) {
                 return response()->json($verificationResult, 422);
             }
 
             $user = $verificationResult['user'];
 
-            if (!$user || !LoginHelper::process_login($user)) {
+            if (! $user || ! LoginHelper::process_login($user)) {
                 Log::error('Unified auth login failed after successful OTP verification.', [
                     'auth_method' => 'unified_auth',
                     'operation' => 'verify_otp',
@@ -265,7 +264,7 @@ class UnifiedAuthController extends Controller
             $request->ip()
         );
 
-        if (!$verificationResult['success']) {
+        if (! $verificationResult['success']) {
             return response()->json([
                 'success' => false,
                 'message' => $verificationResult['message'],
@@ -295,7 +294,7 @@ class UnifiedAuthController extends Controller
             'identifier_type' => $state['identifier_type'],
             'delivery_channel' => $state['delivery_channel'],
             'masked_identifier' => $state['masked_identifier'],
-            'requires_additional_fields' => !empty($fields),
+            'requires_additional_fields' => ! empty($fields),
         ]);
 
         if (empty($fields)) {
@@ -313,7 +312,7 @@ class UnifiedAuthController extends Controller
 
     public function completeRegistration(CompleteIdentifierRegistrationRequest $request): JsonResponse
     {
-        if (!$this->isUnifiedFlowEnabled()) {
+        if (! $this->isUnifiedFlowEnabled()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unified sign-in is not enabled.',
@@ -326,7 +325,7 @@ class UnifiedAuthController extends Controller
             $request->string('flow_token')->toString()
         ) ?? [];
 
-        if (($state['status'] ?? null) !== 'new' || !($state['otp_verified'] ?? false)) {
+        if (($state['status'] ?? null) !== 'new' || ! ($state['otp_verified'] ?? false)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Please verify your identifier first.',
@@ -347,8 +346,8 @@ class UnifiedAuthController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $state
-     * @param array<string, mixed> $submittedFields
+     * @param  array<string, mixed>  $state
+     * @param  array<string, mixed>  $submittedFields
      */
     protected function completeRegistrationFromState(Request $request, array $state, array $submittedFields): JsonResponse
     {
@@ -377,7 +376,7 @@ class UnifiedAuthController extends Controller
             ])->save();
         }
 
-        if (!LoginHelper::process_login($user)) {
+        if (! LoginHelper::process_login($user)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Account created, but login could not be completed.',
@@ -414,8 +413,7 @@ class UnifiedAuthController extends Controller
         ?string $identifierType,
         ?string $identifier,
         ?string $deliveryChannel
-    ): array|JsonResponse
-    {
+    ): array|JsonResponse {
         $state = $flowToken
             ? ($this->authFlowStateService->getFlowState($request, self::FLOW_SCOPE, $flowToken) ?? [])
             : [];

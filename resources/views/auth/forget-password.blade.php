@@ -1,17 +1,26 @@
 @extends(app('auth.layout'))
 
+@php
+    // auth_form_type conf: classic (default) | schema | both
+    $showClassic = \Iquesters\UserManagement\Support\AuthFormSchema::showsClassic();
+    $showSchema = \Iquesters\UserManagement\Support\AuthFormSchema::showsSchema();
+    $formCol = $showClassic && $showSchema ? 'col-6' : 'col-12';
+@endphp
+@unless ($showClassic && $showSchema)
+    @section('auth-card-class', 'col-md-7 col-lg-4')
+@endunless
+
 @section('content')
 @php
     use Iquesters\Foundation\Enums\Module;
     use Iquesters\Foundation\Support\ConfProvider;
 
-    // The schema-driven form column has no recaptcha field yet, so submitting
-    // it would always fail validation once recaptcha is turned on. Fall back
-    // to the classic form alone until that's built.
+    // The schema form fetches a v3 token for 'password_reset_link' (PasswordResetLinkController).
     $recaptchaEnabled = ConfProvider::from(Module::USER_MGMT)->recaptcha->enabled ?? false;
 @endphp
 <div class="w-100 row">
-    <div class="col-6">
+    @if ($showClassic)
+    <div class="{{ $formCol }}">
         <div class="mb-4 text-muted">
             {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
         </div>
@@ -39,14 +48,16 @@
             </div>
         </form>
     </div>
-    @unless ($recaptchaEnabled)
-    <div class="col-6">
+    @endif
+    @if ($showSchema)
+    <div class="{{ $formCol }}">
         @include('userinterface::components.form',
         [
-            'id' => 'password_reset_link-form'
+            'id' => 'password_reset_link-form',
+            'recaptchaAction' => $recaptchaEnabled ? 'password_reset_link' : null,
         ])
     </div>
-    @endunless
+    @endif
 </div>
 
 @endsection
