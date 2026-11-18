@@ -44,6 +44,9 @@ abstract class TestCase extends Orchestra
     {
         $app['config']->set('auth.providers.users.model', User::class);
         $app['config']->set('permission.cache.store', 'array');
+        // In-memory cache, so cached state (e.g. SetupState's "configured" flag)
+        // never leaks from one test into the next.
+        $app['config']->set('cache.default', 'array');
     }
 
     protected function defineDatabaseMigrations(): void

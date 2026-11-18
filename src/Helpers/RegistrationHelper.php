@@ -110,6 +110,12 @@ class RegistrationHelper extends BaseAuthHelper
 
         $user = UserModel::query()->create($userData);
 
+        // Google / OTP sign-up: the random password above is unknown to the user.
+        // Settings then offers "Set a password" instead of asking for it.
+        if (! $password) {
+            self::save_user_meta($user->id, 'password_generated', '1');
+        }
+
         if ($email_verified) {
             $user->markEmailAsVerified();
         }

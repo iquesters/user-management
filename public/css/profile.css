@@ -1,0 +1,44 @@
+/* My Profile / Settings pages (resources/views/profile). Loaded by those pages only. */
+
+/* Settings section menu: light highlight like the sidebar, instead of a solid pill. */
+#settingsNav .nav-link {
+    color: var(--bs-body-color);
+}
+
+#settingsNav .nav-link:hover {
+    background: var(--bs-tertiary-bg);
+}
+
+#settingsNav .nav-link.active {
+    background: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text-emphasis);
+    font-weight: 600;
+}
+
+#settingsNav .nav-link.text-danger.active {
+    background: var(--bs-danger-bg-subtle);
+    color: var(--bs-danger-text-emphasis) !important;
+}
+
+/* Phones: one scrollable row instead of wrapping onto two lines. */
+@media (max-width: 767.98px) {
+    #settingsNav {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    #settingsNav .nav-link {
+        white-space: nowrap;
+        padding: 0.375rem 0.75rem;
+    }
+}
+
+.profile-details {
+    max-width: 960px;
+}
+
+.settings-panes {
+    /* Room for two columns (schema defaultFieldSize: auto). */
+    max-width: 880px;
+}

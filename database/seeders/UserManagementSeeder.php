@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Iquesters\Foundation\Database\Seeders\BaseSeeder;
+use Iquesters\Foundation\Http\Middleware\EnsureAdmin;
+use Iquesters\Foundation\Models\Module;
+use Spatie\Permission\Models\Role;
 
 /**
  * Seeder for the User Management module
@@ -320,6 +323,9 @@ class UserManagementSeeder extends BaseSeeder
     protected function seedCustom(): void
     {
         $this->seedAuthFormSchemas();
+        $this->seedProfileFormSchemas();
+        $this->seedAdminFormSchemas();
+        $this->restrictModuleToAdminRoles();
     }
 
     /**
@@ -770,6 +776,361 @@ class UserManagementSeeder extends BaseSeeder
                     'element' => ['type' => 'button', 'color' => 'primary'],
                     'row' => 0,
                 ],
+            ],
+        ]);
+    }
+
+    /**
+     * Forms of the signed-in user's own pages (My Profile, Settings).
+     * "user-profile" has two modes: view on My Profile, edit on Settings.
+     * The controllers answer these fetch() submissions with JSON + redirect_url.
+     */
+    protected function seedProfileFormSchemas(): void
+    {
+        if (! Schema::hasTable('form_schemas')) {
+            return;
+        }
+
+        $submit = fn (string $text, string $color = 'primary') => [[
+            'type' => 'submit',
+            'route' => '#',
+            'text' => $text,
+            'element' => ['type' => 'button', 'color' => $color, 'variant' => 'outline', 'size' => 'sm'],
+            'align' => 'end',
+            'row' => 0,
+        ]];
+
+        $this->upsertFormSchema('user-profile', 'Profile', 'Signed-in user profile: view on My Profile, edit on Settings', [
+            'endpoint' => '/profile/update',
+            'method' => 'PATCH',
+            'allowCancel' => false,
+            'modes' => [
+                // My Profile: the whole page; the Edit icon opens Settings.
+                'view' => [
+                    'header' => ['title' => 'My profile'],
+                    'allowEdit' => true,
+                    'allowDelete' => false,
+                    'editUrl' => '/settings',
+                ],
+                // Cancel goes back (to My Profile).
+                'edit' => ['allowCancel' => true],
+            ],
+            'defaultFieldSize' => 'auto',
+            'submitButtonLabel' => 'Save',
+            'fields' => [
+                // View only: picture with Change / Remove (each a form schema in a modal).
+                [
+                    'id' => 'picture',
+                    'label' => 'Profile picture',
+                    'type' => 'image',
+                    'showIn' => ['view'],
+                    'maxWidth' => '200px',
+                    'actions' => [
+                        ['label' => 'Change picture', 'icon' => 'fas fa-upload', 'form' => 'user-profile-picture', 'title' => 'Change profile picture', 'submitLabel' => 'Upload'],
+                        ['label' => 'Remove picture', 'icon' => 'fas fa-trash', 'form' => 'user-profile-picture-remove', 'title' => 'Remove profile picture?', 'submitLabel' => 'Remove', 'danger' => true],
+                    ],
+                ],
+                ['id' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true, 'maxLength' => 255, 'autocomplete' => 'name'],
+                [
+                    'id' => 'status',
+                    'label' => 'Status',
+                    'type' => 'select',
+                    // Same badge as <x-userinterface::status> (text-bg-{status}).
+                    'display' => 'status',
+                    'showIn' => ['view'],
+                    'options' => [
+                        ['value' => 'active', 'label' => 'Active'],
+                        ['value' => 'inactive', 'label' => 'Inactive'],
+                        ['value' => 'unknown', 'label' => 'Unknown'],
+                    ],
+                ],
+                ['id' => 'email', 'label' => 'Email', 'type' => 'email', 'readonly' => true],
+                ['id' => 'email_status', 'label' => 'Email verification', 'type' => 'text', 'display' => 'badge', 'showIn' => ['view']],
+                ['id' => 'phone', 'label' => 'Phone', 'type' => 'tel', 'readonly' => true],
+                [
+                    'id' => 'theme',
+                    'label' => 'Theme',
+                    'type' => 'select',
+                    'optionsFrom' => ['master_data' => 'theme', 'exclude' => ['current_theme'], 'empty' => 'Application default'],
+                ],
+                ['id' => 'roles', 'label' => 'Roles', 'type' => 'text', 'display' => 'badge', 'showIn' => ['view']],
+                ['id' => 'member_since', 'label' => 'Member since', 'type' => 'text', 'showIn' => ['view']],
+                ['id' => 'previous_login', 'label' => 'Previous sign-in', 'type' => 'text', 'showIn' => ['view']],
+            ],
+            'actions' => $submit('Save'),
+        ]);
+
+        // Opened in a modal from the picture's "Change picture" action.
+        $this->upsertFormSchema('user-profile-picture', 'Change Profile Picture', 'Upload a new profile picture (cropped to a square on the server)', [
+            'endpoint' => '/profile/picture',
+            'method' => 'POST',
+            'enctype' => 'multipart/form-data',
+            'allowCancel' => true,
+            'defaultFieldSize' => 'auto',
+            'submitButtonLabel' => 'Upload',
+            'info' => ['innerHTML' => 'Choose a JPG, PNG, WebP or GIF up to 5 MB, then pick the square area to use.'],
+            'fields' => [
+                [
+                    'id' => 'picture',
+                    'label' => 'Picture',
+                    'type' => 'file',
+                    'required' => true,
+                    'accept' => 'image/png,image/jpeg,image/webp,image/gif',
+                    // Square crop in the browser (image-crop-field.js); the server keeps it square too.
+                    'crop' => ['aspectRatio' => 1, 'maxSize' => 1024],
+                ],
+            ],
+        ]);
+
+        // Opened in a modal from the picture's "Remove picture" action.
+        $this->upsertFormSchema('user-profile-picture-remove', 'Remove Profile Picture', 'Confirm removing the profile picture', [
+            'endpoint' => '/remove-profile-picture',
+            'method' => 'POST',
+            'allowCancel' => true,
+            'defaultFieldSize' => 'auto',
+            'submitButtonLabel' => 'Remove',
+            'info' => ['innerHTML' => 'Your uploaded picture will be removed and the default picture shown instead.'],
+            'fields' => [
+                ['id' => 'confirm', 'type' => 'hidden', 'default' => '1'],
+            ],
+        ]);
+
+        $passwordFields = [
+            [
+                'id' => 'password',
+                'label' => 'New password',
+                'type' => 'password',
+                'required' => true,
+                'minLength' => 8,
+                'autocomplete' => 'new-password',
+                'confirmed' => true,
+                'password_policy' => true,
+                'password_mixed_case' => true,
+                'password_numbers' => true,
+                'password_symbols' => true,
+            ],
+            [
+                'id' => 'password_confirmation',
+                'label' => 'Confirm new password',
+                'type' => 'password',
+                'required' => true,
+                'minLength' => 8,
+                'autocomplete' => 'new-password',
+                'confirms' => 'password',
+            ],
+        ];
+        $passwordCommon = [
+            'endpoint' => '/password',
+            'method' => 'PUT',
+            'allowCancel' => false,
+            'modes' => ['edit' => ['allowCancel' => false]],
+            'defaultFieldSize' => 'auto',
+        ];
+
+        $this->upsertFormSchema('user-password-update', 'Change Password', 'Change the signed-in user\'s password', $passwordCommon + [
+            'submitButtonLabel' => 'Update password',
+            'fields' => array_merge([
+                ['id' => 'current_password', 'label' => 'Current password', 'type' => 'password', 'required' => true, 'autocomplete' => 'current-password'],
+                // Ends the row, so New + Confirm sit together on the next one.
+                ['id' => 'current_password_spacer', 'type' => 'spacer', 'size' => ['xs' => 12, 'md' => 6]],
+            ], $passwordFields),
+            'actions' => $submit('Update password'),
+        ]);
+
+        // Users who signed up with Google or an OTP have no password yet.
+        $this->upsertFormSchema('user-password-set', 'Set Password', 'Set a first password for a user who signed up without one', $passwordCommon + [
+            'submitButtonLabel' => 'Set password',
+            'fields' => $passwordFields,
+            'actions' => $submit('Set password'),
+        ]);
+
+        // Sent as POST + _method=DELETE: the JSON client sends no body with DELETE.
+        $deleteCommon = [
+            'endpoint' => '/profile',
+            'method' => 'POST',
+            'allowCancel' => false,
+            'modes' => ['edit' => ['allowCancel' => false]],
+            'defaultFieldSize' => 'auto',
+            'submitButtonLabel' => 'Delete my account',
+            'actions' => $submit('Delete my account', 'danger'),
+        ];
+        $methodField = ['id' => '_method', 'type' => 'hidden', 'default' => 'DELETE'];
+
+        $this->upsertFormSchema('user-delete-account', 'Delete Account', 'Delete the signed-in user\'s account (confirm with password)', $deleteCommon + [
+            'fields' => [
+                $methodField,
+                ['id' => 'password', 'label' => 'Enter your password to confirm', 'type' => 'password', 'required' => true, 'autocomplete' => 'current-password'],
+            ],
+        ]);
+
+        $this->upsertFormSchema('user-delete-account-email', 'Delete Account', 'Delete the account of a user without a password (confirm with email)', $deleteCommon + [
+            'fields' => [
+                $methodField,
+                ['id' => 'confirm_email', 'label' => 'Type your email address to confirm', 'type' => 'email', 'required' => true, 'autocomplete' => 'off'],
+            ],
+        ]);
+    }
+
+    /**
+     * Only admin roles (foundation setting admin_roles: super-admin, admin) see
+     * this module. Its pages and data already require an admin role
+     * (ensure.admin, entity permissions); this makes the navigation match.
+     */
+    protected function restrictModuleToAdminRoles(): void
+    {
+        $module = Module::where('name', $this->moduleName)->first();
+        if (! $module) {
+            return;
+        }
+
+        $roleIds = collect(EnsureAdmin::roles())
+            ->map(fn (string $name) => Role::findOrCreate($name, $this->guardName)->id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $module->assignRoles($roleIds);
+    }
+
+    /**
+     * Detail forms of the Users / Roles / Permissions tables (the tables link
+     * rows to these slugs via "form-schema-uid"). View mode first; Edit and
+     * Cancel switch modes. Endpoints are relative so the schema works on any host.
+     */
+    protected function seedAdminFormSchemas(): void
+    {
+        if (! Schema::hasTable('form_schemas')) {
+            return;
+        }
+
+        $api = '/api/user-interface/v1/entity';
+        $save = [[
+            'type' => 'submit',
+            'route' => '#',
+            'text' => 'Save',
+            'element' => ['type' => 'button', 'color' => 'primary', 'variant' => 'outline', 'size' => 'sm'],
+            'align' => 'end',
+            'row' => 0,
+        ]];
+
+        // Users: basic fields through the generic entity API (admins only).
+        // Roles are not edited here.
+        $this->upsertFormSchema('user-details', 'User', 'User details (view / edit) for the Users table', [
+            'entity' => 'users',
+            'defaultFieldSize' => 'auto',
+            'submitButtonLabel' => 'Save',
+            'modes' => [
+                'view' => [
+                    'method' => 'GET',
+                    'endpoint' => $api.'/show/users/{uid}',
+                    'header' => ['title' => 'User'],
+                    'allowEdit' => true,
+                    'allowDelete' => false,
+                ],
+                'edit' => [
+                    'method' => 'PUT',
+                    'endpoint' => $api.'/update/users/{uid}',
+                    'header' => ['title' => 'Edit user'],
+                    'allowCancel' => true,
+                ],
+            ],
+            'fields' => [
+                ['id' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true, 'maxLength' => 255],
+                ['id' => 'email', 'label' => 'Email', 'type' => 'email', 'maxLength' => 255],
+                ['id' => 'phone', 'label' => 'Phone', 'type' => 'tel', 'maxLength' => 32],
+                [
+                    'id' => 'status',
+                    'label' => 'Status',
+                    'type' => 'select',
+                    'required' => true,
+                    'display' => 'status',
+                    'options' => [
+                        ['value' => 'active', 'label' => 'Active'],
+                        ['value' => 'inactive', 'label' => 'Inactive'],
+                        ['value' => 'unknown', 'label' => 'Unknown'],
+                    ],
+                ],
+                // Edit mode only; blank = keep the current password. The entity API
+                // hashes the password column and never returns it.
+                [
+                    'id' => 'password',
+                    'label' => 'New password',
+                    'type' => 'password',
+                    'showIn' => ['edit'],
+                    'omitIfEmpty' => true,
+                    'minLength' => 8,
+                    'autocomplete' => 'new-password',
+                    'confirmed' => true,
+                    'password_policy' => true,
+                    'password_mixed_case' => true,
+                    'password_numbers' => true,
+                    'password_symbols' => true,
+                    'helperText' => 'Leave blank to keep the current password.',
+                ],
+                [
+                    'id' => 'password_confirmation',
+                    'label' => 'Confirm new password',
+                    'type' => 'password',
+                    'showIn' => ['edit'],
+                    'omitIfEmpty' => true,
+                    'autocomplete' => 'new-password',
+                    'confirms' => 'password',
+                ],
+            ],
+            'actions' => $save,
+        ]);
+
+        // Roles: name + permissions, through the admin role endpoints
+        // (the generic entity API does not handle the role/permission links).
+        $this->upsertFormSchema('role-details', 'Role', 'Role details with permissions (view / edit) for the Roles table', [
+            'entity' => 'roles',
+            'dataEndpoint' => '/admin/roles/{uid}/details',
+            'defaultFieldSize' => 'auto',
+            'submitButtonLabel' => 'Save',
+            'modes' => [
+                'view' => [
+                    'method' => 'GET',
+                    'endpoint' => '/admin/roles/{uid}/details',
+                    'header' => ['title' => 'Role'],
+                    'allowEdit' => true,
+                    'allowDelete' => false,
+                ],
+                'edit' => [
+                    'method' => 'PUT',
+                    'endpoint' => '/admin/roles/{uid}/details',
+                    'header' => ['title' => 'Edit role'],
+                    'allowCancel' => true,
+                ],
+            ],
+            'fields' => [
+                ['id' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true, 'maxLength' => 255],
+                [
+                    'id' => 'permissions',
+                    'label' => 'Permissions',
+                    'type' => 'checkbox',
+                    'optionsFrom' => ['url' => '/admin/permission-options'],
+                ],
+            ],
+            'actions' => $save,
+        ]);
+
+        // Permissions are view-only: code checks them by name, so renaming one
+        // would silently change who can do what.
+        $this->upsertFormSchema('permission-details', 'Permission', 'Permission details (view only) for the Permissions table', [
+            'entity' => 'permissions',
+            'defaultFieldSize' => 'auto',
+            'modes' => [
+                'view' => [
+                    'method' => 'GET',
+                    'endpoint' => $api.'/show/permissions/{uid}',
+                    'header' => ['title' => 'Permission'],
+                    'allowEdit' => false,
+                    'allowDelete' => false,
+                ],
+            ],
+            'fields' => [
+                ['id' => 'name', 'label' => 'Name', 'type' => 'text'],
+                ['id' => 'guard_name', 'label' => 'Guard', 'type' => 'text'],
             ],
         ]);
     }

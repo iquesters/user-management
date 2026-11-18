@@ -80,10 +80,14 @@ Route::middleware('web')->group(function () {
 
         // User Profile Update
         Route::patch('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+        Route::post('/profile/picture', [ProfileController::class, 'updatePicture'])->name('profile.picture.update');
 
         Route::get('/settings', [ProfileController::class, 'settings'])->name('settings');
         Route::get('/myprofile', [ProfileController::class, 'myprofile'])->name('myprofile');
-        Route::post('/remove-profile-picture', [MediaController::class, 'removeProfilePicture']);
+        Route::post('/remove-profile-picture', [MediaController::class, 'removeProfilePicture'])->name('profile.picture.remove');
+        Route::get('/profile-picture/{filename}', [MediaController::class, 'picture'])
+            ->where('filename', '[A-Za-z0-9._-]+')->name('profile.picture');
 
         Route::get('/media/library', [MediaController::class, 'library'])->name('media.library');
         // Media Related
