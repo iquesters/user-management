@@ -39,6 +39,28 @@ class RoleFormController extends Controller
         return response()->json(['success' => true, 'data' => $options]);
     }
 
+    /** Create a role with its permissions (role-details form, create mode). */
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255', Rule::unique('roles', 'name')->where('guard_name', 'web')],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['string', Rule::exists('permissions', 'name')->where('guard_name', 'web')],
+        ]);
+
+        $role = Role::create(['name' => $validated['name'], 'guard_name' => 'web']);
+        $role->syncPermissions($validated['permissions'] ?? []);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        static::logInfo('Role created', ['role_id' => $role->id]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Role created.',
+            'data' => $this->payload($role),
+        ], 201);
+    }
+
     public function update(Request $request, Role $role): JsonResponse
     {
         $validated = $request->validate([

@@ -48,6 +48,8 @@ class UserManagementSeeder extends BaseSeeder
                     'description' => 'Datatable schema for users',
                     'schema' => [
                         'entity' => 'users',
+                        // List page Create button: opens user-details in create mode.
+                        'create' => ['form' => 'user-details', 'label' => 'Create user'],
                         'dt-options' => [
                             'columns' => [
                                 ['data' => 'id', 'title' => 'ID', 'visible' => true],
@@ -99,6 +101,7 @@ class UserManagementSeeder extends BaseSeeder
                     'description' => 'Datatable schema for roles',
                     'schema' => [
                         'entity' => 'roles',
+                        'create' => ['form' => 'role-details', 'label' => 'Create role'],
                         'dt-options' => [
                             'columns' => [
                                 ['data' => 'id', 'title' => 'ID', 'visible' => true],
@@ -325,6 +328,7 @@ class UserManagementSeeder extends BaseSeeder
         $this->seedAuthFormSchemas();
         $this->seedProfileFormSchemas();
         $this->seedAdminFormSchemas();
+        $this->addCreateButtonsToTables();
         $this->restrictModuleToAdminRoles();
     }
 
@@ -972,6 +976,38 @@ class UserManagementSeeder extends BaseSeeder
     }
 
     /**
+     * Existing installs: table schemas are only created once (admins may edit
+     * them), so add the list page "create" entry where it is missing, without
+     * touching anything else in the schema.
+     */
+    protected function addCreateButtonsToTables(): void
+    {
+        if (! Schema::hasTable('table_schemas')) {
+            return;
+        }
+
+        $creates = [
+            'user-table' => ['form' => 'user-details', 'label' => 'Create user'],
+            'role-table' => ['form' => 'role-details', 'label' => 'Create role'],
+        ];
+
+        foreach ($creates as $slug => $create) {
+            $row = DB::table('table_schemas')->where('slug', $slug)->first(['id', 'schema']);
+            $schema = $row ? json_decode((string) $row->schema, true) : null;
+
+            if (! is_array($schema) || isset($schema['create'])) {
+                continue;
+            }
+
+            $schema['create'] = $create;
+            DB::table('table_schemas')->where('id', $row->id)->update([
+                'schema' => json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'updated_at' => now(),
+            ]);
+        }
+    }
+
+    /**
      * Only admin roles (foundation setting admin_roles: super-admin, admin) see
      * this module. Its pages and data already require an admin role
      * (ensure.admin, entity permissions); this makes the navigation match.
@@ -1033,6 +1069,13 @@ class UserManagementSeeder extends BaseSeeder
                     'header' => ['title' => 'Edit user'],
                     'allowCancel' => true,
                 ],
+                // "Create user" button on the Users table (table schema "create").
+                'create' => [
+                    'method' => 'POST',
+                    'endpoint' => $api.'/store/users',
+                    'header' => ['title' => 'Create user'],
+                    'allowCancel' => true,
+                ],
             ],
             'fields' => [
                 ['id' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true, 'maxLength' => 255],
@@ -1050,13 +1093,14 @@ class UserManagementSeeder extends BaseSeeder
                         ['value' => 'unknown', 'label' => 'Unknown'],
                     ],
                 ],
-                // Edit mode only; blank = keep the current password. The entity API
-                // hashes the password column and never returns it.
+                // Not in view mode. Required when creating; when editing, blank keeps
+                // the current password. The entity API hashes it and never returns it.
                 [
                     'id' => 'password',
-                    'label' => 'New password',
+                    'label' => 'Password',
                     'type' => 'password',
-                    'showIn' => ['edit'],
+                    'showIn' => ['create', 'edit'],
+                    'requiredIn' => ['create'],
                     'omitIfEmpty' => true,
                     'minLength' => 8,
                     'autocomplete' => 'new-password',
@@ -1065,13 +1109,14 @@ class UserManagementSeeder extends BaseSeeder
                     'password_mixed_case' => true,
                     'password_numbers' => true,
                     'password_symbols' => true,
-                    'helperText' => 'Leave blank to keep the current password.',
+                    'helperText' => 'When editing, leave blank to keep the current password.',
                 ],
                 [
                     'id' => 'password_confirmation',
-                    'label' => 'Confirm new password',
+                    'label' => 'Confirm password',
                     'type' => 'password',
-                    'showIn' => ['edit'],
+                    'showIn' => ['create', 'edit'],
+                    'requiredIn' => ['create'],
                     'omitIfEmpty' => true,
                     'autocomplete' => 'new-password',
                     'confirms' => 'password',
@@ -1099,6 +1144,13 @@ class UserManagementSeeder extends BaseSeeder
                     'method' => 'PUT',
                     'endpoint' => '/admin/roles/{uid}/details',
                     'header' => ['title' => 'Edit role'],
+                    'allowCancel' => true,
+                ],
+                // "Create role" button on the Roles table.
+                'create' => [
+                    'method' => 'POST',
+                    'endpoint' => '/admin/roles/details',
+                    'header' => ['title' => 'Create role'],
                     'allowCancel' => true,
                 ],
             ],

@@ -6,6 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 ## [Unreleased]
 
 ### Added
+- **Create user / Create role** buttons on the Users and Roles tables (create mode of `user-details` / `role-details`; roles via `POST /admin/roles/details`). The seeder adds the button to existing table schemas without changing anything else in them. New users get no role here (assign one from the role screens).
 - **My Profile / Settings** use form schemas (`user-profile` in view mode on My Profile and edit mode on Settings; `user-password-update` / `user-password-set`; `user-delete-account` / `user-delete-account-email`), seeded by `UserManagementSeeder`.
 - **Users / Roles / Permissions** detail forms (`user-details`, `role-details`, `permission-details`) for the admin tables: users edit name, email, phone and status; roles edit name and permissions (`/admin/roles/{id}/details`, `/admin/permission-options`); permissions are view-only. Admin roles cannot be renamed.
 - Account deletion (`DELETE /profile`); the last super-admin cannot delete their account.
