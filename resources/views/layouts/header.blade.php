@@ -94,12 +94,12 @@
                         </li>
                         <li><div class="dropdown-divider my-2"></div></li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center py-1 text-muted" href="#">
+                            <a class="dropdown-item d-flex align-items-center py-1 text-muted" href="{{ Route::has('myprofile') ? route('myprofile') : '#' }}">
                                 <i class="fa-solid fa-fw fa-user-circle me-2"></i> My Profile
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center py-1 text-muted" href="#">
+                            <a class="dropdown-item d-flex align-items-center py-1 text-muted" href="{{ Route::has('ui.help') ? route('ui.help') : '#' }}">
                                 <i class="fas fa-fw fa-question-circle me-2"></i> Help
                             </a>
                         </li>
@@ -113,11 +113,11 @@
                             </form>
                         </li>
                         <small class="d-flex align-items-center justify-content-center mt-2">
-                            <a class="small me-1 text-muted" href="#">
+                            <a class="small me-1 text-muted" href="{{ Route::has('ui.privacy') ? route('ui.privacy') : '#' }}">
                                 Privacy
                             </a>
                             <small>|</small>
-                            <a class="small ms-1 text-muted" href="#">
+                            <a class="small ms-1 text-muted" href="{{ Route::has('ui.terms') ? route('ui.terms') : '#' }}">
                                 Terms & Conditions
                             </a>
                         </small>

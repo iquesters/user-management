@@ -3,6 +3,30 @@
 All notable changes to this package are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Create user / Create role** buttons on the Users and Roles tables (create mode of `user-details` / `role-details`; roles via `POST /admin/roles/details`). The seeder adds the button to existing table schemas without changing anything else in them. New users get no role here (assign one from the role screens).
+- **My Profile / Settings** use form schemas (`user-profile` in view mode on My Profile and edit mode on Settings; `user-password-update` / `user-password-set`; `user-delete-account` / `user-delete-account-email`), seeded by `UserManagementSeeder`.
+- **Users / Roles / Permissions** detail forms (`user-details`, `role-details`, `permission-details`) for the admin tables: users edit name, email, phone and status; roles edit name and permissions (`/admin/roles/{id}/details`, `/admin/permission-options`); permissions are view-only. Admin roles cannot be renamed.
+- Account deletion (`DELETE /profile`); the last super-admin cannot delete their account.
+- My Profile is entirely the `user-profile` schema in view mode (picture, status, email verification, roles, member since, previous sign-in, Edit link). The picture's Change / Remove open the `user-profile-picture` / `user-profile-picture-remove` schemas in a modal; the user picks the square area in the browser (crop field), and `POST /profile/picture` keeps it square (centred) and at most 512px.
+- The `user-details` form lets admins set a new password (edit mode only; blank keeps the current one; hashed by the entity API).
+- `HasUserManagement`: `avatarUrl()`, `profilePictureFile()`, `hasUsablePassword()`.
+- Profile pictures are served by `/profile-picture/{file}` (no `storage:link` needed).
+
+### Changed
+- The user-management module is assigned to the admin roles only (super-admin, admin).
+- Users who signed up with Google or an OTP (random password, meta `password_generated`) are offered "Set a password" and confirm account deletion with their email.
+- Page styles and scripts live in `public/css/profile.css` and `public/js/profile-settings.js`.
+
+### Fixed
+- Settings: leftover forms with hard-coded schema IDs ("Form schema not found"), a missing `initPasswordValidation` script, and a delete form that posted nowhere.
+- Removing a profile picture could fail (empty value) and redirected through a JavaScript timer.
+
+### Removed
+- Unused `ProfileController::updatePicture()` and helpers (no route; referenced a class that does not exist).
+
 ## [2.0.2] – 2026-11-17
 
 ### Security

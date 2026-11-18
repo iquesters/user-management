@@ -6,6 +6,7 @@ use App\Models\MediaResources;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Iquesters\Foundation\Constants\EntityStatus;
@@ -126,7 +127,7 @@ class MediaController extends Controller
                 static::logInfo('medias='.$medias);
 
                 if (isset($medias)) {
-                    return redirect()->back()->with(['success' => count($files).' Media(s) uploaded successfully.']);
+                    return redirect()->back()->with('success', 'Profile picture updated.');
                 } else {
                 }
             } else {
@@ -185,24 +186,43 @@ class MediaController extends Controller
     }
 
     /**
-     * Remove Profile picture.
+     * Remove the profile picture (the file is kept; the picture is deactivated).
      */
     public function removeProfilePicture()
     {
-        try {
-            UserMeta::updateOrCreate(
-                ['ref_parent' => Auth::user()->id, 'meta_key' => 'profile_picture'],
-                ['status' => 'inactive']
-            );
+        $removed = UserMeta::where('ref_parent', Auth::id())
+            ->where('meta_key', 'profile_picture')
+            ->where('status', EntityStatus::ACTIVE)
+            ->update(['status' => EntityStatus::INACTIVE]);
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Profile picture removed successfully',
-            ]);
-        } catch (\Exception $e) {
-            static::logError($e->getMessage(), ['exception' => $e]);
-            // Handle other exceptions
-            abort(500);
+        $type = $removed ? 'success' : 'info';
+        $message = $removed ? 'Profile picture removed.' : 'There is no profile picture to remove.';
+
+        // Form schema "user-profile-picture-remove" (modal) submits with fetch().
+        if (request()->wantsJson()) {
+            session()->flash($type, $message);
+
+            return response()->json(['success' => true, 'message' => $message, 'redirect_url' => route('myprofile', absolute: false)]);
         }
+
+        return redirect()->route('myprofile')->with($type, $message);
+    }
+
+    /**
+     * Serve an uploaded profile picture from the public disk, so pictures work
+     * without `php artisan storage:link`. File names are random (Storage::putFile).
+     */
+    public function picture(string $filename)
+    {
+        $path = 'media/'.basename($filename);
+
+        if (! preg_match('/^[A-Za-z0-9._-]+$/', $filename) || ! Storage::disk('public')->exists($path)) {
+            abort(404);
+        }
+
+        return Storage::disk('public')->response($path, null, [
+            'Cache-Control' => 'private, max-age=86400',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 }
