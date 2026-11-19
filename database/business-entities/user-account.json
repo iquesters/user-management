@@ -1,0 +1,40 @@
+{
+    "name": "User Account",
+    "slug": "user-account",
+    "desc": "A user with their roles, saved together: the API behind the Users screen form (user-details)",
+    "output": "api",
+    "definition": {
+        "version": 2,
+        "parts": [
+            {
+                "alias": "user",
+                "entity": "users",
+                "label": "User",
+                "fields": [
+                    {"field": "name"},
+                    {"field": "email"},
+                    {"field": "phone"},
+                    {"field": "password"}
+                ],
+                "meta_fields": []
+            },
+            {
+                "alias": "roles",
+                "model": "role",
+                "label": "Roles",
+                "link": {
+                    "type": "morph_to_many",
+                    "to": "user",
+                    "mode": "reference",
+                    "pivot": {
+                        "table": "model_has_roles",
+                        "foreign_pivot_key": "model_id",
+                        "related_pivot_key": "role_id",
+                        "morph_type": "model_type"
+                    },
+                    "label_column": "name"
+                }
+            }
+        ]
+    }
+}

@@ -3,6 +3,7 @@
 namespace Iquesters\UserManagement\Database\Seeders;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Iquesters\Foundation\Database\Seeders\BaseSeeder;
@@ -50,6 +51,10 @@ class UserManagementSeeder extends BaseSeeder
                         'entity' => 'users',
                         // List page Create button: opens user-details in create mode.
                         'create' => ['form' => 'user-details', 'label' => 'Create user'],
+                        // List rows and the right panel use the user components;
+                        // the panel's Edit opens user-details (with roles).
+                        'summary_component' => self::USER_SUMMARY_COMPONENT,
+                        'details_component' => self::USER_DETAILS_COMPONENT,
                         'dt-options' => [
                             'columns' => [
                                 ['data' => 'id', 'title' => 'ID', 'visible' => true],
@@ -327,9 +332,43 @@ class UserManagementSeeder extends BaseSeeder
     {
         $this->seedAuthFormSchemas();
         $this->seedProfileFormSchemas();
+        // Before the admin forms: user-details uses it when it is there.
+        $this->seedUserAccountBusinessEntity();
         $this->seedAdminFormSchemas();
         $this->addCreateButtonsToTables();
         $this->restrictModuleToAdminRoles();
+    }
+
+    /** Whether the "user-account" business entity is set up (user-details then edits roles too). */
+    protected bool $userAccountReady = false;
+
+    /**
+     * Users screen: create and edit a user with their roles.
+     *
+     * database/business-entities/user-account.json is a foundation business
+     * entity: users + roles through Spatie's model_has_roles, "API only" (no
+     * generated screens). The hand-made "user-details" form (Users table:
+     * Create and rows) saves through its API, so a user and their roles are
+     * saved together. It changes no tables. Skipped without foundation's
+     * business entities (older foundation); user-details then keeps the
+     * generic entity API, without roles.
+     */
+    protected function seedUserAccountBusinessEntity(): void
+    {
+        $service = 'Iquesters\\Foundation\\Services\\BusinessEntity\\BusinessEntityService';
+
+        if (! class_exists($service) || ! Schema::hasTable('business_entities') || ! Schema::hasTable('table_schemas')) {
+            return;
+        }
+
+        try {
+            $file = json_decode((string) file_get_contents(__DIR__.'/../business-entities/user-account.json'), true, 512, JSON_THROW_ON_ERROR);
+            app($service)->upsertFromFile($file);
+            $this->userAccountReady = true;
+        } catch (\Throwable $e) {
+            // The rest of the module works without it: log and keep seeding.
+            Log::warning('User account business entity not seeded: '.$e->getMessage());
+        }
     }
 
     /**
@@ -975,10 +1014,23 @@ class UserManagementSeeder extends BaseSeeder
         ]);
     }
 
+    /** Record components of the Users table (registered by UserManagementServiceProvider). */
+    public const USER_SUMMARY_COMPONENT = 'user.summary';
+
+    public const USER_DETAILS_COMPONENT = 'user.details';
+
+    /** Values seeded before the keys existed: replaced by the keys, unlike an admin's own choice. */
+    private const OLD_COMPONENT_VALUES = [
+        'summary_component' => 'userinterface::components.lab-user-summary',
+        'details_component' => 'userinterface::components.lab-user-details',
+    ];
+
     /**
      * Existing installs: table schemas are only created once (admins may edit
-     * them), so add the list page "create" entry where it is missing, without
-     * touching anything else in the schema.
+     * them), so add these keys where they are missing, without touching
+     * anything else in the schema: the list page "create" entry, and the
+     * Users table's summary (left) and details (right) components (the older
+     * view-path values are upgraded to the component keys).
      */
     protected function addCreateButtonsToTables(): void
     {
@@ -986,20 +1038,38 @@ class UserManagementSeeder extends BaseSeeder
             return;
         }
 
-        $creates = [
-            'user-table' => ['form' => 'user-details', 'label' => 'Create user'],
-            'role-table' => ['form' => 'role-details', 'label' => 'Create role'],
+        $additions = [
+            'user-table' => [
+                'create' => ['form' => 'user-details', 'label' => 'Create user'],
+                'summary_component' => self::USER_SUMMARY_COMPONENT,
+                'details_component' => self::USER_DETAILS_COMPONENT,
+            ],
+            'role-table' => [
+                'create' => ['form' => 'role-details', 'label' => 'Create role'],
+            ],
         ];
 
-        foreach ($creates as $slug => $create) {
+        foreach ($additions as $slug => $keys) {
             $row = DB::table('table_schemas')->where('slug', $slug)->first(['id', 'schema']);
             $schema = $row ? json_decode((string) $row->schema, true) : null;
-
-            if (! is_array($schema) || isset($schema['create'])) {
+            if (! is_array($schema)) {
                 continue;
             }
 
-            $schema['create'] = $create;
+            $changed = false;
+            foreach ($keys as $key => $value) {
+                $old = self::OLD_COMPONENT_VALUES[$key] ?? null;
+
+                if (! array_key_exists($key, $schema) || ($old !== null && $schema[$key] === $old)) {
+                    $schema[$key] = $value;
+                    $changed = true;
+                }
+            }
+
+            if (! $changed) {
+                continue;
+            }
+
             DB::table('table_schemas')->where('id', $row->id)->update([
                 'schema' => json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 'updated_at' => now(),
@@ -1049,43 +1119,51 @@ class UserManagementSeeder extends BaseSeeder
             'row' => 0,
         ]];
 
-        // Users: basic fields through the generic entity API (admins only).
-        // Roles are not edited here.
-        $this->upsertFormSchema('user-details', 'User', 'User details (view / edit) for the Users table', [
-            'entity' => 'users',
+        // Users: a user with their roles, saved together through the
+        // "user-account" business entity (admins only). Without it (older
+        // foundation), the basic fields through the generic entity API, no roles.
+        $withRoles = $this->userAccountReady;
+        $base = $withRoles ? '/api/foundation/v1/business-entity' : $api;
+        $resource = $withRoles ? 'user-account' : 'users';
+        $id = fn (string $field) => $withRoles ? 'user__'.$field : $field;
+
+        $this->upsertFormSchema('user-details', 'User', 'User details (view / edit) for the Users table', array_filter([
+            'entity' => $withRoles ? 'business-entity/user-account' : 'users',
+            'dataEndpoint' => $withRoles ? $base.'/show/user-account/{uid}' : null,
             'defaultFieldSize' => 'auto',
             'submitButtonLabel' => 'Save',
             'modes' => [
                 'view' => [
                     'method' => 'GET',
-                    'endpoint' => $api.'/show/users/{uid}',
+                    'endpoint' => $base."/show/{$resource}/{uid}",
                     'header' => ['title' => 'User'],
                     'allowEdit' => true,
                     'allowDelete' => false,
                 ],
                 'edit' => [
                     'method' => 'PUT',
-                    'endpoint' => $api.'/update/users/{uid}',
+                    'endpoint' => $base."/update/{$resource}/{uid}",
                     'header' => ['title' => 'Edit user'],
                     'allowCancel' => true,
                 ],
                 // "Create user" button on the Users table (table schema "create").
                 'create' => [
                     'method' => 'POST',
-                    'endpoint' => $api.'/store/users',
+                    'endpoint' => $base."/store/{$resource}",
                     'header' => ['title' => 'Create user'],
                     'allowCancel' => true,
                 ],
             ],
-            'fields' => [
-                ['id' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true, 'maxLength' => 255],
-                ['id' => 'email', 'label' => 'Email', 'type' => 'email', 'maxLength' => 255],
-                ['id' => 'phone', 'label' => 'Phone', 'type' => 'tel', 'maxLength' => 32],
+            'fields' => array_values(array_filter([
+                ['id' => $id('name'), 'label' => 'Name', 'type' => 'text', 'required' => true, 'maxLength' => 255],
+                ['id' => $id('email'), 'label' => 'Email', 'type' => 'email', 'maxLength' => 255],
+                ['id' => $id('phone'), 'label' => 'Phone', 'type' => 'tel', 'maxLength' => 32],
+                // Shown only: the entity API manages status (it never saved a change from here).
                 [
                     'id' => 'status',
                     'label' => 'Status',
                     'type' => 'select',
-                    'required' => true,
+                    'showIn' => ['view'],
                     'display' => 'status',
                     'options' => [
                         ['value' => 'active', 'label' => 'Active'],
@@ -1093,10 +1171,18 @@ class UserManagementSeeder extends BaseSeeder
                         ['value' => 'unknown', 'label' => 'Unknown'],
                     ],
                 ],
+                // Roles: Spatie's model_has_roles, through the business entity (pick existing roles).
+                $withRoles ? [
+                    'id' => 'roles',
+                    'label' => 'Roles',
+                    'type' => 'checkbox',
+                    'display' => 'badge',
+                    'optionsFrom' => ['url' => $base.'/options/user-account/roles'],
+                ] : null,
                 // Not in view mode. Required when creating; when editing, blank keeps
                 // the current password. The entity API hashes it and never returns it.
                 [
-                    'id' => 'password',
+                    'id' => $id('password'),
                     'label' => 'Password',
                     'type' => 'password',
                     'showIn' => ['create', 'edit'],
@@ -1112,18 +1198,18 @@ class UserManagementSeeder extends BaseSeeder
                     'helperText' => 'When editing, leave blank to keep the current password.',
                 ],
                 [
-                    'id' => 'password_confirmation',
+                    'id' => $id('password_confirmation'),
                     'label' => 'Confirm password',
                     'type' => 'password',
                     'showIn' => ['create', 'edit'],
                     'requiredIn' => ['create'],
                     'omitIfEmpty' => true,
                     'autocomplete' => 'new-password',
-                    'confirms' => 'password',
+                    'confirms' => $id('password'),
                 ],
-            ],
+            ])),
             'actions' => $save,
-        ]);
+        ], fn ($value) => $value !== null));
 
         // Roles: name + permissions, through the admin role endpoints
         // (the generic entity API does not handle the role/permission links).

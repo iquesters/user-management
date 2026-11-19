@@ -48,6 +48,8 @@ class UserManagementServiceProvider extends BaseServiceProvider
         // Layout the auth views extend: user-interface's when installed, else ours.
         $this->app->instance('auth.layout', $this->resolveAuthLayout());
 
+        $this->registerRecordComponents();
+
         $this->publishes([
             __DIR__.'/../resources/views/layouts/package.blade.php' => resource_path('views/vendor/usermanagement/layouts/package.blade.php'),
         ], 'user-management-config');
@@ -59,6 +61,24 @@ class UserManagementServiceProvider extends BaseServiceProvider
 
         // composer install/update: publish Spatie/Sanctum files, patch the user model.
         $this->onPackageDiscover(fn () => InstallSteps::run());
+    }
+
+    /**
+     * The Users table's record components (resources/views/records/user/):
+     * "user.summary" (list rows) and "user.details" (right panel). Only with
+     * iquesters/user-interface, which renders them.
+     */
+    private function registerRecordComponents(): void
+    {
+        $registry = 'Iquesters\\UserInterface\\Support\\RecordComponents';
+
+        if (! class_exists($registry)) {
+            return;
+        }
+
+        $components = $this->app->make($registry);
+        $components->register('user.summary', 'usermanagement::records.user.summary', 'summary', 'User (avatar, name, email)');
+        $components->register('user.details', 'usermanagement::records.user.details', 'details', 'User details with roles');
     }
 
     private function resolveAuthLayout(): string

@@ -4,6 +4,7 @@ namespace Iquesters\UserManagement\Tests\Feature;
 
 use Illuminate\Support\Facades\DB;
 use Iquesters\Foundation\Models\Module;
+use Iquesters\UserInterface\Support\RecordComponents;
 use Iquesters\UserManagement\Database\Seeders\UserManagementSeeder;
 use Iquesters\UserManagement\Tests\TestCase;
 use Spatie\Permission\Models\Permission;
@@ -19,9 +20,9 @@ class AdminFormsTest extends TestCase
         $this->assertCount(3, $schemas);
 
         $user = json_decode($schemas['user-details'], true);
-        $this->assertSame(['name', 'email', 'phone', 'status', 'password', 'password_confirmation'], array_column($user['fields'], 'id'));
+        $this->assertSame(['user__name', 'user__email', 'user__phone', 'status', 'roles', 'user__password', 'user__password_confirmation'], array_column($user['fields'], 'id'));
         // Password: create + edit (not view); required on create, blank on edit keeps the current one.
-        $password = collect($user['fields'])->firstWhere('id', 'password');
+        $password = collect($user['fields'])->firstWhere('id', 'user__password');
         $this->assertSame(['create', 'edit'], $password['showIn']);
         $this->assertSame(['create'], $password['requiredIn']);
         $this->assertTrue($password['omitIfEmpty']);
@@ -117,8 +118,60 @@ class AdminFormsTest extends TestCase
             ->assertSee('data-form="user-details"', false);
 
         $schemaForm = json_decode(DB::table('form_schemas')->where('slug', 'user-details')->value('schema'), true);
-        $this->assertSame('/api/user-interface/v1/entity/store/users', $schemaForm['modes']['create']['endpoint']);
-        $this->assertSame(['create'], collect($schemaForm['fields'])->firstWhere('id', 'password')['requiredIn']);
+        $this->assertSame('/api/foundation/v1/business-entity/store/user-account', $schemaForm['modes']['create']['endpoint']);
+        $this->assertSame(['create'], collect($schemaForm['fields'])->firstWhere('id', 'user__password')['requiredIn']);
+    }
+
+    public function test_the_users_table_uses_the_user_components(): void
+    {
+        $this->seed(UserManagementSeeder::class);
+        $schema = fn () => json_decode(DB::table('table_schemas')->where('slug', 'user-table')->value('schema'), true);
+
+        // Component keys, registered by this module (records/user/*).
+        $this->assertSame('user.summary', $schema()['summary_component']);
+        $this->assertSame('user.details', $schema()['details_component']);
+        $registry = app(RecordComponents::class);
+        $this->assertTrue($registry->has('user.summary'));
+        $this->assertSame('details', $registry->all('details')['user.details']['kind']);
+
+        // Existing installs: missing keys are added, the older view paths become keys,
+        // and a component an admin chose is kept.
+        $users = $schema();
+        unset($users['summary_component']);
+        $users['details_component'] = 'userinterface::components.lab-user-details';
+        DB::table('table_schemas')->where('slug', 'user-table')->update(['schema' => json_encode($users)]);
+        $this->seed(UserManagementSeeder::class);
+        $this->assertSame('user.summary', $schema()['summary_component']);
+        $this->assertSame('user.details', $schema()['details_component']);
+
+        $users = $schema();
+        $users['details_component'] = 'acme.my-own-details';
+        DB::table('table_schemas')->where('slug', 'user-table')->update(['schema' => json_encode($users)]);
+        $this->seed(UserManagementSeeder::class);
+        $this->assertSame('acme.my-own-details', $schema()['details_component']);
+
+        // Served to the table by key; the details component shows roles as badges.
+        $this->actingAs($this->makeUser('super-admin'));
+        $html = $this->getJson('/api/user-interface/v1/components/templates/user.details')
+            ->assertOk()->assertJsonPath('success', true)->assertJsonPath('response_schema.data.deprecated', false)
+            ->json('response_schema.data.html');
+        $this->assertStringContainsString('"labels.roles"', $html);
+        $this->assertStringContainsString('"type": "badges"', $html);
+
+        // Both components render, with bindings the browser can parse (picture path included).
+        foreach (['user.summary', 'user.details'] as $key) {
+            $html = $this->getJson("/api/user-interface/v1/components/templates/{$key}")
+                ->assertOk()->json('response_schema.data.html');
+            preg_match('#<script type="application/json" data-component-bindings>(.*?)</script>#s', $html, $match);
+            $bindings = json_decode($match[1] ?? '', true);
+            $this->assertIsArray($bindings, "{$key}: bindings are not valid JSON");
+            $this->assertSame('/profile-picture/', $bindings['__LAB_AVATAR_BLOCK__']['fields']['src']['prefix']);
+        }
+
+        // Older schemas with a view path still work (deprecated); unknown keys are 404.
+        $this->getJson('/api/user-interface/v1/components/templates/userinterface::components.lab-user-details')
+            ->assertOk()->assertJsonPath('response_schema.data.deprecated', true);
+        $this->getJson('/api/user-interface/v1/components/templates/nope.details')->assertNotFound();
     }
 
     public function test_admin_roles_cannot_be_renamed(): void
