@@ -61,6 +61,17 @@ abstract class TestCase extends Orchestra
         }
     }
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // The app boots (and reads settings into the cache) before the test's
+        // database transaction starts, so a value an earlier test saved could
+        // be cached here although its row was rolled back. Start clean.
+        \Illuminate\Support\Facades\Cache::flush();
+        \Iquesters\Foundation\Support\ConfProvider::forget();
+    }
+
     protected function makeUser(?string $role = null, array $attributes = []): User
     {
         $user = User::create($attributes + [
