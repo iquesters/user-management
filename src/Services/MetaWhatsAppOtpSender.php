@@ -152,16 +152,28 @@ class MetaWhatsAppOtpSender implements WhatsAppOtpSender
             ->where('uid', $channelUid)
             ->where('status', 'active')
             ->first();
-        if (! $channel) {
+        if (! $channel || (string) $channel->uid !== $channelUid) {
             throw new \RuntimeException('order_otp_channel_unavailable');
+        }
+        $provider = DB::table('channel_providers')
+            ->where('id', $channel->channel_provider_id)
+            ->where('small_name', 'whatsapp')
+            ->where('status', 'active')
+            ->first();
+        if (! $provider) {
+            throw new \RuntimeException('order_otp_channel_provider_not_authorized');
         }
 
         // A shared or foreign channel must not send OTP as this organisation.
         $memberships = DB::table('model_has_organisations')
             ->where('model_id', $channel->id)
             ->where('model_type', 'Iquesters\\SmartMessenger\\Models\\Channel')
-            ->pluck('organisation_id')->map(fn ($v) => (int) $v)->all();
-        if (count($memberships) !== 1 || $memberships[0] !== $orgId) {
+            ->get(['organisation_id', 'model_type']);
+        $valid = $memberships->filter(fn ($row) =>
+            $row->model_type === 'Iquesters\\SmartMessenger\\Models\\Channel'
+            && (int) $row->organisation_id === $orgId
+        );
+        if ($memberships->count() !== 1 || $valid->count() !== 1) {
             throw new \RuntimeException('order_otp_channel_not_authorized');
         }
 
