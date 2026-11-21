@@ -15,9 +15,10 @@ final class RequireOrderOtpToken
             ?: getenv('ORDER_OTP_INTERNAL_TOKEN') ?: ''));
         $presented = trim((string) $request->bearerToken());
         if (strlen($expected) < 32 || $presented === ''
-            || ! hash_equals($expected, $presented)) {
+            || hash_equals($expected, $presented) === false) {
             return response()->json(['error' => 'unauthorized'], 401);
         }
+
         return $next($request);
     }
 }
