@@ -63,7 +63,6 @@ final class OrderOtpService
             ->where('status', 'active')
             ->latest('created_at')->first();
         if ($previous && Carbon::parse($previous->created_at)->greaterThan(now()->subSeconds(60))) {
-
             return ['accepted' => true, 'challenge_id' => (string) $previous->id];
         }
 
@@ -124,7 +123,6 @@ final class OrderOtpService
             $this->phone($requesterPhone), $this->phone($orderPhone)
         );
         if ($scope === '' || Str::isUuid($challengeId) === false || preg_match('/^[0-9]{6}$/D', $code) !== 1) {
-
             return false;
         }
 
@@ -140,7 +138,6 @@ final class OrderOtpService
                 || Carbon::parse($challenge->expires_at)->isPast()
                 || $challenge->attempt_count >= 5 || $challenge->consumed_at !== null
             ) {
-
                 return false;
             }
 
@@ -175,7 +172,6 @@ final class OrderOtpService
     ): string {
         if ($organisationId <= 0 || $storeId <= 0 || $channelUid === '' || $chatbotUid === ''
             || $orderId === '' || strlen($orderId) > 128 || $requester === '' || $destination === '') {
-
             return '';
         }
 
