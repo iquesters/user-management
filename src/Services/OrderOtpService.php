@@ -19,10 +19,15 @@ use Iquesters\UserManagement\Contracts\WhatsAppOtpSender;
  */
 final class OrderOtpService
 {
-    public function __construct(
-        private readonly PhoneNumberService $phones,
-        private readonly WhatsAppOtpSender $sender,
-    ) {}
+    private readonly PhoneNumberService $phones;
+
+    private readonly WhatsAppOtpSender $sender;
+
+    public function __construct(PhoneNumberService $phones, WhatsAppOtpSender $sender)
+    {
+        $this->phones = $phones;
+        $this->sender = $sender;
+    }
 
     /** @return array{accepted:bool,challenge_id:?string} */
     public function issue(
