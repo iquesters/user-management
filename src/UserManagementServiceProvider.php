@@ -2,6 +2,7 @@
 
 namespace Iquesters\UserManagement;
 
+use Illuminate\Support\Facades\Route;
 use Iquesters\Foundation\Enums\Module;
 use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\System\Providers\BaseServiceProvider;
@@ -44,6 +45,14 @@ class UserManagementServiceProvider extends BaseServiceProvider
         parent::boot();
 
         Assets::registerRoutes();
+
+        // Purpose-specific internal OTP API. A service bearer and API rate
+        // limiting are applied to every route. Never expose through web login.
+        if ($this->app->routesAreCached() === false) {
+            Route::middleware('api')
+                ->prefix('v1/internal/order-otp')
+                ->group(__DIR__.'/../routes/order_otp.php');
+        }
 
         // Layout the auth views extend: user-interface's when installed, else ours.
         $this->app->instance('auth.layout', $this->resolveAuthLayout());
