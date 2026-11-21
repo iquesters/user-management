@@ -26,7 +26,8 @@ class OrderOtpTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        if (! Schema::hasTable('order_otp_challenges')) {
+
+        if (Schema::hasTable('order_otp_challenges') === false) {
             Schema::create('order_otp_challenges', function (Blueprint $t) {
                 $t->uuid('id')->primary();
                 $t->unsignedBigInteger('organisation_id');
@@ -41,6 +42,7 @@ class OrderOtpTest extends TestCase
                 $t->timestamps();
             });
         }
+
         $this->sender = new FakeOrderOtpSender;
         $this->app->instance(WhatsAppOtpSender::class, $this->sender);
     }
@@ -88,7 +90,7 @@ class OrderOtpTest extends TestCase
         $issued = $this->issue();
         $code = $this->sender->messages[0]['otp'];
         $wrong = $code === '000000' ? '999999' : '000000';
-        for ($i = 0; $i < 5; ++$i) {
+        for ($i = 0; $i < 5; $i++) {
             $this->assertFalse(app(OrderOtpService::class)->verify(
                 $issued['challenge_id'], $wrong, 7, 'channel-nams', 'bot-nams',
                 1001, '1234', '+15105550123', '+14155550199'
