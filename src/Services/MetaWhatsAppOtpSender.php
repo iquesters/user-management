@@ -2,9 +2,9 @@
 
 namespace Iquesters\UserManagement\Services;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Iquesters\Foundation\Enums\Module;
 use Iquesters\Foundation\Support\ConfProvider;
@@ -28,8 +28,10 @@ class MetaWhatsAppOtpSender implements WhatsAppOtpSender
             if ($context['order_verification'] !== true) {
                 throw new \InvalidArgumentException('Invalid order verification context.');
             }
+
             [$phoneNumberId, $accessToken] = $this->organisationSender($context);
         }
+
         $templateName = trim((string) ($context['template_name'] ?? $config->verify_template_name ?? ''));
         $templateLanguageCode = trim((string) ($config->template_language_code ?? 'en_US'));
         $graphVersion = trim((string) ($config->graph_version ?? 'v23.0'));
@@ -155,6 +157,7 @@ class MetaWhatsAppOtpSender implements WhatsAppOtpSender
         if (! $channel || (string) $channel->uid !== $channelUid) {
             throw new \RuntimeException('order_otp_channel_unavailable');
         }
+
         $provider = DB::table('channel_providers')
             ->where('id', $channel->channel_provider_id)
             ->where('small_name', 'whatsapp')
@@ -169,9 +172,9 @@ class MetaWhatsAppOtpSender implements WhatsAppOtpSender
             ->where('model_id', $channel->id)
             ->where('model_type', 'Iquesters\\SmartMessenger\\Models\\Channel')
             ->get(['organisation_id', 'model_type']);
-        $valid = $memberships->filter(fn ($row) =>
-            $row->model_type === 'Iquesters\\SmartMessenger\\Models\\Channel'
-            && (int) $row->organisation_id === $orgId
+        $valid = $memberships->filter(
+            fn ($row) => $row->model_type === 'Iquesters\\SmartMessenger\\Models\\Channel'
+                && (int) $row->organisation_id === $orgId
         );
         if ($memberships->count() !== 1 || $valid->count() !== 1) {
             throw new \RuntimeException('order_otp_channel_not_authorized');
@@ -186,10 +189,12 @@ class MetaWhatsAppOtpSender implements WhatsAppOtpSender
         if ($id === '' || $token === '') {
             throw new \RuntimeException('order_otp_channel_credentials_unavailable');
         }
+
         Log::info('Order OTP organisation sender selected.', [
             'organisation_id' => $orgId,
             'channel_id' => $channel->id,
         ]);
+
         return [$id, $token];
     }
 
