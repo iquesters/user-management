@@ -15,6 +15,7 @@ class FakeOrderOtpSender implements WhatsAppOtpSender
     public function sendOtp(string $phone, string $otp, array $context = []): array
     {
         $this->messages[] = compact('phone', 'otp', 'context');
+
         return ['provider_message_id' => 'unit-test', 'delivery_status' => 'sent'];
     }
 }
