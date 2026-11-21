@@ -2,6 +2,7 @@
 
 namespace Iquesters\UserManagement\Services;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -49,7 +50,7 @@ final class OrderOtpService
             ->where('scope_hash', $scope)
             ->where('status', 'active')
             ->latest('created_at')->first();
-        if ($previous && now()->diffInSeconds($previous->created_at, false) > -60) {
+        if ($previous && Carbon::parse($previous->created_at)->greaterThan(now()->subSeconds(60))) {
             return ['accepted' => true, 'challenge_id' => (string) $previous->id];
         }
 
@@ -115,7 +116,7 @@ final class OrderOtpService
                 ->where('channel_uid', $channelUid)
                 ->where('scope_hash', $scope)
                 ->lockForUpdate()->first();
-            if (! $challenge || $challenge->status !== 'active' || $challenge->expires_at < now()
+            if (! $challenge || $challenge->status !== 'active' || Carbon::parse($challenge->expires_at)->isPast()
                 || $challenge->attempt_count >= 5 || $challenge->consumed_at !== null) {
                 return false;
             }
