@@ -22,6 +22,7 @@ final class OrderOtpController extends Controller
             (int) $v['store_id'], $v['provider_order_id'],
             $v['requester_phone'], $v['order_phone'],
         );
+
         return response()->json($result)->header('Cache-Control', 'no-store');
     }
 
@@ -31,11 +32,13 @@ final class OrderOtpController extends Controller
             'challenge_id' => ['required', 'uuid'],
             'code' => ['required', 'regex:/^[0-9]{6}$/D'],
         ]));
+
         $verified = $service->verify(
             $v['challenge_id'], $v['code'], (int) $v['organisation_id'],
             $v['channel_uid'], $v['chatbot_uid'], (int) $v['store_id'],
             $v['provider_order_id'], $v['requester_phone'], $v['order_phone'],
         );
+
         return response()->json(['verified' => $verified])->header('Cache-Control', 'no-store');
     }
 
