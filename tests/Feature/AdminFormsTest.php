@@ -41,7 +41,7 @@ class AdminFormsTest extends TestCase
 
         $roles = Module::where('name', 'user-management')->first()->getAssignedRoles()->pluck('name')->sort()->values()->all();
 
-        $this->assertSame(['admin', 'super-admin'], $roles);
+        $this->assertSame(['super-admin'], $roles);
     }
 
     public function test_role_endpoints_are_admin_only(): void
@@ -59,7 +59,7 @@ class AdminFormsTest extends TestCase
         $role = Role::findOrCreate('editor', 'web');
         Permission::findOrCreate('edit-posts', 'web');
         Permission::findOrCreate('view-posts', 'web');
-        $this->actingAs($this->makeUser('admin'));
+        $this->actingAs($this->makeUser('super-admin'));
 
         $this->getJson('/admin/permission-options')->assertOk()
             ->assertJsonFragment(['value' => 'edit-posts', 'label' => 'edit-posts']);
@@ -78,7 +78,7 @@ class AdminFormsTest extends TestCase
     public function test_admin_can_create_a_role_with_permissions(): void
     {
         Permission::findOrCreate('view-posts', 'web');
-        $this->actingAs($this->makeUser('admin'));
+        $this->actingAs($this->makeUser('super-admin'));
 
         $this->postJson('/admin/roles/details', ['name' => 'reviewer', 'permissions' => ['view-posts']])
             ->assertCreated()

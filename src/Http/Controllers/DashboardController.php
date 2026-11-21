@@ -7,6 +7,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Iquesters\Foundation\Security\TenantAuthorization;
 use Iquesters\Foundation\Support\UserModel;
 use Iquesters\Foundation\System\Traits\Loggable;
 use Iquesters\Organisation\Models\Organisation;
@@ -42,6 +43,7 @@ class DashboardController extends Controller
 
     public function createOrganisation(Request $request)
     {
+        abort_unless(app(TenantAuthorization::class)->isPlatformAdmin($request->user()), 403);
         try {
             $user = UserModel::query()->find(Auth::id());
 

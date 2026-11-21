@@ -70,7 +70,7 @@ class RoleFormController extends Controller
         ]);
 
         // Access checks find admin roles by name: renaming one would lock admins out.
-        if ($validated['name'] !== $role->name && in_array($role->name, EnsureAdmin::roles(), true)) {
+        if ($validated['name'] !== $role->name && in_array($role->name, ['admin', ...EnsureAdmin::roles()], true)) {
             return response()->json([
                 'success' => false,
                 'message' => "The {$role->name} role is used for admin access and cannot be renamed.",
