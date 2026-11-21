@@ -3,6 +3,7 @@
 namespace Iquesters\UserManagement\Tests\Feature;
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Iquesters\UserManagement\Contracts\WhatsAppOtpSender;
 use Iquesters\UserManagement\Services\OrderOtpService;
@@ -27,6 +28,18 @@ class OrderOtpTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // The production lock is the existing organisation row. The isolated
+        // user-management package testbench does not install organisation.
+        if (Schema::hasTable('organisations') === false) {
+            Schema::create('organisations', function (Blueprint $t) {
+                $t->id();
+                $t->string('name');
+            });
+        }
+        if (DB::table('organisations')->where('id', 7)->exists() === false) {
+            DB::table('organisations')->insert(['id' => 7, 'name' => 'Nams test']);
+        }
 
         if (Schema::hasTable('order_otp_challenges') === false) {
             Schema::create('order_otp_challenges', function (Blueprint $t) {
@@ -101,6 +114,30 @@ class OrderOtpTest extends TestCase
             $issued['challenge_id'], $code, 7, 'channel-nams', 'bot-nams',
             1001, '1234', '+15105550123', '+14155550199'
         ), 'Locked challenge cannot be unlocked by later correct code');
+    }
+
+    public function test_pending_challenge_cannot_be_reissued_or_verified(): void
+    {
+        $issued = $this->issue();
+        $id = $issued['challenge_id'];
+        DB::table('order_otp_challenges')->where('id', $id)->update(['status' => 'pending']);
+
+        $second = $this->issue();
+        $this->assertFalse($second['accepted']);
+        $this->assertCount(1, $this->sender->messages);
+
+        $this->assertFalse(app(OrderOtpService::class)->verify(
+            $id, $this->sender->messages[0]['otp'], 7, 'channel-nams',
+            'bot-nams', 1001, '1234', '+15105550123', '+14155550199'
+        ));
+    }
+
+    public function test_duplicate_issuance_during_cooldown_returns_same_challenge(): void
+    {
+        $first = $this->issue();
+        $second = $this->issue();
+        $this->assertSame($first['challenge_id'], $second['challenge_id']);
+        $this->assertCount(1, $this->sender->messages);
     }
 
     public function test_internal_routes_reject_missing_token(): void
