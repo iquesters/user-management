@@ -33,8 +33,7 @@ final class OrderOtpService
     public function issue(
         int $organisationId, string $channelUid, string $chatbotUid,
         int $storeId, string $orderId, string $requesterPhone, string $orderPhone
-    ): array
-    {
+    ): array {
         $destination = $this->phone($orderPhone);
         $requester = $this->phone($requesterPhone);
         $scope = $this->scope($organisationId, $channelUid, $chatbotUid, $storeId, $orderId, $requester, $destination);
@@ -115,8 +114,7 @@ final class OrderOtpService
         string $challengeId, string $code, int $organisationId, string $channelUid,
         string $chatbotUid, int $storeId, string $orderId,
         string $requesterPhone, string $orderPhone
-    ): bool
-    {
+    ): bool {
         $scope = $this->scope(
             $organisationId, $channelUid, $chatbotUid, $storeId, $orderId,
             $this->phone($requesterPhone), $this->phone($orderPhone)
@@ -167,8 +165,7 @@ final class OrderOtpService
     private function scope(
         int $organisationId, string $channelUid, string $chatbotUid,
         int $storeId, string $orderId, string $requester, string $destination
-    ): string
-    {
+    ): string {
         if ($organisationId <= 0 || $storeId <= 0 || $channelUid === '' || $chatbotUid === ''
             || $orderId === '' || strlen($orderId) > 128 || $requester === '' || $destination === '') {
             return '';
