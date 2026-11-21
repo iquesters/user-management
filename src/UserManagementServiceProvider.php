@@ -2,6 +2,7 @@
 
 namespace Iquesters\UserManagement;
 
+use Illuminate\Support\Facades\Route;
 use Iquesters\Foundation\Enums\Module;
 use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\Foundation\System\Providers\BaseServiceProvider;
@@ -11,7 +12,6 @@ use Iquesters\UserManagement\Contracts\WhatsAppOtpSender;
 use Iquesters\UserManagement\Install\InstallSteps;
 use Iquesters\UserManagement\Services\MetaWhatsAppOtpSender;
 use Iquesters\UserManagement\Support\Assets;
-use Illuminate\Support\Facades\Route;
 
 /**
  * Migrations, views (usermanagement::), routes/web.php, the
@@ -48,7 +48,7 @@ class UserManagementServiceProvider extends BaseServiceProvider
 
         // Purpose-specific internal OTP API. A service bearer and API rate
         // limiting are applied to every route. Never expose through web login.
-        if (! $this->app->routesAreCached()) {
+        if ($this->app->routesAreCached() === false) {
             Route::middleware('api')
                 ->prefix('v1/internal/order-otp')
                 ->group(__DIR__.'/../routes/order_otp.php');
