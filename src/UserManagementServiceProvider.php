@@ -11,6 +11,7 @@ use Iquesters\UserManagement\Contracts\WhatsAppOtpSender;
 use Iquesters\UserManagement\Install\InstallSteps;
 use Iquesters\UserManagement\Services\MetaWhatsAppOtpSender;
 use Iquesters\UserManagement\Support\Assets;
+use Illuminate\Support\Facades\Route;
 
 /**
  * Migrations, views (usermanagement::), routes/web.php, the
@@ -44,6 +45,14 @@ class UserManagementServiceProvider extends BaseServiceProvider
         parent::boot();
 
         Assets::registerRoutes();
+
+        // Purpose-specific internal OTP API. A service bearer and API rate
+        // limiting are applied to every route. Never expose through web login.
+        if (! $this->app->routesAreCached()) {
+            Route::middleware('api')
+                ->prefix('v1/internal/order-otp')
+                ->group(__DIR__.'/../routes/order_otp.php');
+        }
 
         // Layout the auth views extend: user-interface's when installed, else ours.
         $this->app->instance('auth.layout', $this->resolveAuthLayout());
