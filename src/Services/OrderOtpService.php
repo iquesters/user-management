@@ -47,48 +47,80 @@ final class OrderOtpService
         $limiter = 'order-otp-send:'.$identifier;
         $requesterLimiter = 'order-otp-requester:'.hash('sha256', $organisationId.'|'.$requester);
         $orgLimiter = 'order-otp-organisation:'.$organisationId;
-        if (
-            RateLimiter::tooManyAttempts($limiter, 3)
-            || RateLimiter::tooManyAttempts($requesterLimiter, 5)
-            || RateLimiter::tooManyAttempts($orgLimiter, 250)
-        ) {
-            Log::warning('order_otp.issue_rate_limited', ['organisation_id' => $organisationId]);
+
+        // Serialize issuance under the organisation row lock. Locking an
+        // existing parent record works even when the first challenge for this
+        // scope does not exist; locking the challenge query alone does not.
+        // Never hold the DB transaction open across a Meta network request.
+        $prepared = DB::transaction(function () use (
+            $organisationId, $channelUid, $scope, $identifier,
+            $limiter, $requesterLimiter, $orgLimiter
+        ): array {
+            $org = DB::table('organisations')
+                ->where('id', $organisationId)->lockForUpdate()->first();
+            if ($org === null) {
+                return ['kind' => 'denied'];
+            }
+
+            if (
+                RateLimiter::tooManyAttempts($limiter, 3)
+                || RateLimiter::tooManyAttempts($requesterLimiter, 5)
+                || RateLimiter::tooManyAttempts($orgLimiter, 250)
+            ) {
+                return ['kind' => 'denied'];
+            }
+
+            $previous = DB::table('order_otp_challenges')
+                ->where('organisation_id', $organisationId)
+                ->where('scope_hash', $scope)
+                ->whereIn('status', ['active', 'pending'])
+                ->latest('created_at')->first();
+            if ($previous && Carbon::parse($previous->created_at)->greaterThan(now()->subSeconds(60))) {
+                // A pending challenge is not yet delivered; a parallel
+                // caller must not claim it has already been sent.
+                return $previous->status === 'active'
+                    ? ['kind' => 'existing', 'id' => (string) $previous->id]
+                    : ['kind' => 'denied'];
+            }
+
+            DB::table('order_otp_challenges')
+                ->where('organisation_id', $organisationId)
+                ->where('scope_hash', $scope)
+                ->whereIn('status', ['active', 'pending'])
+                ->update(['status' => 'superseded', 'updated_at' => now()]);
+
+            $code = (string) random_int(100000, 999999);
+            $id = (string) Str::uuid();
+            DB::table('order_otp_challenges')->insert([
+                'id' => $id,
+                'organisation_id' => $organisationId,
+                'channel_uid' => $channelUid,
+                'scope_hash' => $scope,
+                'destination_hash' => $identifier,
+                'code_hash' => Hash::make($code),
+                'expires_at' => now()->addMinutes(10),
+                'attempt_count' => 0,
+                'status' => 'pending',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            RateLimiter::hit($limiter, 3600);
+            RateLimiter::hit($requesterLimiter, 3600);
+            RateLimiter::hit($orgLimiter, 3600);
+
+            return ['kind' => 'created', 'id' => $id, 'code' => $code];
+        }, 3);
+
+        if ($prepared['kind'] === 'existing') {
+            return ['accepted' => true, 'challenge_id' => $prepared['id']];
+        }
+        if ($prepared['kind'] !== 'created') {
+            Log::warning('order_otp.issue_denied', ['organisation_id' => $organisationId]);
 
             return ['accepted' => false, 'challenge_id' => null];
         }
-
-        $previous = DB::table('order_otp_challenges')
-            ->where('organisation_id', $organisationId)
-            ->where('scope_hash', $scope)
-            ->where('status', 'active')
-            ->latest('created_at')->first();
-        if ($previous && Carbon::parse($previous->created_at)->greaterThan(now()->subSeconds(60))) {
-            return ['accepted' => true, 'challenge_id' => (string) $previous->id];
-        }
-
-        DB::table('order_otp_challenges')
-            ->where('organisation_id', $organisationId)
-            ->where('scope_hash', $scope)
-            ->where('status', 'active')->update(['status' => 'superseded', 'updated_at' => now()]);
-
-        $code = (string) random_int(100000, 999999);
-        $id = (string) Str::uuid();
-        DB::table('order_otp_challenges')->insert([
-            'id' => $id,
-            'organisation_id' => $organisationId,
-            'channel_uid' => $channelUid,
-            'scope_hash' => $scope,
-            'destination_hash' => $identifier,
-            'code_hash' => Hash::make($code),
-            'expires_at' => now()->addMinutes(10),
-            'attempt_count' => 0,
-            'status' => 'active',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        RateLimiter::hit($limiter, 3600);
-        RateLimiter::hit($requesterLimiter, 3600);
-        RateLimiter::hit($orgLimiter, 3600);
+        $id = $prepared['id'];
+        $code = $prepared['code'];
         try {
             // This reuses the existing Meta sender, in its new strict
             // organisation-channel mode. No global login sender fallback.
@@ -107,6 +139,9 @@ final class OrderOtpService
 
             return ['accepted' => false, 'challenge_id' => null];
         }
+
+        DB::table('order_otp_challenges')->where('id', $id)
+            ->where('status', 'pending')->update(['status' => 'active', 'updated_at' => now()]);
 
         Log::info('order_otp.sent', ['organisation_id' => $organisationId, 'store_id' => $storeId]);
 
