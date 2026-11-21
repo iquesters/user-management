@@ -42,9 +42,11 @@ final class OrderOtpService
         $limiter = 'order-otp-send:'.$identifier;
         $requesterLimiter = 'order-otp-requester:'.hash('sha256', $organisationId.'|'.$requester);
         $orgLimiter = 'order-otp-organisation:'.$organisationId;
-        if (RateLimiter::tooManyAttempts($limiter, 3)
+        if (
+            RateLimiter::tooManyAttempts($limiter, 3)
             || RateLimiter::tooManyAttempts($requesterLimiter, 5)
-            || RateLimiter::tooManyAttempts($orgLimiter, 250)) {
+            || RateLimiter::tooManyAttempts($orgLimiter, 250)
+        ) {
             Log::warning('order_otp.issue_rate_limited', ['organisation_id' => $organisationId]);
             return ['accepted' => false, 'challenge_id' => null];
         }
@@ -98,6 +100,7 @@ final class OrderOtpService
             ]);
             return ['accepted' => false, 'challenge_id' => null];
         }
+
         Log::info('order_otp.sent', ['organisation_id' => $organisationId, 'store_id' => $storeId]);
         return ['accepted' => true, 'challenge_id' => $id];
     }
@@ -111,7 +114,7 @@ final class OrderOtpService
             $organisationId, $channelUid, $chatbotUid, $storeId, $orderId,
             $this->phone($requesterPhone), $this->phone($orderPhone)
         );
-        if ($scope === '' || ! Str::isUuid($challengeId) || ! preg_match('/^[0-9]{6}$/D', $code)) {
+        if ($scope === '' || Str::isUuid($challengeId) === false || preg_match('/^[0-9]{6}$/D', $code) !== 1) {
             return false;
         }
 
@@ -122,8 +125,11 @@ final class OrderOtpService
                 ->where('channel_uid', $channelUid)
                 ->where('scope_hash', $scope)
                 ->lockForUpdate()->first();
-            if (! $challenge || $challenge->status !== 'active' || Carbon::parse($challenge->expires_at)->isPast()
-                || $challenge->attempt_count >= 5 || $challenge->consumed_at !== null) {
+            if (
+                $challenge === null || $challenge->status !== 'active'
+                || Carbon::parse($challenge->expires_at)->isPast()
+                || $challenge->attempt_count >= 5 || $challenge->consumed_at !== null
+            ) {
                 return false;
             }
 
@@ -135,10 +141,12 @@ final class OrderOtpService
                 'consumed_at' => $valid ? now() : null,
                 'updated_at' => now(),
             ]);
+
             Log::info('order_otp.verified', [
                 'organisation_id' => $organisationId,
                 'result' => $valid ? 'verified' : 'denied',
             ]);
+
             return $valid;
         });
     }
@@ -146,17 +154,19 @@ final class OrderOtpService
     private function phone(string $number): string
     {
         $value = $this->phones->normalize($number);
-        return preg_match('/^\\+[1-9][0-9]{7,14}$/D', $value) ? $value : '';
+        return preg_match('/^\\+[1-9][0-9]{7,14}$/D', $value) === 1 ? $value : '';
     }
 
     private function scope(
         int $organisationId, string $channelUid, string $chatbotUid,
         int $storeId, string $orderId, string $requester, string $destination
-    ): string {
+    ): string
+    {
         if ($organisationId <= 0 || $storeId <= 0 || $channelUid === '' || $chatbotUid === ''
             || $orderId === '' || strlen($orderId) > 128 || $requester === '' || $destination === '') {
             return '';
         }
+
         return hash('sha256', json_encode([
             $organisationId, $channelUid, $chatbotUid, $storeId,
             $orderId, $requester, $destination,
