@@ -40,7 +40,11 @@ final class OrderOtpService
 
         $identifier = hash('sha256', $organisationId.'|'.$destination);
         $limiter = 'order-otp-send:'.$identifier;
-        if (RateLimiter::tooManyAttempts($limiter, 3)) {
+        $requesterLimiter = 'order-otp-requester:'.hash('sha256', $organisationId.'|'.$requester);
+        $orgLimiter = 'order-otp-organisation:'.$organisationId;
+        if (RateLimiter::tooManyAttempts($limiter, 3)
+            || RateLimiter::tooManyAttempts($requesterLimiter, 5)
+            || RateLimiter::tooManyAttempts($orgLimiter, 250)) {
             Log::warning('order_otp.issue_rate_limited', ['organisation_id' => $organisationId]);
             return ['accepted' => false, 'challenge_id' => null];
         }
@@ -75,6 +79,8 @@ final class OrderOtpService
             'updated_at' => now(),
         ]);
         RateLimiter::hit($limiter, 3600);
+        RateLimiter::hit($requesterLimiter, 3600);
+        RateLimiter::hit($orgLimiter, 3600);
         try {
             // This reuses the existing Meta sender, in its new strict
             // organisation-channel mode. No global login sender fallback.
