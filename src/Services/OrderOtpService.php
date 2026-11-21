@@ -53,6 +53,7 @@ final class OrderOtpService
             || RateLimiter::tooManyAttempts($orgLimiter, 250)
         ) {
             Log::warning('order_otp.issue_rate_limited', ['organisation_id' => $organisationId]);
+
             return ['accepted' => false, 'challenge_id' => null];
         }
 
@@ -62,6 +63,7 @@ final class OrderOtpService
             ->where('status', 'active')
             ->latest('created_at')->first();
         if ($previous && Carbon::parse($previous->created_at)->greaterThan(now()->subSeconds(60))) {
+
             return ['accepted' => true, 'challenge_id' => (string) $previous->id];
         }
 
@@ -103,10 +105,12 @@ final class OrderOtpService
                 'organisation_id' => $organisationId,
                 'error_type' => $e::class,
             ]);
+
             return ['accepted' => false, 'challenge_id' => null];
         }
 
         Log::info('order_otp.sent', ['organisation_id' => $organisationId, 'store_id' => $storeId]);
+
         return ['accepted' => true, 'challenge_id' => $id];
     }
 
@@ -120,6 +124,7 @@ final class OrderOtpService
             $this->phone($requesterPhone), $this->phone($orderPhone)
         );
         if ($scope === '' || Str::isUuid($challengeId) === false || preg_match('/^[0-9]{6}$/D', $code) !== 1) {
+
             return false;
         }
 
@@ -135,6 +140,7 @@ final class OrderOtpService
                 || Carbon::parse($challenge->expires_at)->isPast()
                 || $challenge->attempt_count >= 5 || $challenge->consumed_at !== null
             ) {
+
                 return false;
             }
 
@@ -159,6 +165,7 @@ final class OrderOtpService
     private function phone(string $number): string
     {
         $value = $this->phones->normalize($number);
+
         return preg_match('/^\\+[1-9][0-9]{7,14}$/D', $value) === 1 ? $value : '';
     }
 
@@ -168,6 +175,7 @@ final class OrderOtpService
     ): string {
         if ($organisationId <= 0 || $storeId <= 0 || $channelUid === '' || $chatbotUid === ''
             || $orderId === '' || strlen($orderId) > 128 || $requester === '' || $destination === '') {
+
             return '';
         }
 
