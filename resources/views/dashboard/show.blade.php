@@ -40,11 +40,20 @@
                     @else
                         <!-- Show when user has no organisations -->
                         <div>
+                            @php
+                                // Only platform admins create organisations (Track B); everyone else is added by one.
+                                $canCreateOrganisation = $user->hasRole('super-admin', 'web');
+                            @endphp
                             <p>
                                 <span class="text-warning fw-semibold">No Organisation Found.</span>
-                                You need to create or join an organisation to get started.
+                                @if ($canCreateOrganisation)
+                                    You need to create or join an organisation to get started.
+                                @else
+                                    You aren't part of an organisation yet. Ask your administrator to add you to one.
+                                @endif
                             </p>
-                            
+
+                            @if ($canCreateOrganisation)
                             <!-- Create Organisation Form -->
                             <div class="justify-content-center">
                                 <div class="col-md-6">
@@ -84,6 +93,7 @@
                                     </form>
                                 </div>
                             </div>
+                            @endif
                         </div>
                     @endif
                 </div>

@@ -28,6 +28,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 - Profile pictures are served by `/profile-picture/{file}` (no `storage:link` needed).
 
 ### Changed
+- **Merged Track B** (user-management#20): password changes lock the user row and revoke old sessions and tokens; creating an organisation from the dashboard is super-admin only.
+- **Dashboard without an organisation:** only super-admins see the "Create organisation" form; others are told to ask their administrator (the form gave them a 403).
+- Saving a user from Admin → Users works again after Track B: foundation now writes `users` through the user model for business entities, so the password rules above run there too.
 - `user-details`: **status is shown, not edited.** The entity API manages status, so a change made in this form was never saved.
 - The user-management module is assigned to the admin roles only (super-admin, admin).
 - Users who signed up with Google or an OTP (random password, meta `password_generated`) are offered "Set a password" and confirm account deletion with their email.

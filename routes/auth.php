@@ -74,7 +74,8 @@ Route::middleware('web')->group(function () {
         // Dashboard
         Route::prefix('dashboard')->group(function () {
             Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-            Route::post('/create-organisation', [DashboardController::class, 'createOrganisation'])->name('dashboard.create-organisation');
+            Route::post('/create-organisation', [DashboardController::class, 'createOrganisation'])
+                ->middleware('ensure.admin')->name('dashboard.create-organisation');
         });
         Route::get('/profile-image', [DashboardController::class, 'profileImage'])->name('profile-image');
 
