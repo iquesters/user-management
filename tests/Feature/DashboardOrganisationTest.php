@@ -2,6 +2,8 @@
 
 namespace Iquesters\UserManagement\Tests\Feature;
 
+use Iquesters\Foundation\Enums\Module;
+use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\UserManagement\Tests\TestCase;
 
 class DashboardOrganisationTest extends TestCase
@@ -28,7 +30,7 @@ class DashboardOrganisationTest extends TestCase
     public function test_only_platform_admins_see_the_create_organisation_form(): void
     {
         // Users without an organisation can't create one (Track B): they are told who adds them.
-        \Iquesters\Foundation\Support\ConfProvider::from(\Iquesters\Foundation\Enums\Module::USER_MGMT)->organisation_needed = true;
+        ConfProvider::from(Module::USER_MGMT)->organisation_needed = true;
         $this->actingAs($this->makeUser('user'))->get('/dashboard')->assertOk()
             ->assertSee('Ask your administrator to add you to one.')
             ->assertDontSee('Create Organisation');
