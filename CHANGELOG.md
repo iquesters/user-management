@@ -6,6 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 ## [Unreleased]
 
 ### Added
+- **Users table components moved:** the table's list rows use `row_component` (`user.summary`), and the record's `user.details` component is the `user-details` form's view mode component (`modes.view.component`). The seeder moves existing installs' old keys and keeps components an admin chose.
 - **Users table uses record components:** `user.summary` in the list (avatar, name, email) and `user.details` in the right panel (profile details plus the user's **roles as badges**).
   - **Where:** `resources/views/records/user/`, registered by key in `UserManagementServiceProvider` (user-interface `docs/record-components.md`).
   - **Roles:** come from the `user-account` business entity record (`labels.roles`), so nothing about roles is hardcoded in the table.

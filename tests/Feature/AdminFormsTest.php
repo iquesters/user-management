@@ -127,27 +127,36 @@ class AdminFormsTest extends TestCase
         $this->seed(UserManagementSeeder::class);
         $schema = fn () => json_decode(DB::table('table_schemas')->where('slug', 'user-table')->value('schema'), true);
 
-        // Component keys, registered by this module (records/user/*).
-        $this->assertSame('user.summary', $schema()['summary_component']);
-        $this->assertSame('user.details', $schema()['details_component']);
+        // Component keys, registered by this module (records/user/*): the
+        // table's list rows, and the record through its form's view mode.
+        $this->assertSame('user.summary', $schema()['row_component']);
+        $this->assertArrayNotHasKey('details_component', $schema());
+        $form = json_decode(DB::table('form_schemas')->where('slug', 'user-details')->value('schema'), true);
+        $this->assertSame('user.details', $form['modes']['view']['component']);
         $registry = app(RecordComponents::class);
         $this->assertTrue($registry->has('user.summary'));
         $this->assertSame('details', $registry->all('details')['user.details']['kind']);
 
-        // Existing installs: missing keys are added, the older view paths become keys,
-        // and a component an admin chose is kept.
+        // Existing installs: the old keys move (summary_component → row_component,
+        // the seeded details_component is dropped, older view paths become keys).
         $users = $schema();
-        unset($users['summary_component']);
+        unset($users['row_component']);
+        $users['summary_component'] = 'userinterface::components.lab-user-summary';
         $users['details_component'] = 'userinterface::components.lab-user-details';
         DB::table('table_schemas')->where('slug', 'user-table')->update(['schema' => json_encode($users)]);
         $this->seed(UserManagementSeeder::class);
-        $this->assertSame('user.summary', $schema()['summary_component']);
-        $this->assertSame('user.details', $schema()['details_component']);
+        $this->assertSame('user.summary', $schema()['row_component']);
+        $this->assertArrayNotHasKey('summary_component', $schema());
+        $this->assertArrayNotHasKey('details_component', $schema());
 
+        // Components an admin chose are kept.
         $users = $schema();
+        unset($users['row_component']);
+        $users['summary_component'] = 'acme.my-own-row';
         $users['details_component'] = 'acme.my-own-details';
         DB::table('table_schemas')->where('slug', 'user-table')->update(['schema' => json_encode($users)]);
         $this->seed(UserManagementSeeder::class);
+        $this->assertSame('acme.my-own-row', $schema()['row_component']);
         $this->assertSame('acme.my-own-details', $schema()['details_component']);
 
         // Served to the table by key; the details component shows roles as badges.

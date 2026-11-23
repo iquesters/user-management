@@ -51,10 +51,9 @@ class UserManagementSeeder extends BaseSeeder
                         'entity' => 'users',
                         // List page Create button: opens user-details in create mode.
                         'create' => ['form' => 'user-details', 'label' => 'Create user'],
-                        // List rows and the right panel use the user components;
-                        // the panel's Edit opens user-details (with roles).
-                        'summary_component' => self::USER_SUMMARY_COMPONENT,
-                        'details_component' => self::USER_DETAILS_COMPONENT,
+                        // The split view's list rows use the user card; the
+                        // record itself shows user-details' view component.
+                        'row_component' => self::USER_SUMMARY_COMPONENT,
                         'dt-options' => [
                             'columns' => [
                                 ['data' => 'id', 'title' => 'ID', 'visible' => true],
@@ -1038,11 +1037,12 @@ class UserManagementSeeder extends BaseSeeder
             return;
         }
 
+        $this->moveUserTableComponents();
+
         $additions = [
             'user-table' => [
                 'create' => ['form' => 'user-details', 'label' => 'Create user'],
-                'summary_component' => self::USER_SUMMARY_COMPONENT,
-                'details_component' => self::USER_DETAILS_COMPONENT,
+                'row_component' => self::USER_SUMMARY_COMPONENT,
             ],
             'role-table' => [
                 'create' => ['form' => 'role-details', 'label' => 'Create role'],
@@ -1070,6 +1070,43 @@ class UserManagementSeeder extends BaseSeeder
                 continue;
             }
 
+            DB::table('table_schemas')->where('id', $row->id)->update([
+                'schema' => json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'updated_at' => now(),
+            ]);
+        }
+    }
+
+    /**
+     * Existing installs, Users table: "summary_component" is now
+     * "row_component" (an admin's own value is kept), and the record's
+     * component moved to the user-details form (modes.view.component), so the
+     * table's "details_component" is dropped when it is the seeded one.
+     */
+    protected function moveUserTableComponents(): void
+    {
+        $row = DB::table('table_schemas')->where('slug', 'user-table')->first(['id', 'schema']);
+        $schema = $row ? json_decode((string) $row->schema, true) : null;
+        if (! is_array($schema)) {
+            return;
+        }
+
+        $changed = false;
+
+        if (array_key_exists('summary_component', $schema)) {
+            $value = $schema['summary_component'];
+            $schema['row_component'] ??= $value === self::OLD_COMPONENT_VALUES['summary_component'] ? self::USER_SUMMARY_COMPONENT : $value;
+            unset($schema['summary_component']);
+            $changed = true;
+        }
+
+        $seededDetails = [self::USER_DETAILS_COMPONENT, self::OLD_COMPONENT_VALUES['details_component']];
+        if (array_key_exists('details_component', $schema) && in_array($schema['details_component'], $seededDetails, true)) {
+            unset($schema['details_component']);
+            $changed = true;
+        }
+
+        if ($changed) {
             DB::table('table_schemas')->where('id', $row->id)->update([
                 'schema' => json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 'updated_at' => now(),
@@ -1137,6 +1174,8 @@ class UserManagementSeeder extends BaseSeeder
                     'method' => 'GET',
                     'endpoint' => $base."/show/{$resource}/{uid}",
                     'header' => ['title' => 'User'],
+                    // The record shows as the user card (picture, roles…); Edit shows the fields.
+                    'component' => self::USER_DETAILS_COMPONENT,
                     'allowEdit' => true,
                     'allowDelete' => false,
                 ],
