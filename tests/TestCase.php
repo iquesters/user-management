@@ -5,8 +5,10 @@ namespace Iquesters\UserManagement\Tests;
 use Diglactic\Breadcrumbs\Breadcrumbs;
 use Diglactic\Breadcrumbs\ServiceProvider as BreadcrumbsServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Iquesters\Foundation\FoundationServiceProvider;
+use Iquesters\Foundation\Support\ConfProvider;
 use Iquesters\UserInterface\UserInterfaceServiceProvider;
 use Iquesters\UserManagement\Tests\Fixtures\User;
 use Iquesters\UserManagement\UserManagementServiceProvider;
@@ -59,6 +61,17 @@ abstract class TestCase extends Orchestra
             $sanctum = dirname((new \ReflectionClass(SanctumServiceProvider::class))->getFileName(), 2);
             $this->loadMigrationsFrom($sanctum.'/database/migrations');
         }
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // The app boots (and reads settings into the cache) before the test's
+        // database transaction starts, so a value an earlier test saved could
+        // be cached here although its row was rolled back. Start clean.
+        Cache::flush();
+        ConfProvider::forget();
     }
 
     protected function makeUser(?string $role = null, array $attributes = []): User
