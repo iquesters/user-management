@@ -2,6 +2,7 @@
 
 namespace Iquesters\UserManagement\Http\Controllers\Auth;
 
+use Iquesters\UserManagement\Support\Terms;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -59,6 +60,10 @@ class RegisteredUserController extends Controller
             $this->logDebug('reCAPTCHA validation disabled for registration');
         }
 
+        if (Terms::required()) {
+            $rules['accept_terms'] = ['accepted'];
+        }
+
         $validated = $request->validate($rules);
 
         $this->logDebug("Registration validation passed | email={$validated['email']} | has_recaptcha_token=".(isset($validated['recaptcha_token']) ? 'true' : 'false'));
@@ -71,6 +76,10 @@ class RegisteredUserController extends Controller
             password: $validated['password'],
             email_verified: false
         );
+
+        if (Terms::required()) {
+            Terms::record($user);
+        }
 
         // Use login helper
         LoginHelper::process_login($user);
@@ -123,6 +132,10 @@ class RegisteredUserController extends Controller
             // ------------------------------------------------
             // Validate
             // ------------------------------------------------
+            if (Terms::required()) {
+                $rules['accept_terms'] = ['accepted'];
+            }
+
             $validated = $request->validate($rules);
 
             // ------------------------------------------------
@@ -135,6 +148,10 @@ class RegisteredUserController extends Controller
                 password: $request->password,
                 email_verified: false
             );
+
+            if (Terms::required()) {
+                Terms::record($user);
+            }
 
             // ------------------------------------------------
             // Log the new user in either way; only the response shape differs.

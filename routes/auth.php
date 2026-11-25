@@ -1,5 +1,6 @@
 <?php
 
+use Iquesters\UserManagement\Http\Controllers\Auth\TermsController;
 use Illuminate\Support\Facades\Route;
 use Iquesters\UserManagement\Http\Controllers\Auth\AuthenticatedSessionController;
 use Iquesters\UserManagement\Http\Controllers\Auth\ConfirmablePasswordController;
@@ -56,6 +57,10 @@ Route::middleware('web')->group(function () {
     });
 
     Route::middleware('auth')->group(function () {
+        // Agree to the Terms and Privacy policy (EnsureTermsAccepted sends people here).
+        Route::get('accept-terms', [TermsController::class, 'show'])->name('terms.accept');
+        Route::post('accept-terms', [TermsController::class, 'store'])->name('terms.accept.store');
+
         // Email Verification
         Route::get('verify-email', EmailVerificationPromptController::class)->name('verification.notice');
         Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)

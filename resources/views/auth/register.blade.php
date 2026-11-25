@@ -81,6 +81,22 @@
                     @enderror
                 </div>
 
+                @if (\Iquesters\UserManagement\Support\Terms::required())
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="accept_terms" id="accept_terms" value="1" required @checked(old('accept_terms'))>
+                        <label class="form-check-label small" for="accept_terms">
+                            {{ __('I have read and agree to the') }}
+                            @foreach (\Iquesters\UserManagement\Support\Terms::links() as $link)
+                                <a href="{{ $link['url'] }}" target="_blank" rel="noopener">{{ $link['label'] }}</a>@if (! $loop->last) {{ __('and the') }} @endif
+                            @endforeach
+                            <span class="text-danger" aria-hidden="true">*</span>
+                        </label>
+                        @error('accept_terms')
+                            <div class="text-danger small mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+                @endif
+
                 @include('usermanagement::components.recaptcha-field')
 
                 <div class="d-flex justify-content-between align-items-center mb-3">

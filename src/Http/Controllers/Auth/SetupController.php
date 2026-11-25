@@ -57,6 +57,8 @@ class SetupController extends Controller
             // Real image types only (checked by content); SVG excluded (can carry scripts).
             'logo' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
             'description' => 'nullable|string|max:500',
+            // Browser tab icon; optional (the logo is used when there is none).
+            'favicon' => 'nullable|file|mimes:png,ico,jpg,jpeg,webp|max:512',
         ]);
 
         try {
@@ -70,10 +72,20 @@ class SetupController extends Controller
 
             static::logInfo('Setup step 3/4: logo saved', ['path' => $logoUrl]);
 
-            // Name, logo and description are user-interface settings (validated, stored in module_settings).
+            $faviconUrl = '';
+            if ($faviconFile = $request->file('favicon')) {
+                $faviconExtension = in_array($faviconFile->guessExtension(), ['png', 'ico', 'jpg', 'jpeg', 'webp'], true)
+                    ? $faviconFile->guessExtension() : 'png';
+                $faviconName = 'favicon_'.Str::slug($validated['app_name']).'.'.$faviconExtension;
+                $faviconFile->move(public_path('img'), $faviconName);
+                $faviconUrl = 'img/'.$faviconName;
+            }
+
+            // Name, logo, favicon and description are user-interface settings (validated, stored in module_settings).
             ConfProvider::from(Module::USER_INFE)->update([
                 'app_name' => $validated['app_name'],
                 'logo' => $logoUrl,
+                'favicon' => $faviconUrl,
                 'app_description' => $validated['description'] ?? '',
             ], Auth::id());
 

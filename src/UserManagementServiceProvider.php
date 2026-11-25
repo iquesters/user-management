@@ -50,6 +50,9 @@ class UserManagementServiceProvider extends BaseServiceProvider
 
         $this->registerRecordComponents();
 
+        // Signed-in people agree to the current Terms / Privacy policy once (Terms::required()).
+        $this->app['router']->pushMiddlewareToGroup('web', \Iquesters\UserManagement\Http\Middleware\EnsureTermsAccepted::class);
+
         $this->publishes([
             __DIR__.'/../resources/views/layouts/package.blade.php' => resource_path('views/vendor/usermanagement/layouts/package.blade.php'),
         ], 'user-management-config');
