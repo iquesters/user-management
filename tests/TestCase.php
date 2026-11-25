@@ -90,6 +90,9 @@ abstract class TestCase extends Orchestra
             $user->assignRole($role);
         }
 
+        // Accounts have agreed to the current terms (EnsureTermsAccepted would send them to /accept-terms).
+        \Iquesters\UserManagement\Support\Terms::record($user);
+
         return $user;
     }
 }

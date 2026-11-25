@@ -513,6 +513,7 @@ class UserManagementSeeder extends BaseSeeder
                     'autocomplete' => 'new-password',
                     'confirms' => 'password',
                 ],
+                \Iquesters\UserManagement\Support\Terms::field(),
             ],
             'actions' => [
                 [
@@ -530,6 +531,17 @@ class UserManagementSeeder extends BaseSeeder
                     'row' => 0,
                 ],
             ],
+        ]);
+
+        // Agree to the Terms / Privacy policy (after Google or OTP sign-up, or a new terms_version).
+        $this->upsertFormSchema('accept-terms', 'Accept terms', 'Agree to the Terms and conditions and the Privacy policy', [
+            'endpoint' => '/accept-terms',
+            'method' => 'POST',
+            'allowCancel' => false,
+            'modes' => ['edit' => ['allowCancel' => false]],
+            'defaultFieldSize' => 12,
+            'submitButtonLabel' => 'Agree and continue',
+            'fields' => [\Iquesters\UserManagement\Support\Terms::field()],
         ]);
 
         // First-run application setup (/setup). Multipart because of the logo upload;
@@ -559,6 +571,13 @@ class UserManagementSeeder extends BaseSeeder
                     'type' => 'file',
                     'required' => true,
                     'accept' => 'image/png,image/jpeg,image/gif,image/webp',
+                ],
+                [
+                    'id' => 'favicon',
+                    'label' => 'Browser tab icon (optional; the logo is used if empty)',
+                    'type' => 'file',
+                    'required' => false,
+                    'accept' => 'image/png,image/x-icon,image/vnd.microsoft.icon,image/jpeg,image/webp',
                 ],
                 [
                     'id' => 'description',

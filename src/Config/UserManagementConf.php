@@ -30,7 +30,13 @@ class UserManagementConf extends BaseConf
     // Which form the auth pages render: classic | schema | both
     protected string $auth_form_type;
 
-    protected RecaptchaConf $recaptcha;
+    /** People must agree to the Terms and the Privacy policy (sign-up, and again when terms_version changes). */
+    protected bool $terms_required;
+
+    /** Version of the platform's Terms / Privacy policy (e.g. its date). Changing it asks everyone to agree again. */
+    protected string $terms_version;
+
+        protected RecaptchaConf $recaptcha;
 
     protected SocialLoginConf $social_login;
 
@@ -49,6 +55,9 @@ class UserManagementConf extends BaseConf
         $default_values->signin_identifier = 'email';
         $default_values->signin_flow = 'classic';
         $default_values->auth_form_type = 'classic';
+
+        $default_values->terms_required = true;
+        $default_values->terms_version = '2026-11-25';
 
         $default_values->recaptcha = new RecaptchaConf;
         $default_values->recaptcha->prepareDefault($default_values->recaptcha);
@@ -73,6 +82,8 @@ class UserManagementConf extends BaseConf
             'signin_identifier' => 'in:email,phone',
             'signin_flow' => 'in:classic,unified',
             'auth_form_type' => 'in:classic,schema,both',
+            'terms_required' => 'boolean',
+            'terms_version' => 'string|max:32',
         ];
     }
 }

@@ -99,7 +99,8 @@ class SetupTest extends TestCase
         $schema = json_decode(DB::table('form_schemas')->where('slug', 'setup-form')->value('schema'), true);
 
         $this->assertSame('/setup', $schema['endpoint']);
-        $this->assertSame(['app_name', 'logo', 'description'], array_column($schema['fields'], 'id'));
+        // The browser tab icon is optional (the logo is used without one).
+        $this->assertSame(['app_name', 'logo', 'favicon', 'description'], array_column($schema['fields'], 'id'));
 
         $this->getJson('/api/noauth/form/setup-form')->assertOk()->assertJsonPath('success', true);
     }

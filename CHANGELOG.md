@@ -5,6 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 
 ## [Unreleased]
 
+### Added (terms and privacy)
+- **People agree to the Terms and the Privacy policy:** a required checkbox on sign-up (classic and schema forms, with links), and an **accept page** (`/accept-terms`, form schema `accept-terms`) that every signed-in person who hasn't agreed to the current version sees once (Google or OTP sign-up, accounts made by an organisation admin). `EnsureTermsAccepted` is added to the `web` group; it only redirects page loads.
+- Settings: `terms_required` (default on), `terms_version` (default `2026-11-25`). Changing the version asks everyone again. The agreement is kept as user metas `terms_version` and `terms_accepted_at`. The pages are user-interface's (`terms_url` / `privacy_url`, else its own pages).
+- **Setup asks for an optional browser tab icon** (favicon); without one the logo is used.
+
+### Fixed
+- The auth layouts' tab title was "Auth": it is the app's name, with its icon.
+
 ### Added
 - **Users table components moved:** the table's list rows use `row_component` (`user.summary`), and the record's `user.details` component is the `user-details` form's view mode component (`modes.view.component`). The seeder moves existing installs' old keys and keeps components an admin chose.
 - **Users table uses record components:** `user.summary` in the list (avatar, name, email) and `user.details` in the right panel (profile details plus the user's **roles as badges**).
@@ -28,6 +36,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 - Profile pictures are served by `/profile-picture/{file}` (no `storage:link` needed).
 
 ### Changed
+- **Dashboard cards from other modules:** the dashboard shows every service tagged `dashboard-cards` (`render(?Authenticatable $user): ?string`, null shows nothing), e.g. community's "Apply for membership" card. user-management doesn't depend on those modules.
 - **Merged Track B** (user-management#20): password changes lock the user row and revoke old sessions and tokens; creating an organisation from the dashboard is super-admin only.
 - **Dashboard without an organisation:** only super-admins see the "Create organisation" form; others are told to ask their administrator (the form gave them a 403).
 - Saving a user from Admin → Users works again after Track B: foundation now writes `users` through the user model for business entities, so the password rules above run there too.
