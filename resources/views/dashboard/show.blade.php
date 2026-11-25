@@ -18,6 +18,17 @@
             <h5 class="text-muted fs-6">Welcome, {{ $user->name }}!</h5>
         </div>
 
+        {{-- Cards from other modules (e.g. community's "Apply for membership"):
+             services tagged "dashboard-cards" with render(?Authenticatable $user): ?string.
+             Each module decides when it shows (null = nothing). --}}
+        @if ($user)
+            @foreach (app()->tagged('dashboard-cards') as $dashboardCard)
+                @if (method_exists($dashboardCard, 'render') && ($dashboardCardHtml = $dashboardCard->render($user)))
+                    <div class="mb-3">{!! $dashboardCardHtml !!}</div>
+                @endif
+            @endforeach
+        @endif
+
         
         <!-- Organisation Section -->
         @if ($isOrganisationNeeded)
