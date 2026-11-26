@@ -254,6 +254,12 @@ class GoogleController extends Controller
             return $stored;
         }
 
+        // Sent to sign in from a page that needs it (e.g. an event's registration form): back there.
+        $intended = SafeRedirect::url(Session::pull('url.intended'));
+        if ($intended && $intended !== $base_url) {
+            return $intended;
+        }
+
         return route($defaultRoute);
     }
 }
