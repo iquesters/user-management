@@ -84,7 +84,8 @@ class RegisteredUserController extends Controller
         // Use login helper
         LoginHelper::process_login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        // Back to where they were going (e.g. an event's registration form), else the dashboard.
+        return redirect()->intended(route('dashboard', absolute: false));
     }
 
     public function store(Request $request): JsonResponse|RedirectResponse
@@ -158,8 +159,10 @@ class RegisteredUserController extends Controller
             // ------------------------------------------------
             LoginHelper::process_login($user);
 
+            // Back to where they were going (e.g. an event's registration form), else the dashboard.
+            $target = $request->session()->pull('url.intended', route('dashboard', absolute: false));
             if ($request->wantsJson() === false) {
-                return redirect(route('dashboard', absolute: false));
+                return redirect($target);
             }
 
             // ------------------------------------------------
@@ -173,7 +176,7 @@ class RegisteredUserController extends Controller
                 'message' => 'Your account has been created.',
                 // Only non-secret fields: $validated also holds the password.
                 'data' => array_intersect_key($validated, array_flip(['name', 'email', 'phone'])),
-                'redirect_url' => route('dashboard', absolute: false),
+                'redirect_url' => $target,
             ]);
 
         } catch (ValidationException $e) {
