@@ -5,6 +5,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 
 ## [Unreleased]
 
+## [2.2.0] – 2026-11-27
+
+_Also covers 2.0.3 and 2.1.0, which were tagged without their own heading._
+
 ### Fixed (back to where they were going)
 - **Signing up returns to the page that needed it** (e.g. an event's registration form opened from its public page), like signing in already did; without one, the dashboard. **Google sign-in** does the same. Test: `RedirectAfterSignUpTest`.
 
