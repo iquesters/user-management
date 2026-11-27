@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follo
 
 ## [Unreleased]
 
+### Fixed (unified sign-in)
+- **A proper sign-in code email**: the code in the subject (*482913 is your TTV Alumni code*, seen in the phone's notification), the app's logo and name, how long it is valid (`otp_ttl_minutes`). With iquesters/notifications it is the app message *Sign-in code* (wording editable by super-admins in Notifications → Templates; always sent; the code never stored in Sent messages); without it, a built-in email. It was a one-line plain-text email.
+- **The Terms and Privacy agreement is on the first step** of unified sign-in, under the email or phone (a required checkbox with the links). It is recorded when the account is made, or when a returning person signs in with a code (e.g. after a new `terms_version`), so nobody meets the separate accept page afterwards. Re-seed (`user-management:seed`) to add it to the forms.
+- **Back to the page that asked for sign-in** (e.g. an event's registration form from its public link) after a unified sign-in or sign-up by code; it always went to the dashboard.
+- **The sign-in page stayed on the next step**: after the email, the code or password step showed and the page reloaded back to the email box. The page now tells the form it shows the result itself.
+- **The verification code is exactly the code sent**: only digits, exactly its length (setting `otp_length`, 6 by default), checked in the form (letters and extra characters can't be typed; spaces in a pasted code are dropped) and on the server (*Enter the 6-digit code we sent you*). Re-seed (`user-management:seed`) to update the form.
+
 ## [2.2.0] – 2026-11-27
 
 _Also covers 2.0.3 and 2.1.0, which were tagged without their own heading._

@@ -697,6 +697,9 @@ class UserManagementSeeder extends BaseSeeder
             'disableSnackbar' => true,
         ];
 
+        // The Terms / Privacy agreement on the first step (when the app requires one).
+        $termsField = \Iquesters\UserManagement\Support\Terms::required() ? [\Iquesters\UserManagement\Support\Terms::field()] : [];
+
         $this->upsertFormSchema('unified-identify-email', 'Unified Sign-in — Email', 'Identifier-first login/registration entry step (email tab)', $identifyCommon + [
             'fields' => [
                 [
@@ -710,6 +713,9 @@ class UserManagementSeeder extends BaseSeeder
                     'autocomplete' => 'username',
                     'autofocus' => true,
                 ],
+                // The agreement, asked up front: recorded when the account is made (or a returning
+                // person signs in with a code).
+                ...$termsField,
             ],
         ]);
 
@@ -754,6 +760,7 @@ class UserManagementSeeder extends BaseSeeder
                     'placeholder' => '9876543210',
                     'autocomplete' => 'tel',
                 ],
+                ...$termsField,
             ],
         ]);
 
@@ -772,7 +779,7 @@ class UserManagementSeeder extends BaseSeeder
                 'edit' => ['allowCancel' => false],
             ],
             'defaultFieldSize' => 12,
-            'submitButtonLabel' => 'Verify OTP',
+            'submitButtonLabel' => 'Continue',
             'disableSnackbar' => true,
             'fields' => [
                 ['id' => 'flow_token', 'type' => 'hidden', 'required' => true],
@@ -781,12 +788,17 @@ class UserManagementSeeder extends BaseSeeder
                 ['id' => 'delivery_channel', 'type' => 'hidden', 'required' => true],
                 [
                     'id' => 'otp',
-                    'label' => 'Verification code',
+                    'label' => 'Code',
                     'type' => 'text',
                     'required' => true,
-                    'minLength' => 4,
-                    'maxLength' => 8,
-                    'placeholder' => 'Enter OTP',
+                    // Exactly the code sent: its length (setting otp_length), digits only.
+                    'minLength' => $otpLength = \Iquesters\UserManagement\Http\Requests\Auth\VerifyIdentifierOtpRequest::otpLength(),
+                    'maxLength' => $otpLength,
+                    'pattern' => '[0-9]{'.$otpLength.'}',
+                    'digitsOnly' => true,
+                    'inputmode' => 'numeric',
+                    'placeholder' => $otpLength.'-digit code',
+                    'helperText' => 'The '.$otpLength.'-digit code we sent you.',
                     'autocomplete' => 'one-time-code',
                     'autofocus' => true,
                 ],

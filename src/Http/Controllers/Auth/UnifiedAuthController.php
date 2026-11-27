@@ -22,6 +22,7 @@ use Iquesters\UserManagement\Services\AuthFlowStateService;
 use Iquesters\UserManagement\Services\IdentifierResolverService;
 use Iquesters\UserManagement\Services\OtpService;
 use Iquesters\UserManagement\Services\RegistrationFieldService;
+use Iquesters\UserManagement\Support\Terms;
 
 class UnifiedAuthController extends Controller
 {
@@ -100,6 +101,8 @@ class UnifiedAuthController extends Controller
             'status' => $user ? 'existing' : 'new',
             'user_id' => $user?->id,
             'password_login_email' => $user?->email,
+            // Agreed to the Terms / Privacy policy on this step: recorded once they're signed in or created.
+            'accepted_terms' => $request->boolean('accept_terms'),
             'identified_at' => now()->toDateTimeString(),
         ];
 
@@ -237,6 +240,11 @@ class UnifiedAuthController extends Controller
                 ], 500);
             }
 
+            // Agreed on the first step (e.g. a new terms version): no accept page afterwards.
+            if (! empty($state['accepted_terms']) && Terms::required() && ! Terms::hasAccepted($user)) {
+                Terms::record($user);
+            }
+
             $request->session()->regenerate();
             $this->authFlowStateService->forgetFlowState($request, self::FLOW_SCOPE, $request->string('flow_token')->toString());
 
@@ -252,7 +260,7 @@ class UnifiedAuthController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Logged in successfully.',
-                'redirect_url' => route(ConfProvider::from(Module::USER_MGMT)->default_auth_route ?? 'dashboard'),
+                'redirect_url' => $this->afterSignIn($request),
             ]);
         }
 
@@ -297,6 +305,7 @@ class UnifiedAuthController extends Controller
             'requires_additional_fields' => ! empty($fields),
         ]);
 
+        // Nothing more to ask: the account is made now (they agreed to the Terms on the first step).
         if (empty($fields)) {
             return $this->completeRegistrationFromState($request, $state, []);
         }
@@ -329,6 +338,15 @@ class UnifiedAuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Please verify your identifier first.',
+            ], 422);
+        }
+
+        // The Terms / Privacy agreement was given on the first step (kept in the flow).
+        if (Terms::required() && empty($state['accepted_terms']) && ! $request->boolean('accept_terms')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please agree to the Terms and conditions and the Privacy policy.',
+                'errors' => ['accept_terms' => ['Please agree to the Terms and conditions and the Privacy policy.']],
             ], 422);
         }
 
@@ -370,6 +388,11 @@ class UnifiedAuthController extends Controller
             meta: $meta
         );
 
+        // Agreed on the first step (or, from an older page, with the last one): recorded now.
+        if (Terms::required() && (! empty($state['accepted_terms']) || $request->boolean('accept_terms'))) {
+            Terms::record($user);
+        }
+
         if ($state['identifier_type'] === 'phone' && empty($user->phone_verified_at)) {
             $user->forceFill([
                 'phone_verified_at' => now(),
@@ -398,8 +421,17 @@ class UnifiedAuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Account created successfully.',
-            'redirect_url' => route(ConfProvider::from(Module::USER_MGMT)->default_auth_route ?? 'dashboard'),
+            'redirect_url' => $this->afterSignIn($request),
         ]);
+    }
+
+    /**
+     * Where to go after signing in or up: the page that asked for it (e.g. an
+     * event's registration form opened from its public link), else the default.
+     */
+    protected function afterSignIn(Request $request): string
+    {
+        return (string) $request->session()->pull('url.intended', route(ConfProvider::from(Module::USER_MGMT)->default_auth_route ?? 'dashboard'));
     }
 
     protected function isUnifiedFlowEnabled(): bool
