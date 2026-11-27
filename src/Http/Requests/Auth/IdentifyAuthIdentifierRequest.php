@@ -31,10 +31,20 @@ class IdentifyAuthIdentifierRequest extends FormRequest
         // would hit to enumerate identifiers or force OTP sends, so it's the
         // one that most needs the gate (see LoginRequest for the same pattern
         // on the password path).
+        // The Terms / Privacy agreement, asked on this first step (a ticked box, not just present).
+        if (\Iquesters\UserManagement\Support\Terms::required()) {
+            $rules['accept_terms'] = ['accepted'];
+        }
+
         if (ConfProvider::from(Module::USER_MGMT)->recaptcha->enabled ?? false) {
             $rules['recaptcha_token'] = ['required', new RecaptchaRule('unified_identify', 0.5)];
         }
 
         return $rules;
+    }
+
+    public function messages(): array
+    {
+        return ['accept_terms.accepted' => 'Please agree to the Terms and conditions and the Privacy policy.', 'accept_terms.required' => 'Please agree to the Terms and conditions and the Privacy policy.'];
     }
 }

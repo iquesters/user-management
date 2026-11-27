@@ -29,15 +29,25 @@
     <div class="col-12">
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
-                <div class="mb-4">
-                    <h4 class="mb-2">Sign in or create your account</h4>
-                    <p class="text-muted mb-0">
+                {{-- The step's title and line change as the person moves on (Welcome → Check your email → …). --}}
+                <div class="mb-4 text-center unified-step-head">
+                    <h4 class="mb-1 fw-semibold" id="unified-step-title">Welcome</h4>
+                    <p class="text-muted mb-0" id="unified-step-subtitle">
                         @if($whatsappLoginEnabled)
-                            Start with your email address or phone number. We will guide you to the right next step.
+                            Sign in or create your account with your email or phone. No password needed.
                         @else
-                            Start with your email address. We will guide you to the right next step.
+                            Sign in or create your account with your email. No password needed.
                         @endif
                     </p>
+                </div>
+
+                {{-- Who is signing in: the email (or phone) entered, with Change. --}}
+                <div id="unified-identity" class="d-none unified-identity mb-3">
+                    <span class="d-inline-flex align-items-center gap-2 text-truncate">
+                        <i class="fas fa-circle-user text-primary"></i>
+                        <span id="unified-identity-text" class="fw-medium text-truncate"></span>
+                    </span>
+                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="unified-reset-button">Change</button>
                 </div>
 
                 {{-- Intentional inline unified-auth state machine for the package login screen; @todo move this temporary auth UI behavior into dedicated assets once the shared auth module is extracted. --}}
@@ -68,44 +78,42 @@
                     </div>
                 </div>
 
-                <div id="unified-password-section" class="d-none">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Login with password</h6>
-                        <button type="button" class="btn btn-sm btn-link p-0 d-none" id="unified-switch-to-otp">Or verify with OTP instead</button>
-                    </div>
-
-                    @include('userinterface::components.form', ['id' => 'unified-login-with-password', 'recaptchaAction' => $recaptchaEnabled ? 'login' : null])
-                </div>
-
+                {{-- The code (the default way): sent by itself after the email. --}}
                 <div id="unified-otp-section" class="d-none">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Login or verify with OTP</h6>
-                        <button type="button" class="btn btn-sm btn-link p-0 d-none" id="unified-switch-to-password">Or login with password instead</button>
-                    </div>
-
                     @include('userinterface::components.form', ['id' => 'unified-verify-otp'])
 
-                    <div class="d-flex gap-2 flex-wrap mt-2">
-                        <button type="button" class="btn btn-sm btn-success" id="unified-send-otp-button">Send OTP</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="unified-resend-otp-button">Resend OTP</button>
+                    <div class="text-center small mt-3 d-grid gap-2">
+                        <div>
+                            <span class="text-muted">Didn't get it?</span>
+                            <button type="button" class="btn btn-link btn-sm p-0 align-baseline text-decoration-none" id="unified-send-otp-button">Send the code</button>
+                            <button type="button" class="btn btn-link btn-sm p-0 align-baseline text-decoration-none d-none" id="unified-resend-otp-button">Resend the code</button>
+                            <span class="text-muted">· check Spam too</span>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none d-none" id="unified-switch-to-password"><i class="fas fa-key me-1"></i>Use your password instead</button>
+                        </div>
                     </div>
                 </div>
 
+                {{-- The password (the other way, for accounts that have one). --}}
+                <div id="unified-password-section" class="d-none">
+                    @include('userinterface::components.form', ['id' => 'unified-login-with-password', 'recaptchaAction' => $recaptchaEnabled ? 'login' : null])
+                    <div class="text-center small mt-3">
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none d-none" id="unified-switch-to-otp"><i class="fas fa-envelope me-1"></i>Email me a code instead</button>
+                    </div>
+                </div>
+
+                {{-- A new account: the few details the app asks for. --}}
                 <div id="unified-registration-section" class="d-none">
-                    <h6 class="mb-2">Complete your registration</h6>
                     <form id="unified-registration-form" class="d-grid gap-3">
                         <div id="unified-registration-fields" class="d-grid gap-3"></div>
                         <div class="d-flex justify-content-end">
-                            <button type="button" class="btn btn-sm btn-primary" id="unified-complete-registration-button">Create account</button>
+                            <button type="button" class="btn btn-sm btn-primary" id="unified-complete-registration-button">Create my account</button>
                         </div>
                     </form>
                 </div>
 
-                <div id="unified-feedback" class="small text-muted mt-3" aria-live="polite"></div>
-
-                <div class="d-flex gap-2 flex-wrap mt-3">
-                    <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="unified-reset-button">Use a different email or phone</button>
-                </div>
+                <div id="unified-feedback" class="small text-muted mt-3 text-center" aria-live="polite"></div>
             </div>
         </div>
 
@@ -116,6 +124,18 @@
         @endif
     </div>
 </div>
+
+@push('styles')
+<style>
+    /* Unified sign-in: one calm column, large touch targets, a big centred code box. */
+    .unified-step-head h4 { font-size: 1.5rem; }
+    .unified-identity { display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+        padding: .6rem .9rem; border-radius: 999px; background: var(--bs-tertiary-bg); }
+    #unified-otp-section input[name="otp"] { font-size: 1.75rem; letter-spacing: .55em; text-align: center;
+        font-family: Consolas, Menlo, monospace; padding-left: .55em; }
+    #unified-otp-section input[name="otp"]::placeholder { letter-spacing: normal; font-size: 1rem; font-family: inherit; }
+</style>
+@endpush
 
 @push('scripts')
     <script>
@@ -146,8 +166,20 @@
                 registrationSection: document.getElementById('unified-registration-section'),
                 registrationForm: document.getElementById('unified-registration-form'),
                 registrationFields: document.getElementById('unified-registration-fields'),
-                completeRegistrationButton: document.getElementById('unified-complete-registration-button')
+                completeRegistrationButton: document.getElementById('unified-complete-registration-button'),
+                identity: document.getElementById('unified-identity'),
+                identityText: document.getElementById('unified-identity-text'),
+                stepTitle: document.getElementById('unified-step-title'),
+                stepSubtitle: document.getElementById('unified-step-subtitle')
             };
+            const firstTitle = elements.stepTitle.textContent;
+            const firstSubtitle = elements.stepSubtitle.textContent.trim();
+
+            /** The step's title and line (Welcome → Check your email → Enter your password → Almost done). */
+            function setStep(title, subtitle) {
+                elements.stepTitle.textContent = title;
+                elements.stepSubtitle.textContent = subtitle || '';
+            }
 
             // The identifier input now comes from whichever schema-rendered
             // tab form (#unified-identify-email / #unified-identify-phone)
@@ -271,6 +303,12 @@
                 elements.identifyWrap.classList.add('d-none');
                 elements.passwordSection.classList.remove('d-none');
                 elements.otpSection.classList.add('d-none');
+                setStep('Enter your password', 'Or get a code by email instead.');
+                setFeedback('', 'muted');
+                window.setTimeout(function () {
+                    const password = document.querySelector('#unified-login-with-password input[type="password"]');
+                    if (password) password.focus();
+                }, 50);
             }
 
             function showOtpPanel() {
@@ -278,6 +316,12 @@
                 elements.otpSection.classList.remove('d-none');
                 setOtpDispatched(state.otpSent);
                 elements.passwordSection.classList.add('d-none');
+                const input = getVerifyOtpInput();
+                const digits = (input && input.maxLength > 0) ? input.maxLength : 6;
+                setStep(
+                    state.deliveryChannel === 'whatsapp' ? 'Check WhatsApp' : 'Check your email',
+                    'We sent a ' + digits + '-digit code to ' + (state.identifier || 'you') + '. Enter it below to ' + (state.status === 'existing' ? 'sign in.' : 'create your account.')
+                );
 
                 if (!state.otpSent) {
                     sendOtp(endpoints.sendOtp, 'send');
@@ -294,7 +338,8 @@
                 resetPanels();
                 elements.identifyWrap.classList.remove('d-none');
                 setFeedback('', 'muted');
-                elements.resetButton.classList.add('d-none');
+                elements.identity.classList.add('d-none');
+                setStep(firstTitle, firstSubtitle);
 
                 ['unified-identify-email', 'unified-identify-phone'].forEach(function (formId) {
                     const input = getIdentifierInput(formId);
@@ -327,14 +372,14 @@
                         window.clearInterval(state.cooldownTimer);
                         state.cooldownTimer = null;
                         elements.resendOtpButton.disabled = false;
-                        elements.resendOtpButton.textContent = 'Resend OTP';
+                        elements.resendOtpButton.textContent = 'Resend the code';
                         return;
                     }
 
-                    elements.resendOtpButton.textContent = 'Resend OTP (' + state.cooldownRemaining + 's)';
+                    elements.resendOtpButton.textContent = 'Resend in ' + state.cooldownRemaining + 's';
                 }, 1000);
 
-                elements.resendOtpButton.textContent = 'Resend OTP (' + state.cooldownRemaining + 's)';
+                elements.resendOtpButton.textContent = 'Resend in ' + state.cooldownRemaining + 's';
             }
 
             async function postJson(url, payload) {
@@ -448,24 +493,22 @@
                 setSchemaFieldValue('unified-verify-otp', 'identifier', state.identifier, 20);
                 setSchemaFieldValue('unified-verify-otp', 'delivery_channel', state.deliveryChannel, 20);
 
-                elements.resetButton.classList.remove('d-none');
+                // Who is signing in, with Change.
+                elements.identityText.textContent = state.identifier || '';
+                elements.identity.classList.remove('d-none');
                 const identifierInput = getIdentifierInput(formId);
                 if (identifierInput) {
                     identifierInput.disabled = true;
                 }
 
+                // The code first (it works for everyone, new or returning); a password only as the
+                // other way, for accounts that have one.
                 if (state.hasPasswordOption) {
                     setSchemaFieldValue('unified-login-with-password', 'email', data.password_login_email, 20);
                     elements.switchToOtpButton.classList.remove('d-none');
                     elements.switchToPasswordButton.classList.remove('d-none');
-                    showPasswordPanel();
-                } else {
-                    showOtpPanel();
                 }
-
-                setFeedback(data.status === 'existing'
-                    ? 'Account found. Continue with password or request an OTP.'
-                    : 'No account found yet. Verify this identifier to create one.', 'success');
+                showOtpPanel();
                 log('info', 'Unified auth identifier resolved.', data);
             }
 
@@ -476,11 +519,11 @@
                 }
 
                 setLoading(operation === 'send' ? elements.sendOtpButton : elements.resendOtpButton, true, operation === 'send' ? 'Sending...' : 'Resending...');
-                setFeedback('Preparing your verification code.', 'muted');
+                setFeedback('Sending your code…', 'muted');
 
                 try {
                     const data = await postJson(url, otpPayload());
-                    setFeedback(data.message || 'Verification code sent.', 'success');
+                    setFeedback('Code sent. It can take a minute to arrive.', 'success');
                     state.otpSent = true;
                     setOtpDispatched(true);
                     startCooldown(Number(data.cooldown_seconds || 60));
@@ -510,7 +553,11 @@
 
                 if (data.requires_registration_fields) {
                     renderRegistrationFields(data.fields || []);
+                    elements.otpSection.classList.add('d-none');
                     elements.registrationSection.classList.remove('d-none');
+                    setStep('Almost done', 'A few details to finish creating your account.');
+                    setFeedback('', 'muted');
+                    return;
                 }
 
                 setFeedback(data.message || 'Verification successful.', 'success');
@@ -532,6 +579,7 @@
                 });
 
                 try {
+                    // The Terms / Privacy agreement was given on the first step.
                     const data = await postJson(endpoints.completeRegistration, {
                         flow_token: state.flowToken,
                         fields: fields
@@ -560,8 +608,12 @@
             window.addEventListener('lab-form:submitted', function (event) {
                 const formId = event.detail && event.detail.formId;
                 if (formId === 'unified-identify-email' || formId === 'unified-identify-phone') {
+                    // This page shows the next step itself: the form mustn't reload the page.
+                    event.preventDefault();
                     handleIdentifySubmitted(event.detail.response, formId);
                 } else if (formId === 'unified-verify-otp') {
+                    // A redirect_url (signed in) is still followed by the form; otherwise the next step shows here.
+                    event.preventDefault();
                     handleVerifyOtpSubmitted(event.detail.response);
                 }
             });

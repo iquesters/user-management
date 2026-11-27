@@ -43,6 +43,9 @@ class UserManagementServiceProvider extends BaseServiceProvider
     {
         parent::boot();
 
+        // The sign-in code email, as an editable app message when notifications is installed.
+        \Iquesters\UserManagement\Support\SignInCodeEmail::register();
+
         Assets::registerRoutes();
 
         // Layout the auth views extend: user-interface's when installed, else ours.

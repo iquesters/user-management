@@ -3,8 +3,8 @@
 namespace Iquesters\UserManagement\Services;
 
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Iquesters\UserManagement\Contracts\OtpSender;
+use Iquesters\UserManagement\Support\SignInCodeEmail;
 
 class EmailOtpSender implements OtpSender
 {
@@ -24,12 +24,8 @@ class EmailOtpSender implements OtpSender
         ]);
 
         try {
-            Mail::raw(
-                'Your verification code is '.$otp.'. It will expire soon. If you did not request this code, you can ignore this email.',
-                function ($message) use ($identifier) {
-                    $message->to($identifier)->subject('Your verification code');
-                }
-            );
+            // The app's "Sign-in code" email (notifications template when installed, else built in).
+            SignInCodeEmail::send($identifier, $otp, isset($context['user_id']) ? (int) $context['user_id'] : null);
         } catch (\Throwable $throwable) {
             Log::error('Email OTP delivery failed.', [
                 'auth_method' => 'email_otp',
